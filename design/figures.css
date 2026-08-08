@@ -1,0 +1,30 @@
+figure {
+  counter-increment: study-figure;
+  margin: var(--space-12) 0 3.4rem;
+  padding: 0;
+}
+figure img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: min(76vh, 820px);
+  height: auto;
+  margin: 0 auto;
+  background: #fff;
+}
+figcaption {
+  max-width: var(--study-reading-width);
+  margin: var(--space-3) auto 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-body);
+  font-size: .79rem;
+  line-height: 1.5;
+}
+figcaption::before {
+  content: "Figura " counter(study-figure) ". ";
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-utility);
+  font-size: .92em;
+  font-weight: 700;
+  letter-spacing: .015em;
+}
