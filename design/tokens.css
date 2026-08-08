@@ -1,0 +1,50 @@
+:root {
+  color-scheme: light;
+  --study-canvas: #e8e1d6;
+  --study-paper: #faf6ed;
+  --study-paper-muted: #f2ede4;
+  --study-ink: #2a2721;
+  --study-ink-strong: #161410;
+  --study-ink-muted: #666057;
+  --study-rule: #d9d1c5;
+  --study-rule-strong: #b8aea0;
+  --study-link: #365c67;
+  --study-focus: #365c67;
+  --study-accent: #365c67;
+  --study-concept: #365c67;
+  --study-example: #50664f;
+  --study-warning: #755824;
+  --study-danger: #82483e;
+  --study-connection: #5d586f;
+  --study-recall: #575f63;
+  --study-concept-soft: #e9efee;
+  --study-example-soft: #edf0e8;
+  --study-warning-soft: #f2ecdf;
+  --study-danger-soft: #f2e7e3;
+  --study-connection-soft: #ece9ef;
+  --study-recall-soft: #ebecea;
+  --study-font-display: Georgia, Cambria, "Times New Roman", serif;
+  --study-font-body: Georgia, Cambria, "Times New Roman", serif;
+  --study-font-utility: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --study-font-code: "Cascadia Code", Consolas, "SFMono-Regular", monospace;
+  --study-body-size: 1.125rem;
+  --study-body-leading: 1.64;
+  --study-small-size: .84rem;
+  --study-reading-width: 64ch;
+  --study-paper-width: 56rem;
+  --study-shell-width: 78rem;
+  --study-toc-width: 11.5rem;
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
+  --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
+  --space-12: 3rem; --space-16: 4rem;
+  --radius-s: .18rem; --radius-m: .3rem; --shadow-paper: none;
+}
+html[data-study-theme="dark"] {
+  color-scheme: dark;
+  --study-canvas: #171817; --study-paper: #20211f; --study-paper-muted: #272824;
+  --study-ink: #ddd8cc; --study-ink-strong: #f4efe4; --study-ink-muted: #b3ada1;
+  --study-rule: #3b3b36; --study-rule-strong: #55534b; --study-link: #91b3b8;
+  --study-focus: #91b3b8; --study-accent: #91b3b8; --study-concept: #91b3b8;
+  --study-example: #a8bea0; --study-warning: #d6bc88; --study-danger: #d9a098;
+  --study-connection: #bcb5cf; --study-recall: #b8c0c1;
+}
