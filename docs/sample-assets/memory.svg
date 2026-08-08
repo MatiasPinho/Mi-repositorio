@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360" role="img" aria-label="Jerarquía simplificada de memoria">
+  <rect width="720" height="360" fill="#ffffff"/>
+  <g font-family="Segoe UI, Arial" text-anchor="middle" fill="#172033">
+    <text x="360" y="38" font-size="26" font-weight="700">Jerarquía de memoria</text>
+    <rect x="260" y="65" width="200" height="48" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/><text x="360" y="96" font-size="18">Registros</text>
+    <rect x="225" y="135" width="270" height="48" rx="10" fill="#ede9fe" stroke="#8b5cf6" stroke-width="2"/><text x="360" y="166" font-size="18">Caché</text>
+    <rect x="185" y="205" width="350" height="48" rx="10" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/><text x="360" y="236" font-size="18">RAM</text>
+    <rect x="135" y="275" width="450" height="48" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/><text x="360" y="306" font-size="18">Almacenamiento</text>
+    <text x="90" y="110" font-size="14" fill="#64748b">más rápida</text><text x="620" y="110" font-size="14" fill="#64748b">menor capacidad</text>
+    <text x="90" y="310" font-size="14" fill="#64748b">más lenta</text><text x="620" y="310" font-size="14" fill="#64748b">mayor capacidad</text>
+  </g>
+</svg>
