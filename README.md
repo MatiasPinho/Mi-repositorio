@@ -1,4 +1,4 @@
-# University Study System V3.6.4
+# University Study System V3.6.5
 
 Workspace versionado de la release que estamos usando para iterar diseño, renderer e infraestructura de publicación del University Study System.
 
@@ -6,9 +6,10 @@ Workspace versionado de la release que estamos usando para iterar diseño, rende
 
 ## Release actual
 
-- `VERSION`: 3.6.4
+- `VERSION`: 3.6.5
 - diseño Claude integrado y estabilizado
 - renderer HTML académico actual
+- títulos específicos de `WARNING`, `EXAM`, `RECALL`, `EXAMPLE` y demás callouts preservados dentro del cuerpo, sin reemplazar la categoría del gutter
 - `unit_id` estable para scopes
 - figuras derivadas con namespace `derived:` y procedencia obligatoria
 - migración de registros legacy sin reprocesar fuentes
@@ -16,7 +17,10 @@ Workspace versionado de la release que estamos usando para iterar diseño, rende
 - captions robustos
 - gate `10-integrity.json` antes de publicar
 - preflight de PyMuPDF
-- pipelines actuales de `procesar`, `resumen`, `guia` y `repaso`
+- contratos JSON endurecidos para que warnings de dependencias no contaminen `stdout`
+- `/procesar` consume explícitamente las variantes `--json` de scans/preflight estructurados
+- CLI local V3.6.5 fuerza UTF-8 en Windows y subprocesses determinísticos
+- 73/73 tests de release pasando
 
 ## Archivos centrales versionados
 
