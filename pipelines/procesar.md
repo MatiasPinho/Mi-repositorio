@@ -16,8 +16,8 @@ Load only these shared rules before semantic work:
 
 ## RUN
 1. Resolve the course deterministically (`study.py course list` only if needed).
-2. `python study.py materials scan <course>` and work only on new/changed sources plus the minimum existing context needed for integration.
-3. Run `python study.py figures preflight <course>`. If it reports `READY` and changed sources include PDFs, run `python study.py figures scan <course> --write`. If it reports `DISABLED`, continue textual ingestion without attempting the scanner again.
+2. `python study.py materials scan <course> --json` and work only on new/changed sources plus the minimum existing context needed for integration.
+3. Run `python study.py figures preflight <course> --json`. If it reports `READY` and changed sources include PDFs, run `python study.py figures scan <course> --write --json`. If it reports `DISABLED`, continue textual ingestion without attempting the scanner again.
 4. Interpret sources, including pedagogically meaningful figures, and update `academico/academic.json`, `contexto.md`, `conocimiento/concepts.json` and evidence links. Every unit-scoped concept/figure should carry stable `unit_id` (for example `unidad-1`) in addition to any human-readable unit label.
 5. Sync concepts to progress.
 6. Run academic/structural audit and `python study.py validate <course>`.
