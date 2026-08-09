@@ -83,6 +83,7 @@ def caption_comment(line: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
+
 def consume_caption(lines: list[str], index: int) -> tuple[str | None, int]:
     """Consume an optional caption after a table/code block, tolerating blank lines."""
     j = index
@@ -123,6 +124,12 @@ def render_markdown(
     *,
     wrap_prose: bool = True,
 ) -> tuple[str, list[tuple[int, str, str]], str]:
+    """Render Markdown.
+
+    At document level, ordinary prose is placed in the manual's gutter/body row
+    primitive. Recursive callout rendering disables those wrappers so semantic
+    component bodies stay structurally simple.
+    """
     lines = text.replace("\r\n", "\n").split("\n")
     out: list[str] = []
     toc: list[tuple[int, str, str]] = []
@@ -224,15 +231,19 @@ def render_markdown(
                 i += 1
             body, _toc, _title = render_markdown("\n".join(buf), scope="", wrap_prose=False) if buf else ("", [], "")
 
-            term_types = {"DEFINITION", "CONCEPT", "CONNECTION"}
+            # The gutter label is the stable semantic role (Cuidado, Definición,
+            # Recuperación...). A specific author title carries additional meaning
+            # and must never disappear during rendering, regardless of callout type.
             redundant_title = custom_title.casefold() == semantic_label.casefold() if custom_title else False
             term = (
                 f'<p class="term">{inline(custom_title)}</p>'
-                if custom_title and callout_type in term_types and not redundant_title
+                if custom_title and not redundant_title
                 else ""
             )
 
             if callout_type == "RECALL":
+                # Retrieval prompts are deliberately visible. The hint remains
+                # utility text so it supports the study flow without competing.
                 prompt = re.sub(r"^<p>", '<p class="prompt">', body, count=1) if body else ""
                 hint = '<p class="hint">Respondé sin mirar antes de seguir leyendo.</p>'
                 body = prompt + hint
@@ -321,6 +332,9 @@ def render_markdown(
             i += 1
         if waiting_for_lede and wrap_prose:
             lede = f'<p class="study-lede">{inline(" ".join(buf))}</p>'
+            # Keep the opening lede in the same body column as the chapter title,
+            # matching the reference design rather than rendering it as a later
+            # prose row.
             if out and out[-1].startswith('<header class="study-header">'):
                 out[-1] = out[-1].replace('</div></header>', f'{lede}</div></header>')
             else:
