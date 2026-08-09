@@ -1,13 +1,14 @@
 # University Study System V3.6.4
 
-Estado actual del sistema universitario portable para Claude Code y Codex.
+Workspace versionado de la release que estamos usando para iterar diseño, renderer e infraestructura de publicación del University Study System.
 
-La superficie de lectura es HTML estático/local con diseño de manual universitario contemporáneo. El conocimiento académico se construye desde fuentes, se organiza en estado canónico y recién después pasa por planificación pedagógica, redacción, Humanizer, review e integridad determinística antes de publicar.
+> Este repositorio es el **snapshot de trabajo curado**, no una copia completa del paquete local. El ZIP/local sigue siendo la distribución ejecutable con `study.py`, plantillas, tests, adapters y materias. Acá versionamos lo que estamos modificando y revisando activamente para no mezclarlo con datos académicos locales.
 
 ## Release actual
 
 - `VERSION`: 3.6.4
 - diseño Claude integrado y estabilizado
+- renderer HTML académico actual
 - `unit_id` estable para scopes
 - figuras derivadas con namespace `derived:` y procedencia obligatoria
 - migración de registros legacy sin reprocesar fuentes
@@ -15,32 +16,28 @@ La superficie de lectura es HTML estático/local con diseño de manual universit
 - captions robustos
 - gate `10-integrity.json` antes de publicar
 - preflight de PyMuPDF
-- 70 tests de release
+- pipelines actuales de `procesar`, `resumen`, `guia` y `repaso`
 
-## Flujo normal
-
-```bash
-python study.py
-python study.py course add "Programación I"
-python study.py figures migrate programacion-i
-python study.py figures preflight programacion-i
-python study.py validate programacion-i
-```
-
-En Claude Code:
+## Archivos centrales versionados
 
 ```text
-/procesar Programacion-I
-/resumen Programacion-I "Unidad 1"
+design/                     # fuente visual canónica
+assets/study-theme.css       # theme generado consumido por el renderer
+scripts/render_study.py      # Markdown semántico -> HTML
+scripts/figure_assets.py     # scan/render/registro/migración de figuras
+scripts/unit_identity.py     # identidad estable de unidades
+scripts/artifact_integrity.py# gate previo a publicación
+scripts/pipeline_run.py      # runs/handoffs + 10-integrity.json
+pipelines/                   # flujo semántico de los artefactos
+contracts/handoffs.md
+rules/ingestion/figures.md
 ```
-
-En Codex se usan las acciones equivalentes con `$`.
 
 ## Diseño
 
-La fuente visual canónica está en `design/`. `assets/study-theme.css` es el build consumido por `scripts/render_study.py`.
+La superficie de lectura es HTML estático/local con estética de manual universitario contemporáneo. La fuente visual canónica está en `design/`; `assets/study-theme.css` es el build que consume `scripts/render_study.py`.
 
-Tipografía: Source Serif 4 + IBM Plex como mejora progresiva, con fallbacks locales. Prosa alrededor de 68 caracteres, gutter académico para secciones/roles semánticos y ancho técnico separado para figuras, tablas y código.
+Tipografía: Source Serif 4 + IBM Plex como mejora progresiva, con fallbacks locales. La prosa usa una medida aproximada de 68 caracteres, gutter académico para secciones/roles semánticos y ancho técnico separado para figuras, tablas y código.
 
 ## Principio
 
