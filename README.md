@@ -1,33 +1,47 @@
-# University Study System V3.5
+# University Study System V3.6.4
 
-Design-focused workspace for the University Study System. The full local package remains the source for academic pipelines; this repository is intentionally scoped to the student-facing renderer, design system, visual rules, samples, and design skills so a design agent can iterate without unrelated context.
+Estado actual del sistema universitario portable para Claude Code y Codex.
 
-## Design scope
+La superficie de lectura es HTML estático/local con diseño de manual universitario contemporáneo. El conocimiento académico se construye desde fuentes, se organiza en estado canónico y recién después pasa por planificación pedagógica, redacción, Humanizer, review e integridad determinística antes de publicar.
 
-The current direction is **modern academic book**: warm paper, dark ink, restrained color, strong long-form readability, instructional figures, and minimal interface chrome.
+## Release actual
 
-Start with `DESIGN-BRIEF.md`, then inspect all three samples under `docs/design-samples/` before proposing changes.
+- `VERSION`: 3.6.4
+- diseño Claude integrado y estabilizado
+- `unit_id` estable para scopes
+- figuras derivadas con namespace `derived:` y procedencia obligatoria
+- migración de registros legacy sin reprocesar fuentes
+- source figures con `asset: null` válidas hasta su extracción visual
+- captions robustos
+- gate `10-integrity.json` antes de publicar
+- preflight de PyMuPDF
+- 70 tests de release
 
-## Canonical visual files
+## Flujo normal
 
-```text
-design/
-├── tokens.css
-├── typography.css
-├── layout.css
-├── components.css
-├── figures.css
-└── print.css
+```bash
+python study.py
+python study.py course add "Programación I"
+python study.py figures migrate programacion-i
+python study.py figures preflight programacion-i
+python study.py validate programacion-i
 ```
 
-`assets/study-theme.css` is the built theme consumed by `scripts/render_study.py`.
+En Claude Code:
 
-## Stress tests
+```text
+/procesar Programacion-I
+/resumen Programacion-I "Unidad 1"
+```
 
-- `docs/design-samples/theory.html` — prose-heavy theory
-- `docs/design-samples/architecture.html` — technical diagram/figure-heavy content
-- `docs/design-samples/operating-systems.html` — prose + table + semantic callouts
+En Codex se usan las acciones equivalentes con `$`.
 
-## Constraints
+## Diseño
 
-Do not redesign academic pipelines or source-processing logic. Preserve semantic roles, responsive behavior, figures, print/PDF behavior, and portability across Claude Code and Codex.
+La fuente visual canónica está en `design/`. `assets/study-theme.css` es el build consumido por `scripts/render_study.py`.
+
+Tipografía: Source Serif 4 + IBM Plex como mejora progresiva, con fallbacks locales. Prosa alrededor de 68 caracteres, gutter académico para secciones/roles semánticos y ancho técnico separado para figuras, tablas y código.
+
+## Principio
+
+La infraestructura interna puede ser rigurosa y trazable; el material que recibe el estudiante debe sentirse como un buen apunte escrito por una persona: claro, didáctico, visualmente sobrio y sin exponer el aparato forense interno.

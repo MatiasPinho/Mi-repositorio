@@ -1,50 +1,80 @@
 :root {
   color-scheme: light;
-  --study-canvas: #e8e1d6;
-  --study-paper: #faf6ed;
-  --study-paper-muted: #f2ede4;
-  --study-ink: #2a2721;
-  --study-ink-strong: #161410;
-  --study-ink-muted: #666057;
-  --study-rule: #d9d1c5;
-  --study-rule-strong: #b8aea0;
-  --study-link: #365c67;
-  --study-focus: #365c67;
-  --study-accent: #365c67;
-  --study-concept: #365c67;
-  --study-example: #50664f;
-  --study-warning: #755824;
-  --study-danger: #82483e;
-  --study-connection: #5d586f;
-  --study-recall: #575f63;
-  --study-concept-soft: #e9efee;
-  --study-example-soft: #edf0e8;
-  --study-warning-soft: #f2ecdf;
-  --study-danger-soft: #f2e7e3;
-  --study-connection-soft: #ece9ef;
-  --study-recall-soft: #ebecea;
-  --study-font-display: Georgia, Cambria, "Times New Roman", serif;
-  --study-font-body: Georgia, Cambria, "Times New Roman", serif;
-  --study-font-utility: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-  --study-font-code: "Cascadia Code", Consolas, "SFMono-Regular", monospace;
-  --study-body-size: 1.125rem;
-  --study-body-leading: 1.64;
-  --study-small-size: .84rem;
-  --study-reading-width: 64ch;
-  --study-paper-width: 56rem;
-  --study-shell-width: 78rem;
-  --study-toc-width: 11.5rem;
+
+  /* Surfaces — warm, low chroma, higher contrast than v3.5 */
+  --study-canvas: #e9e5dc;
+  --study-paper: #fbf9f4;
+  --study-paper-muted: #f7f4ec;
+  --study-ink: #232019;
+  --study-ink-strong: #100f0c;
+  --study-ink-soft: #413c33;
+  --study-ink-muted: #6b6459;
+  --study-ink-faint: #746c5e;
+  --study-rule: #ddd7cb;
+  --study-rule-soft: #e6e0d4;
+  --study-rule-strong: #b9b1a2;
+
+  /* Semantic signalling — one hue per academic role, all low saturation */
+  --study-link: #2f5d67;
+  --study-focus: #2f5d67;
+  --study-accent: #2f5d67;
+  --study-concept: #2f5d67;
+  --study-example: #4a6349;
+  --study-warning: #7a5a20;
+  --study-danger: #7e4238;
+  --study-connection: #5a5570;
+  --study-recall: #55605f;
+  --study-danger-soft: #f8efec;
+  --study-warning-soft: #f6f1e6;
+
+  /* Type — Google Fonts with full system fallbacks */
+  --study-font-body: "Source Serif 4", "Source Serif Pro", Georgia, Cambria, serif;
+  --study-font-display: var(--study-font-body);
+  --study-font-utility: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --study-font-code: "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
+
+  --study-body-size: clamp(1.0625rem, .98rem + .35vw, 1.1875rem);
+  --study-body-leading: 1.72;
+  --study-small-size: .82rem;
+
+  /* Measure system: prose stays narrow, figures/tables break wider */
+  --study-measure: 42rem;      /* ~68 characters */
+  --study-gutter: 8rem;        /* section numbers + semantic labels */
+  --study-gutter-gap: 2rem;
+  --study-wide: 52rem;         /* figures, tables, code */
+  --study-paper-width: 66rem;
+  --study-shell-width: 86rem;
+  --study-toc-width: 13rem;
+
   --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
   --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
   --space-12: 3rem; --space-16: 4rem;
-  --radius-s: .18rem; --radius-m: .3rem; --shadow-paper: none;
+  --radius-s: 0; --radius-m: 0; --shadow-paper: none;
 }
+
+/* Opt-in dark surface for night sessions. Same hierarchy, same semantics. */
 html[data-study-theme="dark"] {
   color-scheme: dark;
-  --study-canvas: #171817; --study-paper: #20211f; --study-paper-muted: #272824;
-  --study-ink: #ddd8cc; --study-ink-strong: #f4efe4; --study-ink-muted: #b3ada1;
-  --study-rule: #3b3b36; --study-rule-strong: #55534b; --study-link: #91b3b8;
-  --study-focus: #91b3b8; --study-accent: #91b3b8; --study-concept: #91b3b8;
-  --study-example: #a8bea0; --study-warning: #d6bc88; --study-danger: #d9a098;
-  --study-connection: #bcb5cf; --study-recall: #b8c0c1;
+  --study-canvas: #16171a;
+  --study-paper: #1e2023;
+  --study-paper-muted: #24262a;
+  --study-ink: #ddd9d0;
+  --study-ink-strong: #f5f2ea;
+  --study-ink-soft: #c6c1b7;
+  --study-ink-muted: #a49d92;
+  --study-ink-faint: #7d766c;
+  --study-rule: #34373b;
+  --study-rule-soft: #2b2e32;
+  --study-rule-strong: #4d5157;
+  --study-link: #8fb6be;
+  --study-focus: #8fb6be;
+  --study-accent: #8fb6be;
+  --study-concept: #8fb6be;
+  --study-example: #a3bd9b;
+  --study-warning: #d3bb87;
+  --study-danger: #d99e93;
+  --study-connection: #b6b0c9;
+  --study-recall: #b0b9b8;
+  --study-danger-soft: #2a2320;
+  --study-warning-soft: #262218;
 }

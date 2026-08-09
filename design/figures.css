@@ -1,30 +1,30 @@
+/* Figures are instructional objects: framed plate at wide measure, caption
+   label in the gutter so it reads as textbook apparatus. */
 figure {
   counter-increment: study-figure;
-  margin: var(--space-12) 0 3.4rem;
+  max-width: var(--study-wide);
+  margin: 2.9rem 0 3.1rem;
   padding: 0;
 }
+figure .plate { border: 1px solid var(--study-rule); background: #fff; padding: 1.6rem 1.2rem; }
 figure img {
   display: block;
   width: auto;
   max-width: 100%;
-  max-height: min(76vh, 820px);
+  max-height: min(74vh, 760px);
   height: auto;
   margin: 0 auto;
-  background: #fff;
 }
-figcaption {
-  max-width: var(--study-reading-width);
-  margin: var(--space-3) auto 0;
-  color: var(--study-ink-muted);
-  font-family: var(--study-font-body);
-  font-size: .79rem;
-  line-height: 1.5;
-}
+figcaption { display: flex; flex-wrap: wrap; gap: .35rem var(--study-gutter-gap); margin: .85rem 0 0; }
 figcaption::before {
-  content: "Figura " counter(study-figure) ". ";
+  content: "Figura " counter(study-figure);
+  flex: 0 0 var(--study-gutter);
   color: var(--study-ink-strong);
   font-family: var(--study-font-utility);
-  font-size: .92em;
-  font-weight: 700;
-  letter-spacing: .015em;
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
 }
+figcaption > span { flex: 1 1 26rem; max-width: var(--study-measure); color: var(--study-ink-muted); font-size: .86rem; line-height: 1.55; text-wrap: pretty; }
+figure.wide { max-width: none; }
