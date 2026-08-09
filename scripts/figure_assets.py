@@ -7,6 +7,7 @@ No AI calls are made.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import importlib.util
 import json
@@ -135,7 +136,11 @@ def registry_issues(course: Path, data: dict[str, Any] | None = None) -> list[di
 
 def require_fitz():
     try:
-        import fitz  # type: ignore
+        # Some dependency builds print compatibility notices during import. The
+        # figure commands expose JSON on stdout, so third-party chatter belongs
+        # on stderr and can never corrupt the machine-readable payload.
+        with contextlib.redirect_stdout(sys.stderr):
+            import fitz  # type: ignore
         return fitz
     except Exception as exc:
         raise SystemExit(
@@ -194,14 +199,17 @@ def page_metrics(page: Any) -> dict[str, Any]:
 
 def scan_pdf(path: Path, relative: str) -> dict[str, Any]:
     fitz = require_fitz()
-    doc = fitz.open(path)
     pages = []
-    try:
-        for i, page in enumerate(doc):
-            row = {"page": i + 1, **page_metrics(page)}
-            pages.append(row)
-    finally:
-        doc.close()
+    # Keep any library diagnostics away from stdout; cmd_scan prints the sole
+    # JSON document only after all PDFs have been inspected.
+    with contextlib.redirect_stdout(sys.stderr):
+        doc = fitz.open(path)
+        try:
+            for i, page in enumerate(doc):
+                row = {"page": i + 1, **page_metrics(page)}
+                pages.append(row)
+        finally:
+            doc.close()
     return {
         "file": relative,
         "sha256": sha256(path),
@@ -247,28 +255,29 @@ def cmd_render_page(args: argparse.Namespace) -> None:
     page_no = args.page
     if page_no < 1:
         raise SystemExit("--page is 1-based and must be >= 1")
-    doc = fitz.open(source)
-    try:
-        if page_no > len(doc):
-            raise SystemExit(f"Page {page_no} out of range (PDF has {len(doc)} pages)")
-        page = doc[page_no - 1]
-        clip = None
-        if args.clip:
-            nums = [float(x.strip()) for x in args.clip.split(",")]
-            if len(nums) != 4:
-                raise SystemExit("--clip expects x0,y0,x1,y1 in PDF points")
-            clip = fitz.Rect(*nums)
-            if clip.is_empty or not page.rect.intersects(clip):
-                raise SystemExit("Invalid clip rectangle")
-            clip = clip & page.rect
-        scale = max(args.dpi, 72) / 72.0
-        pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), clip=clip, alpha=False)
-        out_dir = course / "assets" / "figures"
-        out_dir.mkdir(parents=True, exist_ok=True)
-        out = out_dir / f"{safe_id(args.id)}.png"
-        pix.save(out)
-    finally:
-        doc.close()
+    with contextlib.redirect_stdout(sys.stderr):
+        doc = fitz.open(source)
+        try:
+            if page_no > len(doc):
+                raise SystemExit(f"Page {page_no} out of range (PDF has {len(doc)} pages)")
+            page = doc[page_no - 1]
+            clip = None
+            if args.clip:
+                nums = [float(x.strip()) for x in args.clip.split(",")]
+                if len(nums) != 4:
+                    raise SystemExit("--clip expects x0,y0,x1,y1 in PDF points")
+                clip = fitz.Rect(*nums)
+                if clip.is_empty or not page.rect.intersects(clip):
+                    raise SystemExit("Invalid clip rectangle")
+                clip = clip & page.rect
+            scale = max(args.dpi, 72) / 72.0
+            pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), clip=clip, alpha=False)
+            out_dir = course / "assets" / "figures"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            out = out_dir / f"{safe_id(args.id)}.png"
+            pix.save(out)
+        finally:
+            doc.close()
     result = {
         "asset": out.relative_to(course).as_posix(),
         "source_file": source.relative_to(course / "fuentes").as_posix(),
@@ -323,6 +332,7 @@ def cmd_register_derived(args: argparse.Namespace) -> None:
         raise SystemExit(1)
     save_registry(course, data)
     print(json.dumps({"ok": True, "key": key, "record": record}, ensure_ascii=False, indent=2))
+
 
 
 def cmd_migrate_registry(args: argparse.Namespace) -> None:
