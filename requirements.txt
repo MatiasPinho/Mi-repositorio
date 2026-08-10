@@ -1,0 +1,6 @@
+# Complete University Study System environment.
+# Install this file once on a new machine; the split requirement files remain
+# available for focused development and document the individual capability groups.
+-r requirements-mcp.txt
+-r requirements-visual.txt
+-r requirements-design.txt

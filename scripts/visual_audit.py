@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Design-time screenshot and mechanical audit for rendered study HTML.
+"""Screenshot and mechanically audit rendered study HTML.
 
-Normal study generation does not depend on a browser. This maintenance tool injects the
-rendered HTML into Chromium without navigating away from the local artifact, captures multiple
-viewports, and performs a few objective checks before an AI/human visual review.
+The complete study environment includes Playwright Chromium because rendered study
+artifacts must receive a real browser audit before publication. The tool injects the
+rendered HTML into Chromium without navigating away from the local artifact, captures
+multiple viewports, and performs objective layout/readability checks before publication.
 """
 from __future__ import annotations
 
@@ -69,7 +70,6 @@ def inline_local_images(html_text: str, base_dir: Path) -> str:
     return pat.sub(repl, html_text)
 
 
-
 def _pdf_to_vertical_png(pdf_path: Path, out_png: Path) -> dict:
     import fitz
     from PIL import Image
@@ -87,17 +87,33 @@ def _pdf_to_vertical_png(pdf_path: Path, out_png: Path) -> dict:
     canvas.save(out_png)
     return {"pages": len(images), "width": canvas.width, "height": canvas.height}
 
-def audit(html_path: Path, out_dir: Path) -> dict:
+
+def _selected_viewports(names: tuple[str, ...] | None) -> tuple[str, ...]:
+    selected = names or tuple(VIEWPORTS)
+    invalid = [name for name in selected if name not in VIEWPORTS]
+    if invalid:
+        raise SystemExit(f"Unknown visual-audit viewport(s): {', '.join(invalid)}")
+    if not selected:
+        raise SystemExit("At least one visual-audit viewport is required")
+    return selected
+
+
+def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None = None) -> dict:
     try:
         from playwright.sync_api import sync_playwright
     except Exception as exc:
-        raise SystemExit("Install design-time dependency: pip install -r requirements-design.txt") from exc
+        raise SystemExit(
+            "Visual audit environment is incomplete. Run INSTALAR-STUDY.bat "
+            "or: python -m pip install -r requirements.txt"
+        ) from exc
 
+    selected = _selected_viewports(viewport_names)
     html_text = inline_local_images(html_path.read_text(encoding="utf-8"), html_path.parent)
     out_dir.mkdir(parents=True, exist_ok=True)
     report = {
         "file": str(html_path),
         "engine": "chromium-set-content",
+        "selected_viewports": list(selected),
         "contrast": token_contrast_checks(),
         "screenshots": {},
         "viewports": {},
@@ -113,15 +129,22 @@ def audit(html_path: Path, out_dir: Path) -> dict:
         kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
         if executable:
             kwargs["executable_path"] = executable
-        browser = pw.chromium.launch(**kwargs)
-        for name, vp in VIEWPORTS.items():
+        try:
+            browser = pw.chromium.launch(**kwargs)
+        except Exception as exc:
+            raise SystemExit(
+                "Playwright Chromium is missing or cannot launch. Run INSTALAR-STUDY.bat "
+                "or: python -m playwright install chromium"
+            ) from exc
+        for name in selected:
+            vp = VIEWPORTS[name]
             page = browser.new_page(viewport=vp)
             if name == "print":
                 page.emulate_media(media="print", color_scheme="light")
             else:
                 page.emulate_media(media="screen", color_scheme="light")
             page.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
-            page.wait_for_timeout(600)
+            page.wait_for_timeout(300)
             metrics = page.evaluate("""() => {
               const article = document.querySelector('article');
               const p = document.querySelector('article p');
@@ -169,10 +192,17 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Capture and mechanically audit a rendered study document")
     ap.add_argument("html")
     ap.add_argument("--out", default="visual-tests/latest")
+    ap.add_argument(
+        "--viewports",
+        default="",
+        help="Optional comma-separated subset for smoke tests; normal publication omits this and audits all viewports",
+    )
     args = ap.parse_args()
-    report = audit(Path(args.html), Path(args.out))
-    print(json.dumps(report, ensure_ascii=False, indent=2))
+    names = tuple(x.strip() for x in args.viewports.split(",") if x.strip()) or None
+    report = audit(Path(args.html), Path(args.out), names)
+    print(json.dumps(report, ensure_ascii=False, indent=2), flush=True)
     return 0 if report["ok"] else 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

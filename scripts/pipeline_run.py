@@ -82,8 +82,7 @@ def cmd_start(args: argparse.Namespace) -> None:
     candidate = base
     n = 2
     while candidate.exists():
-        candidate = Path(str(base) + f"-{n}"
-        )
+        candidate = Path(str(base) + f"-{n}")
         n += 1
     candidate.mkdir(parents=True)
     manifest = {
@@ -121,6 +120,27 @@ def cmd_start(args: argparse.Namespace) -> None:
 def review_gate(path: Path) -> list[str]:
     """Apply the versioned deterministic academic evaluation policy."""
     return evaluate_review(load(path, {}))
+
+
+def _validate_visual_audit(run: Path, errors: list[str]) -> None:
+    audit_dir = run / "visual-audit"
+    report_path = audit_dir / "audit.json"
+    if not report_path.is_file():
+        errors.append("missing-visual-audit.json")
+        return
+    try:
+        report = load(report_path, {})
+    except (json.JSONDecodeError, OSError):
+        errors.append("visual-audit-invalid-json")
+        return
+    if not isinstance(report, dict) or report.get("ok") is not True:
+        errors.append("visual-audit-failed")
+    if report.get("engine") != "chromium-set-content":
+        errors.append("visual-audit-wrong-engine")
+    for name in ("desktop.png", "mobile.png"):
+        shot = audit_dir / name
+        if not shot.is_file() or shot.stat().st_size <= 0:
+            errors.append(f"missing-visual-screenshot:{name}")
 
 
 def validate_run(run: Path) -> dict[str, Any]:
@@ -164,6 +184,8 @@ def validate_run(run: Path) -> dict[str, Any]:
             if not isinstance(payload, dict) or payload.get("ok") is not True:
                 errors.append("integrity-gate-failed")
 
+        _validate_visual_audit(run, errors)
+
         course_rel = manifest.get("course", "")
         course = (ROOT / str(course_rel)).resolve() if course_rel else None
         if course and course.is_dir():
@@ -200,6 +222,9 @@ def cmd_finish(args: argparse.Namespace) -> None:
     manifest["status"] = "finished"
     manifest["finished_at"] = now()
     manifest["stages"] = {p.name: "present" for p in sorted(run.iterdir()) if p.is_file() and p.name != "manifest.json"}
+    manifest["stages"]["visual-audit/audit.json"] = "present"
+    manifest["stages"]["visual-audit/desktop.png"] = "present"
+    manifest["stages"]["visual-audit/mobile.png"] = "present"
     save(run / "manifest.json", manifest)
     print(json.dumps({"ok": True, "run": run.relative_to(ROOT).as_posix()}, ensure_ascii=False, indent=2))
 

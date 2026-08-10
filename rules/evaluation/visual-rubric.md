@@ -19,7 +19,15 @@ Hard fail:
 - broken image paths in the published artifact;
 - unreadable/missing alt text for an essential figure;
 - a derived diagram changes academic meaning;
-- the artifact claims an image shows something the reviewer cannot verify from canonical/source evidence.
+- the artifact claims an image shows something the reviewer cannot verify from canonical/source evidence;
+- a rendered summary/guide/rapid-review is published without a successful `visual_audit.py` browser report;
+- the final response claims visual PASS when rendered screenshots were not actually available for inspection.
+
+Rendered-browser evidence:
+- `visual_audit.py` must complete with `audit.json -> ok: true` before publication;
+- inspect at least desktop and mobile screenshots for hierarchy, clipping/overflow, figure legibility, spacing and callout readability;
+- HTML-string checks, registry checks and image-path checks are integrity evidence, not substitutes for rendered visual evidence;
+- missing Playwright/Chromium is an incomplete environment and must be repaired with the project setup, not silently downgraded to a skipped visual review.
 
 Design-system fidelity:
 - student Markdown expresses semantic roles, never local styling;

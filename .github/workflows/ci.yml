@@ -28,11 +28,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install test/runtime dependencies
+      - name: Install complete study environment
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-mcp.txt -r requirements-visual.txt
+          python -m pip install -r requirements.txt
+          python -m playwright install chromium
           python -m pip check
+
+      - name: Complete environment preflight
+        run: python scripts/setup_env.py check --json
 
       - name: MCP preflight
         run: python study.py mcp preflight --json
