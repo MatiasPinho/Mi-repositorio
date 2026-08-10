@@ -4,11 +4,33 @@ import argparse, shutil
 from pathlib import Path
 
 
+REQUIRED_DIRECTORIES = (
+    "academico",
+    "conocimiento",
+    "fuentes",
+    "fuentes/oficiales",
+    "fuentes/transcripciones",
+    "notas",
+    "preguntas",
+    "progreso",
+    "resumenes",
+    "simulacros",
+    "assets",
+    "assets/figures",
+)
+
+
 def slugify(s: str) -> str:
     import unicodedata, re
     s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
     s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
     return s or "materia"
+
+
+def ensure_course_directories(target: Path) -> None:
+    """Create structural directories explicitly because Git does not preserve empty folders."""
+    for relative in REQUIRED_DIRECTORIES:
+        (target / relative).mkdir(parents=True, exist_ok=True)
 
 
 def main():
@@ -22,6 +44,7 @@ def main():
     if target.exists():
         raise SystemExit(f"Already exists: {target}")
     shutil.copytree(template, target)
+    ensure_course_directories(target)
     context = target / "contexto.md"
     text = context.read_text(encoding="utf-8").replace("- **Materia:**", f"- **Materia:** {args.name}")
     context.write_text(text, encoding="utf-8")
