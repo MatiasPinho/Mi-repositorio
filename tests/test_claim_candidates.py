@@ -11,6 +11,8 @@ from scripts.claim_candidates import (
     write_candidates,
 )
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class ClaimCandidateTests(unittest.TestCase):
     def make_course(self, root: Path) -> Path:
@@ -23,6 +25,13 @@ class ClaimCandidateTests(unittest.TestCase):
             encoding="utf-8",
         )
         return course
+
+    def test_process_pipeline_keeps_candidate_extraction_in_ingestion_flow(self):
+        text = (ROOT / "pipelines" / "procesar.md").read_text(encoding="utf-8")
+        self.assertIn("claim_candidates.py scan", text)
+        self.assertIn("claim_candidates", text)
+        self.assertIn("teacher_transcript", text)
+        self.assertIn("semantic_claims.py course", text)
 
     def test_frozen_benchmark_passes(self):
         result = run_benchmark()
