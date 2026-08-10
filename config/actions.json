@@ -1,0 +1,57 @@
+{
+  "procesar": {
+    "mode": "INGEST",
+    "description": "Ingiere material nuevo o modificado sin generar apuntes pedagógicos.",
+    "hint": "[materia]"
+  },
+  "aprender": {
+    "mode": "LEARN",
+    "description": "Enseña una unidad o tema por primera vez con comprensión progresiva.",
+    "hint": "[materia] [unidad/tema]"
+  },
+  "estudiar": {
+    "mode": "TODAY",
+    "description": "Inicia una sesión adaptativa según progreso, repasos y evaluaciones.",
+    "hint": "[materia] [minutos opcionales]"
+  },
+  "resumen": {
+    "mode": "SUMMARY",
+    "description": "Genera o actualiza un resumen humano, claro y estudiable.",
+    "hint": "[materia] [unidad/tema]"
+  },
+  "guia": {
+    "mode": "GUIDE",
+    "description": "Genera una guía de estudio exhaustiva pero pedagógica.",
+    "hint": "[materia] [unidad/tema]"
+  },
+  "repaso": {
+    "mode": "REVIEW",
+    "description": "Genera un repaso high-yield de 5–10 minutos para contenido ya aprendido.",
+    "hint": "[materia] [unidad/tema]"
+  },
+  "preguntas": {
+    "mode": "RECALL",
+    "description": "Practica active recall sin mostrar respuestas antes del intento.",
+    "hint": "[materia] [unidad/tema] [cantidad opcional]"
+  },
+  "simulacro": {
+    "mode": "EXAM",
+    "description": "Genera y administra un simulacro de una evaluación registrada.",
+    "hint": "[materia] [evaluacion]"
+  },
+  "explicar": {
+    "mode": "EXPLAIN",
+    "description": "Explica profundamente un concepto usando la materia como base.",
+    "hint": "[materia] [concepto]"
+  },
+  "auditar": {
+    "mode": "AUDIT",
+    "description": "Audita conocimiento o artefactos contra las fuentes.",
+    "hint": "[materia] [unidad/tema/todo]"
+  },
+  "estado": {
+    "mode": "STATUS",
+    "description": "Muestra estado académico, dominio, repasos y artefactos.",
+    "hint": "[materia] [evaluacion opcional]"
+  }
+}

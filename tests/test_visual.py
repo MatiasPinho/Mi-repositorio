@@ -232,6 +232,7 @@ leer dato
         help_cp = subprocess.run([sys.executable, str(FIGURES), "--help"], cwd=ROOT, text=True, capture_output=True)
         self.assertEqual(help_cp.returncode, 0)
 
+
     def test_captions_allow_blank_lines_but_orphans_fail_check(self):
         with tempfile.TemporaryDirectory() as td:
             td = Path(td)

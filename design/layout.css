@@ -27,6 +27,7 @@ article {
   counter-reset: study-figure study-table study-code study-section;
 }
 
+/* Row primitive */
 .row { display: flex; flex-wrap: wrap; gap: .4rem var(--study-gutter-gap); }
 .row > .mark { flex: 0 0 var(--study-gutter); }
 .row > .body { flex: 1 1 26rem; max-width: var(--study-measure); min-width: 0; }
@@ -40,6 +41,7 @@ article {
   padding-top: .42rem;
 }
 
+/* Front matter */
 .book-running-line {
   display: flex;
   flex-wrap: wrap;
@@ -71,6 +73,7 @@ article {
 .study-header > .body { flex: 1 1 26rem; max-width: var(--study-measure); }
 .study-meta { color: var(--study-ink-muted); font-family: var(--study-font-utility); font-size: var(--study-small-size); }
 
+/* Section rows: number in the gutter, heading in the measure */
 .section-head { display: flex; flex-wrap: wrap; gap: .5rem var(--study-gutter-gap); align-items: baseline; margin: clamp(3rem, 5vw, 4.75rem) 0 1.35rem; }
 .section-head > .num {
   flex: 0 0 var(--study-gutter);
@@ -85,12 +88,14 @@ article {
 .section-head > .num::before { content: counter(study-section); }
 .section-head > h2, .section-head > h3 { flex: 1 1 26rem; max-width: var(--study-measure); }
 
+/* Reading progress — 2px, chrome only, hidden in print */
 .reading-progress { position: fixed; inset: 0 0 auto; height: 2px; background: color-mix(in srgb, var(--study-rule-strong) 35%, transparent); z-index: 50; }
 .reading-progress > span { display: block; height: 100%; width: 0; background: var(--study-accent); }
 
+/* Quiet editorial index — long guides only, never on a summary */
 .toc {
   flex: 0 1 var(--study-toc-width);
-  margin-right: auto;
+  margin-right: auto; /* wrapped state: sits above the article, aligned left */
   position: sticky;
   top: 2.5rem;
   max-height: calc(100vh - 5rem);
@@ -110,6 +115,7 @@ article {
 .toc a[aria-current="true"] { color: var(--study-ink-strong); border-left-color: var(--study-accent); }
 .toc .depth-3 { padding-left: 1.4rem; }
 
+/* Renderer extensions for nested headings and empty prose gutters. */
 .row > .mark:empty { padding-top: 0; }
 .subsection-head { margin: 2.7rem 0 .8rem; }
 .subsection-head h3, .minor-head h4 { margin: 0; }

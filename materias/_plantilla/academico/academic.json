@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "identity": {
+    "institution": "",
+    "career": "",
+    "study_plan": "",
+    "subject": "",
+    "chair": "",
+    "commission": "",
+    "professors": []
+  },
+  "units": [],
+  "assessments": [],
+  "rules": [],
+  "official_status": {
+    "subject_status": "unknown",
+    "regularity": "unknown",
+    "promotion": "unknown",
+    "notes": []
+  }
+}

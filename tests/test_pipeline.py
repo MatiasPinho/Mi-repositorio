@@ -126,6 +126,7 @@ class PipelineRunTests(unittest.TestCase):
         self.assertNotEqual(cp.returncode, 0)
         self.assertIn("missing-06-repair.md", json.loads(cp.stdout)["errors"])
 
+
     def test_missing_fidelity_checks_fail_gate(self):
         run = self.start()
         review = good_review(True)

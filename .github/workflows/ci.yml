@@ -1,0 +1,44 @@
+﻿name: University Study CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-tests:
+    name: ${{ matrix.os }} Â· Python 3.11
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test/runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-mcp.txt -r requirements-visual.txt
+          python -m pip check
+
+      - name: MCP preflight
+        run: python study.py mcp preflight --json
+
+      - name: Verify generated agent assets
+        run: python scripts/sync_agent_assets.py verify
+
+      - name: Run release suite
+        run: python tests/run_release_tests.py

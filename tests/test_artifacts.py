@@ -102,6 +102,7 @@ class ArtifactStateTests(unittest.TestCase):
             self.assertTrue(rows[0]["stale"])
             self.assertIn("untracked-artifact", rows[0]["reasons"])
 
+
     def test_new_marks_use_contract_version_7(self):
         with tempfile.TemporaryDirectory() as td:
             c = self.make_course(td)
@@ -120,6 +121,7 @@ class ArtifactStateTests(unittest.TestCase):
             self.run_cli("mark", "--course", str(c), "--file", "preguntas/unidad-1.md", "--type", "questions", "--scope", "Unidad 1")
             manifest = json.loads((c / ".study" / "artifacts.json").read_text(encoding="utf-8"))
             self.assertNotIn("design_sha256", manifest["artifacts"]["preguntas/unidad-1.md"])
+
 
     def test_same_unit_figure_change_marks_stale(self):
         with tempfile.TemporaryDirectory() as td:

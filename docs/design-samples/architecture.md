@@ -1,6 +1,6 @@
 # Jerarquía de memoria
 
-Esta muestra estresa el tratamiento de **diagramas técnicos**, captions y relaciones espaciales.
+El caso que estresa diagramas técnicos, captions y relaciones espaciales.
 
 ## Por qué existe una jerarquía
 
@@ -9,7 +9,7 @@ No existe una única memoria que sea simultáneamente enorme, instantánea y bar
 > [!DEFINITION] Idea central
 > Los niveles más cercanos al procesador priorizan velocidad; los más alejados permiten conservar más información a cambio de mayor latencia.
 
-![Jerarquía simplificada de memoria](../sample-assets/memory.svg "Leé la figura de arriba hacia abajo: cercanía al procesador, velocidad y capacidad cambian en conjunto")
+![Jerarquía simplificada de memoria](../sample-assets/memory.svg "Leé la figura de arriba hacia abajo: cercanía al procesador, velocidad y capacidad cambian en conjunto.")
 
 **Cómo leer la figura:** no memorices sólo los nombres. Mirá la dirección general: al bajar en la jerarquía aumenta la capacidad disponible y también el tiempo necesario para acceder a los datos.
 

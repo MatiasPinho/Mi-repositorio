@@ -1,13 +1,13 @@
 # Estados de un proceso
 
-Esta muestra combina explicación, comparación, tabla y recuperación activa para probar una página más densa.
+Explicación, comparación, tabla y recuperación activa en una página más densa.
 
 ## Estado no significa prioridad
 
 Un proceso puede cambiar de estado porque está ejecutándose, esperando un recurso o listo para recibir CPU. El estado describe **qué condición de ejecución tiene ahora**, no cuán importante es para el sistema.
 
 > [!ERROR] Confusión típica
-> “Listo” no significa “ejecutándose”. Significa que el proceso puede ejecutar, pero todavía no tiene asignado el procesador.
+> «Listo» no significa «ejecutándose». Significa que el proceso puede ejecutar, pero todavía no tiene asignado el procesador.
 
 ## Comparación rápida
 
@@ -15,7 +15,8 @@ Un proceso puede cambiar de estado porque está ejecutándose, esperando un recu
 | --- | --- | --- |
 | Listo | Puede ejecutar | Recibir CPU |
 | Ejecutando | Tiene CPU | Continuar o ser interrumpido |
-| Bloqueado | Espera un evento/recurso | Que ocurra aquello que espera |
+| Bloqueado | Espera un evento o recurso | Que ocurra aquello que espera |
+<!-- caption: Los tres estados básicos y su condición de avance. -->
 
 La tabla sirve para comparar roles; no reemplaza una explicación de las transiciones entre estados.
 

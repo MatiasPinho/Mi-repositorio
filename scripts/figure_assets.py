@@ -294,44 +294,78 @@ def cmd_preflight(args: argparse.Namespace) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
-def cmd_register_derived(args: argparse.Namespace) -> None:
-    course = resolve_course(args.course)
+def verify_registry(course: Path) -> dict[str, Any]:
+    data = load_registry(course)
+    issues = registry_issues(course, data)
+    return {"ok": not issues, "issues": issues, "figures": len(data.get("figures", {}))}
+
+
+def register_derived(
+    course: Path,
+    figure_id: str,
+    unit_value: str,
+    asset: str,
+    description: str,
+    based_on: list[str],
+    *,
+    concepts: list[str] | None = None,
+    learner_focus: list[str] | None = None,
+    kind: str = "diagram",
+    role: str = "supporting",
+) -> dict[str, Any]:
+    """Collision-safe derived figure registration for CLI and MCP callers."""
+    if not based_on:
+        raise ValueError("based_on debe contener al menos una referencia canónica")
     data = load_registry(course)
     figures = data["figures"]
-    key = derived_key(args.id)
+    key = derived_key(figure_id)
     if key in figures:
-        raise SystemExit(f"Figure id already exists; refusing overwrite: {key}")
-    asset_path, asset_rel = safe_course_asset(course, args.asset)
-    # Never reuse an asset already owned by a source or another derived record.
+        raise ValueError(f"Figure id already exists; refusing overwrite: {key}")
+    try:
+        asset_path, asset_rel = safe_course_asset(course, asset)
+    except SystemExit as exc:
+        raise ValueError(str(exc)) from exc
     for existing_key, existing in figures.items():
-        if isinstance(existing, dict) and str(existing.get("asset", "")) == asset_rel:
-            raise SystemExit(f"Figure asset already registered by {existing_key}; refusing collision: {asset_rel}")
-    unit = resolve_unit(course, args.unit)
+        if isinstance(existing, dict) and existing.get("asset") and str(existing.get("asset")) == asset_rel:
+            raise ValueError(f"Figure asset already registered by {existing_key}; refusing collision: {asset_rel}")
+    unit = resolve_unit(course, unit_value)
     if not unit.get("unit_id"):
-        raise SystemExit(f"Could not resolve stable unit id from: {args.unit}")
+        raise ValueError(f"Could not resolve stable unit id from: {unit_value}")
     record = {
         "id": key,
         "unit_id": unit["unit_id"],
-        "unit": unit.get("label") or args.unit,
-        "concepts": args.concept or [],
-        "kind": args.kind,
-        "role": args.role,
-        "description": args.description,
-        "learner_focus": args.learner_focus or [],
+        "unit": unit.get("label") or unit_value,
+        "concepts": concepts or [],
+        "kind": kind,
+        "role": role,
+        "description": description,
+        "learner_focus": learner_focus or [],
         "asset": asset_rel,
         "asset_sha256": sha256(asset_path),
         "origin": "derived",
-        "based_on": args.based_on or [],
+        "based_on": based_on,
     }
     figures[key] = record
     data["version"] = max(int(data.get("version", 1) or 1), 2)
     issues = registry_issues(course, data)
     if issues:
         figures.pop(key, None)
-        print(json.dumps({"ok": False, "issues": issues}, ensure_ascii=False, indent=2))
-        raise SystemExit(1)
+        raise ValueError(json.dumps({"ok": False, "issues": issues}, ensure_ascii=False))
     save_registry(course, data)
-    print(json.dumps({"ok": True, "key": key, "record": record}, ensure_ascii=False, indent=2))
+    return {"ok": True, "key": key, "record": record}
+
+
+def cmd_register_derived(args: argparse.Namespace) -> None:
+    course = resolve_course(args.course)
+    try:
+        result = register_derived(
+            course, args.id, args.unit, args.asset, args.description, args.based_on or [],
+            concepts=args.concept or [], learner_focus=args.learner_focus or [],
+            kind=args.kind, role=args.role,
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 
@@ -389,11 +423,9 @@ def cmd_scope(args: argparse.Namespace) -> None:
 
 def cmd_verify(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
-    data = load_registry(course)
-    issues = registry_issues(course, data)
-    result = {"ok": not issues, "issues": issues, "figures": len(data.get("figures", {}))}
+    result = verify_registry(course)
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    if issues:
+    if not result["ok"]:
         raise SystemExit(1)
 
 

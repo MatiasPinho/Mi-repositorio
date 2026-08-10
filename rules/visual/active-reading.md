@@ -1,9 +1,21 @@
-# Active reading
+# Active reading layer
 
-The document must support learning without turning every section into an exercise sheet.
+A beautiful page is not enough. Student-facing documents should make useful retrieval easy without turning every paragraph into a quiz.
 
-- Use retrieval prompts after coherent groups of concepts, not after every paragraph.
-- Keep recall blocks visually quieter than core exposition.
-- Highlighting/underlining is not the main learning mechanism; use semantic structure and retrieval instead.
-- Avoid interface chrome that competes with reading.
-- The primary reading flow must remain linear and understandable with all optional interactions ignored.
+## Summary
+After a coherent cluster of concepts, add a short visible `RECALL` block when it materially helps. Typical frequency: one block every 2–4 major sections, not after every paragraph.
+
+## Guide
+May include more worked questions, but keep the main explanation uninterrupted.
+
+## Rapid review
+Retrieval is central: short questions, contrasts and reconstruction prompts are preferred over rereading prose.
+
+## Good prompts
+- explain the idea without looking;
+- reconstruct a process or diagram;
+- compare two confusable concepts;
+- predict an outcome from a small case;
+- state a condition/formula and when it applies.
+
+Avoid trivial recognition questions whose answer is visibly repeated immediately above unless they are only a warm-up.

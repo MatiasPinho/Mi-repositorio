@@ -1,0 +1,20 @@
+﻿__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.DS_Store
+*.zip
+
+# Private academic data stays local. Keep only the public template.
+materias/*
+!materias/_plantilla/
+!materias/_plantilla/**
+
+# Ephemeral pipeline state and visual-test output
+**/.study/runs/
+visual-tests/
+
+# Local editor / OS noise
+.vscode/
+.idea/

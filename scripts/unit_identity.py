@@ -26,6 +26,11 @@ def slug(text: Any) -> str:
 
 
 def canonical_unit_id(value: Any) -> str:
+    """Return a stable unit id from a common unit id/label.
+
+    Examples: U1, Unidad 1, Unidad 1: Foo -> unidad-1.
+    Non-numeric custom ids remain slugified.
+    """
     raw = normalize(value)
     if not raw:
         return ""

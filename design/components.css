@@ -30,6 +30,8 @@
 .callout.danger > .callout-body > * { padding: .75rem .9rem .75rem 0; margin: 0; }
 .callout.connection { --rail: var(--study-connection); }
 
+/* Retrieval prompts stay visible: the student should see the question, not
+   have to open a disclosure to find out one exists. */
 .callout.recall {
   --rail: var(--study-recall);
   margin: 2.75rem 0;
@@ -45,6 +47,7 @@
 details.callout.recall > .callout-body > summary { cursor: pointer; list-style: none; color: var(--study-recall); font-family: var(--study-font-utility); font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 details.callout.recall summary::-webkit-details-marker { display: none; }
 
+/* Tables break past the prose measure; rules only where they carry structure */
 .table-scroll { width: 100%; max-width: var(--study-wide); overflow-x: auto; margin: 1.6rem 0 1.9rem; }
 table { width: 100%; min-width: 34rem; border-collapse: collapse; font-family: var(--study-font-body); font-size: .94rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
 th, td { text-align: left; vertical-align: top; padding: .72rem .85rem; }
@@ -66,6 +69,8 @@ th {
 td { border-bottom: 1px solid var(--study-rule-soft); }
 tbody tr:last-child td { border-bottom: 1.5px solid var(--study-rule-strong); }
 tbody td:first-child { color: var(--study-ink-strong); font-weight: 600; }
+/* Table and code captions follow the figure pattern: label in the gutter,
+   description in the measure, so all apparatus reads the same way. */
 .table-caption, .code-caption { display: flex; flex-wrap: wrap; gap: .35rem var(--study-gutter-gap); margin: .85rem 0 0; }
 .table-caption { counter-increment: study-table; }
 .code-caption { counter-increment: study-code; }

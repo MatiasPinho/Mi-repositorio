@@ -1,6 +1,6 @@
 # Programar antes de escribir código
 
-La idea central de esta muestra es comprobar cómo se comporta el sistema con **teoría continua**, definiciones y distinciones, sin depender de imágenes.
+Cómo se comporta el sistema con teoría continua, definiciones y distinciones, sin depender de imágenes.
 
 ## Del problema a la solución
 
@@ -17,6 +17,16 @@ El punto importante no es memorizar una frase, sino distinguir dos responsabilid
 ## Una distinción que conviene fijar
 
 **Analizar** responde qué hay que resolver. **Diseñar** responde cómo se va a resolver. Mezclar ambas etapas hace que una solución se ate demasiado pronto a un lenguaje o a una herramienta concreta.
+
+```text
+// diseño, todavía sin lenguaje
+leer nota
+si nota no está entre 1 y 10
+    rechazar y volver a pedir
+sino
+    registrar nota
+```
+<!-- caption: La validación aparece porque el dato ya no viene garantizado. -->
 
 > [!CONNECTION] Relación
 > Esta separación permite que un mismo diseño pueda traducirse después a lenguajes distintos sin cambiar la lógica central.
