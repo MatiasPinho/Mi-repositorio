@@ -43,5 +43,8 @@ jobs:
       - name: Stressed materials benchmark
         run: python scripts/stressed_materials.py benchmark
 
+      - name: PDF stress benchmark
+        run: python scripts/pdf_stress.py benchmark
+
       - name: Run release suite
         run: python tests/run_release_tests.py
