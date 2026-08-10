@@ -1,5 +1,7 @@
-# Transcripciones de clase
+# Transcripciones transversales
 
-Guardá acá transcripciones `.txt`, `.md`, `.srt` o `.vtt`.
+Esta carpeta es excepcional: usala solo para clases o anuncios que abarquen
+varias unidades. Una clase de una unidad específica va en
+`unidades/<unit-id>/fuentes/transcripciones/`.
 
-Si tienen timestamps, no los elimines: la skill los usa para citar el momento exacto de la clase y volver al fragmento correspondiente.
+Conservá siempre los timestamps de `.srt` y `.vtt`.

@@ -23,6 +23,7 @@ import artifact_integrity  # noqa: E402
 import artifact_state  # noqa: E402
 import concept_graph  # noqa: E402
 import figure_assets  # noqa: E402
+import course_layout  # noqa: E402
 from artifact_state import scoped_concepts, scoped_figures  # noqa: E402
 from unit_identity import record_unit_id, resolve_unit, stable_unit_id_from_row  # noqa: E402
 
@@ -54,12 +55,12 @@ def _unit_row(course: Path, unit_id: str) -> dict[str, Any] | None:
 
 
 def _progress_rows(course: Path, unit: str = "") -> dict[str, Any]:
-    data = _read(course / "progreso" / "progress.json", {"concepts": {}})
+    data = course_layout.load_registry(course, "progress")
     concepts = data.get("concepts", {}) if isinstance(data, dict) else {}
     if not unit:
         return concepts if isinstance(concepts, dict) else {}
     target = resolve_unit(course, unit).get("unit_id", "")
-    graph = _read(course / "conocimiento" / "concepts.json", {"concepts": {}})
+    graph = course_layout.load_registry(course, "concepts")
     graph_rows = graph.get("concepts", {}) if isinstance(graph, dict) else {}
     allowed: set[str] = set()
     for key, item in graph_rows.items():
@@ -97,17 +98,34 @@ def list_courses() -> dict[str, Any]:
     return {"count": len(rows), "courses": rows}
 
 
-def material_changes(course_name: str) -> dict[str, Any]:
+def material_changes(course_name: str, unit: str = "") -> dict[str, Any]:
     course = _course(course_name)
-    _, changes = study.scan_materials(course)
-    return {"course": course.name, **changes}
+    _, changes = study.scan_materials(course, unit)
+    return {"course": course.name, "unit": resolve_unit(course, unit) if unit else None, **changes}
+
+
+def list_units(course_name: str) -> dict[str, Any]:
+    course = _course(course_name)
+    existing = {path.name for path in course_layout.existing_unit_roots(course)}
+    rows = []
+    for row in course_layout.academic_units(course):
+        unit_id = stable_unit_id_from_row(row)
+        rows.append({
+            "unit_id": unit_id,
+            "name": row.get("name", unit_id),
+            "topics": row.get("topics", []),
+            "status": row.get("status", "unknown"),
+            "ready": unit_id in existing,
+            "path": f"unidades/{unit_id}",
+        })
+    return {"course": course.name, "layout_version": 4 if course_layout.has_unit_layout(course) else 3, "count": len(rows), "units": rows}
 
 
 def get_course_context(course_name: str) -> dict[str, Any]:
     course = _course(course_name)
     academic = _read(course / "academico" / "academic.json", {})
-    concepts = _read(course / "conocimiento" / "concepts.json", {"concepts": {}})
-    figures = _read(course / "conocimiento" / "figures.json", {"figures": {}})
+    concepts = course_layout.load_registry(course, "concepts")
+    figures = course_layout.load_registry(course, "figures")
     context_path = course / "contexto.md"
     context_text = context_path.read_text(encoding="utf-8") if context_path.exists() else ""
     _, changes = study.scan_materials(course)
@@ -117,6 +135,7 @@ def get_course_context(course_name: str) -> dict[str, Any]:
         "academic": academic,
         "context": context_text,
         "material_changes": changes,
+        "layout": list_units(course.name),
         "knowledge_counts": {
             "concepts": len(concepts.get("concepts", {})) if isinstance(concepts, dict) else 0,
             "figures": len(figures.get("figures", {})) if isinstance(figures, dict) else 0,
@@ -141,6 +160,12 @@ def get_unit_context(course_name: str, unit: str) -> dict[str, Any]:
         "course": course.name,
         "display_name": study.course_display_name(course),
         "unit": {"unit_id": unit_id, "label": resolved.get("label", ""), "record": row},
+        "paths": {
+            "root": f"unidades/{unit_id}",
+            "official_sources": f"unidades/{unit_id}/fuentes/oficiales",
+            "transcripts": f"unidades/{unit_id}/fuentes/transcripciones",
+            "summaries": f"unidades/{unit_id}/resumenes",
+        },
         "concept_scope_mode": scope_mode,
         "concepts": concepts,
         "figures": figures,
@@ -166,7 +191,7 @@ def list_figures(course_name: str, unit: str = "") -> dict[str, Any]:
         resolved = resolve_unit(course, unit)
         rows = scoped_figures(course, unit)
         return {"course": course.name, "unit_id": resolved.get("unit_id"), "count": len(rows), "figures": rows}
-    data = _read(course / "conocimiento" / "figures.json", {"figures": {}})
+    data = course_layout.load_registry(course, "figures")
     rows = data.get("figures", {}) if isinstance(data, dict) else {}
     return {"course": course.name, "unit_id": None, "count": len(rows), "figures": rows}
 
@@ -240,19 +265,38 @@ def validate_course(course_name: str) -> dict[str, Any]:
     """Run structural/academic/knowledge/figure/artifact validation in-process."""
     course = _course(course_name)
     structural: list[str] = []
-    required_dirs = [
-        "academico", "conocimiento", "fuentes", "notas", "preguntas",
-        "progreso", "resumenes", "simulacros",
+    canonical = course_layout.has_unit_layout(course)
+    required_dirs = ["academico", "fuentes", "unidades"] if canonical else [
+        "academico", "conocimiento", "fuentes", "notas", "preguntas", "progreso", "resumenes", "simulacros"
     ]
     for dirname in required_dirs:
         if not (course / dirname).is_dir():
             structural.append(f"falta carpeta requerida: {dirname}/")
 
-    required_json = [
-        course / "academico" / "academic.json",
-        course / "conocimiento" / "concepts.json",
-        course / "progreso" / "progress.json",
-    ]
+    required_json = [course / "academico" / "academic.json"]
+    if canonical:
+        expected = set(course_layout.unit_ids(course))
+        existing = {path.name for path in course_layout.existing_unit_roots(course)}
+        for unit_id in sorted(expected):
+            root = course / "unidades" / unit_id
+            if not root.is_dir():
+                structural.append(f"falta unidad canónica: unidades/{unit_id}/")
+                continue
+            for dirname in course_layout.UNIT_DIRECTORIES:
+                if not (root / dirname).is_dir():
+                    structural.append(f"falta carpeta de unidad: unidades/{unit_id}/{dirname}/")
+            required_json += [root / "unidad.json", root / "conocimiento/concepts.json", root / "conocimiento/figures.json", root / "progreso/progress.json"]
+        for orphan in sorted(existing - expected):
+            structural.append(f"unidad huérfana no declarada en academic.json: unidades/{orphan}/")
+        for kind, row_key in (("concepts", "concepts"), ("figures", "figures"), ("progress", "concepts")):
+            for path in course_layout.registry_paths(course, kind):
+                data = _read(path, {row_key: {}})
+                owner = path.parents[1].name
+                for key, item in data.get(row_key, {}).items() if isinstance(data, dict) else []:
+                    if isinstance(item, dict) and record_unit_id(course, item) != owner:
+                        structural.append(f"registro en unidad incorrecta: {path.relative_to(course)}#{key}")
+    else:
+        required_json += [course / "conocimiento/concepts.json", course / "progreso/progress.json"]
     for path in required_json:
         if not path.exists():
             structural.append(f"falta archivo requerido: {path.relative_to(course)}")
@@ -274,14 +318,14 @@ def validate_course(course_name: str) -> dict[str, Any]:
             structural.append(f"no se pudo validar academic.json: {exc}")
 
     stale: list[dict[str, Any]] = []
-    if (course / "conocimiento" / "concepts.json").exists():
+    if any(path.exists() for path in course_layout.registry_paths(course, "concepts")):
         try:
             stale = concept_graph.stale_rows(course)
         except (json.JSONDecodeError, OSError, ValueError, SystemExit) as exc:
             structural.append(f"no se pudo validar concepts.json: {exc}")
 
     figure_issues: list[dict[str, Any]] = []
-    if (course / "conocimiento" / "figures.json").exists():
+    if any(path.exists() for path in course_layout.registry_paths(course, "figures")):
         try:
             figure_issues = figure_assets.verify_registry(course).get("issues", [])
         except (json.JSONDecodeError, OSError, ValueError, SystemExit) as exc:

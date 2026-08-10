@@ -23,7 +23,7 @@ Do **not** include:
 - a dense page image when a clearer source figure or small schematic is available.
 
 ## Source-first policy
-Prefer a relevant figure from the course sources when it faithfully represents what the chair teaches. Preserve provenance internally in `conocimiento/figures.json`.
+Prefer a relevant figure from the unit sources when it faithfully represents what the chair teaches. Preserve provenance internally in `unidades/<unit-id>/conocimiento/figures.json`.
 
 If a source figure is too dense but the concept would benefit from a simpler schematic, a simplified diagram may be created only if every relationship shown is supported by canonical knowledge. Mark its origin as `derived` internally; never imply that a derived diagram came from the chair.
 
@@ -51,7 +51,7 @@ Never infer unlabeled components from an unreadable image. If the agent cannot c
 
 
 ## On-demand discovery for migrated/older courses
-If `conocimiento/figures.json` has no relevant entry for the requested scope, do **not** reprocess the whole course. Instead:
+If `unidades/<unit-id>/conocimiento/figures.json` has no relevant entry for the requested scope, do **not** reprocess the whole course. Instead:
 1. run `python study.py figures scan <course> --write` if `.study/figure-pages.json` is missing/stale and the visual dependency is available;
 2. use concept source references to identify candidate PDF pages for the requested scope;
 3. inspect only those candidate pages/figures;

@@ -130,7 +130,7 @@ class PortableActionTests(unittest.TestCase):
             text = p.read_text(encoding="utf-8").lower()
             # Provider names may be mentioned only in the portable router's explanation, never as required execution syntax.
             self.assertNotIn("context: fork", text, p)
-            self.assertNotIn("/resumen", text, p)
+            self.assertIsNone(re.search(r"(?<![\w.-])/resumen(?![\w/.-])", text), p)
             self.assertNotIn("$resumen", text, p)
 
 

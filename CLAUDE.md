@@ -1,4 +1,4 @@
-# University Study System V3.7.2 — Claude Code
+# University Study System V4.0.0 — Claude Code
 
 This project uses a portable shared core. Do not duplicate methodology here.
 

@@ -20,7 +20,32 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from study import resolve_course  # noqa: E402
-from unit_identity import resolve_unit, record_unit_id  # noqa: E402
+if __package__:
+    from .course_layout import (  # noqa: E402
+        LayoutError,
+        content_path,
+        has_unit_layout,
+        iter_source_files,
+        load_registry as load_layout_registry,
+        resolve_source as resolve_layout_source,
+        save_registry as save_layout_registry,
+        source_ref,
+        unit_root,
+    )
+    from .unit_identity import resolve_unit, record_unit_id  # noqa: E402
+else:
+    from course_layout import (  # noqa: E402
+        LayoutError,
+        content_path,
+        has_unit_layout,
+        iter_source_files,
+        load_registry as load_layout_registry,
+        resolve_source as resolve_layout_source,
+        save_registry as save_layout_registry,
+        source_ref,
+        unit_root,
+    )
+    from unit_identity import resolve_unit, record_unit_id  # noqa: E402
 
 
 def visual_capabilities() -> dict[str, Any]:
@@ -36,11 +61,8 @@ def registry_path(course: Path) -> Path:
     return course / "conocimiento" / "figures.json"
 
 
-def load_registry(course: Path) -> dict[str, Any]:
-    path = registry_path(course)
-    if not path.exists():
-        return {"version": 2, "figures": {}}
-    data = json.loads(path.read_text(encoding="utf-8"))
+def load_registry(course: Path, unit: str = "") -> dict[str, Any]:
+    data = load_layout_registry(course, "figures", unit)
     if not isinstance(data, dict):
         raise SystemExit("figures.json must be a JSON object")
     data.setdefault("version", 2)
@@ -50,10 +72,11 @@ def load_registry(course: Path) -> dict[str, Any]:
     return data
 
 
-def save_registry(course: Path, data: dict[str, Any]) -> None:
-    path = registry_path(course)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+def save_registry(course: Path, data: dict[str, Any], unit: str = "") -> None:
+    try:
+        save_layout_registry(course, "figures", data, unit)
+    except LayoutError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def derived_key(value: str) -> str:
@@ -65,16 +88,23 @@ def derived_key(value: str) -> str:
     return "derived:" + safe_id(tail)
 
 
-def safe_course_asset(course: Path, value: str) -> tuple[Path, str]:
+def safe_course_asset(course: Path, value: str, unit: str = "") -> tuple[Path, str]:
     raw = Path(value)
-    path = raw if raw.is_absolute() else course / raw
+    if raw.is_absolute():
+        path = raw
+    elif unit and has_unit_layout(course):
+        normalized = value.replace("\\", "/")
+        path = course / raw if normalized.startswith("unidades/") else unit_root(course, unit) / raw
+    else:
+        path = course / raw
     path = path.resolve()
-    asset_root = (course / "assets" / "figures").resolve()
+    asset_root = ((unit_root(course, unit) if unit and has_unit_layout(course) else course) / "assets" / "figures").resolve()
     if not path.is_relative_to(asset_root):
         raise SystemExit("Derived figure asset must live under assets/figures/")
     if not path.is_file():
         raise SystemExit(f"Derived figure asset does not exist: {path}")
-    return path, path.relative_to(course).as_posix()
+    base = unit_root(course, unit) if unit and has_unit_layout(course) else course
+    return path, path.relative_to(base).as_posix()
 
 
 def registry_issues(course: Path, data: dict[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -114,19 +144,21 @@ def registry_issues(course: Path, data: dict[str, Any] | None = None) -> list[di
         if origin == "derived" and not asset:
             issues.append({"figure": key, "reason": "derived-asset-missing"})
         if asset:
-            target = (course / asset).resolve()
+            unit_value = record_unit_id(course, item)
+            target = content_path(course, unit_value, asset) if unit_value and has_unit_layout(course) else (course / asset).resolve()
             if not target.is_file():
                 issues.append({"figure": key, "reason": "asset-missing", "asset": asset})
-            prior = seen_assets.get(asset)
+            asset_identity = f"{unit_value}:{asset}" if has_unit_layout(course) else asset
+            prior = seen_assets.get(asset_identity)
             if prior and prior[0] != key:
                 issues.append({"figure": key, "reason": "asset-collision", "asset": asset, "other": prior[0], "origins": [prior[1], origin]})
             else:
-                seen_assets[asset] = (key, origin)
+                seen_assets[asset_identity] = (key, origin)
         source = item.get("source_file")
         expected = item.get("source_sha256")
         if source and expected:
             try:
-                src = resolve_source(course, str(source))
+                src = resolve_source(course, str(source), record_unit_id(course, item))
                 if sha256(src) != expected:
                     issues.append({"figure": key, "reason": "source-changed", "source": source})
             except SystemExit:
@@ -157,17 +189,11 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def resolve_source(course: Path, value: str) -> Path:
-    raw = Path(value)
-    candidates = [raw] if raw.is_absolute() else [course / "fuentes" / raw, course / raw]
-    for p in candidates:
-        try:
-            rp = p.resolve()
-            if rp.is_file() and rp.is_relative_to((course / "fuentes").resolve()):
-                return rp
-        except OSError:
-            pass
-    raise SystemExit(f"Source file not found under fuentes/: {value}")
+def resolve_source(course: Path, value: str, unit: str = "") -> Path:
+    try:
+        return resolve_layout_source(course, value, unit)
+    except LayoutError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def page_metrics(page: Any) -> dict[str, Any]:
@@ -221,11 +247,9 @@ def scan_pdf(path: Path, relative: str) -> dict[str, Any]:
 
 def cmd_scan(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
-    official = course / "fuentes" / "oficiales"
     rows = []
-    if official.exists():
-        for p in sorted(official.rglob("*.pdf")):
-            rel = p.relative_to(course / "fuentes").as_posix()
+    for p, rel, _unit_id in iter_source_files(course, args.unit or ""):
+        if "oficiales" in {part.lower() for part in p.parts} and p.suffix.lower() == ".pdf":
             rows.append(scan_pdf(p, rel))
     payload = {
         "version": 1,
@@ -234,7 +258,8 @@ def cmd_scan(args: argparse.Namespace) -> None:
         "note": "Candidate is a deterministic visual-density heuristic, not a judgement of teaching value.",
     }
     if args.write:
-        out = course / ".study" / "figure-pages.json"
+        out_base = unit_root(course, args.unit) if args.unit and has_unit_layout(course) else course
+        out = out_base / ".study" / "figure-pages.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -251,7 +276,7 @@ def safe_id(value: str) -> str:
 def cmd_render_page(args: argparse.Namespace) -> None:
     fitz = require_fitz()
     course = resolve_course(args.course)
-    source = resolve_source(course, args.file)
+    source = resolve_source(course, args.file, args.unit or "")
     page_no = args.page
     if page_no < 1:
         raise SystemExit("--page is 1-based and must be >= 1")
@@ -272,15 +297,16 @@ def cmd_render_page(args: argparse.Namespace) -> None:
                 clip = clip & page.rect
             scale = max(args.dpi, 72) / 72.0
             pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), clip=clip, alpha=False)
-            out_dir = course / "assets" / "figures"
+            out_base = unit_root(course, args.unit) if args.unit and has_unit_layout(course) else course
+            out_dir = out_base / "assets" / "figures"
             out_dir.mkdir(parents=True, exist_ok=True)
             out = out_dir / f"{safe_id(args.id)}.png"
             pix.save(out)
         finally:
             doc.close()
     result = {
-        "asset": out.relative_to(course).as_posix(),
-        "source_file": source.relative_to(course / "fuentes").as_posix(),
+        "asset": out.relative_to(out_base).as_posix(),
+        "source_file": source_ref(course, source, args.unit or ""),
         "source_sha256": sha256(source),
         "page": page_no,
         "clip": args.clip or None,
@@ -316,21 +342,26 @@ def register_derived(
     """Collision-safe derived figure registration for CLI and MCP callers."""
     if not based_on:
         raise ValueError("based_on debe contener al menos una referencia canónica")
+    unit = resolve_unit(course, unit_value)
+    if not unit.get("unit_id"):
+        raise ValueError(f"Could not resolve stable unit id from: {unit_value}")
     data = load_registry(course)
     figures = data["figures"]
     key = derived_key(figure_id)
     if key in figures:
         raise ValueError(f"Figure id already exists; refusing overwrite: {key}")
     try:
-        asset_path, asset_rel = safe_course_asset(course, asset)
+        asset_path, asset_rel = safe_course_asset(course, asset, unit["unit_id"])
     except SystemExit as exc:
         raise ValueError(str(exc)) from exc
     for existing_key, existing in figures.items():
-        if isinstance(existing, dict) and existing.get("asset") and str(existing.get("asset")) == asset_rel:
+        if (
+            isinstance(existing, dict)
+            and existing.get("asset")
+            and str(existing.get("asset")) == asset_rel
+            and (not has_unit_layout(course) or record_unit_id(course, existing) == unit["unit_id"])
+        ):
             raise ValueError(f"Figure asset already registered by {existing_key}; refusing collision: {asset_rel}")
-    unit = resolve_unit(course, unit_value)
-    if not unit.get("unit_id"):
-        raise ValueError(f"Could not resolve stable unit id from: {unit_value}")
     record = {
         "id": key,
         "unit_id": unit["unit_id"],
@@ -434,10 +465,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("scan")
     p.add_argument("--course", required=True)
+    p.add_argument("--unit", help="Stable unit id or label; omit to scan the whole course")
     p.add_argument("--write", action="store_true")
     p.set_defaults(func=cmd_scan)
     p = sub.add_parser("render-page")
     p.add_argument("--course", required=True)
+    p.add_argument("--unit", help="Unit owning the source and output asset")
     p.add_argument("--file", required=True, help="Path relative to fuentes/, e.g. oficiales/Unidad2.pdf")
     p.add_argument("--page", type=int, required=True, help="1-based PDF page")
     p.add_argument("--id", required=True)

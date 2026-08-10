@@ -10,7 +10,12 @@ import unicodedata
 from datetime import date
 from pathlib import Path
 
-from unit_identity import canonical_unit_id, resolve_unit
+if __package__:
+    from .course_layout import LayoutError, load_registry, resolve_source, save_registry
+    from .unit_identity import canonical_unit_id, resolve_unit
+else:
+    from course_layout import LayoutError, load_registry, resolve_source, save_registry
+    from unit_identity import canonical_unit_id, resolve_unit
 
 DEFAULT = {"version": 2, "concepts": {}}
 RELATION_TYPES = {
@@ -49,20 +54,17 @@ def sha256(path: Path) -> str:
 
 
 def load(course: Path) -> dict:
-    p = graph_path(course)
-    if not p.exists():
-        p.parent.mkdir(parents=True, exist_ok=True)
-        save(course, {"version": 2, "concepts": {}})
-    data = json.loads(p.read_text(encoding="utf-8"))
+    data = load_registry(course, "concepts")
     data.setdefault("version", 2)
     data.setdefault("concepts", {})
     return data
 
 
 def save(course: Path, data: dict) -> None:
-    p = graph_path(course)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    try:
+        save_registry(course, "concepts", data)
+    except LayoutError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def find_key(data: dict, name: str) -> str | None:
@@ -216,8 +218,11 @@ def cmd_source(args):
     if args.speaker:
         src["speaker"] = args.speaker.strip()
 
-    source_path = course / "fuentes" / args.file
-    if source_path.exists() and source_path.is_file():
+    try:
+        source_path = resolve_source(course, args.file, item.get("unit_id") or item.get("unit", ""))
+    except LayoutError:
+        source_path = None
+    if source_path is not None:
         src["sha256"] = sha256(source_path)
     else:
         src["fingerprint_status"] = "source-file-not-found"
@@ -292,10 +297,13 @@ def stale_rows(course: Path, file: str = "") -> list[dict]:
         for src in item.get("sources", []):
             if target_file and normalize(src.get("file", "")) != target_file:
                 continue
-            path = course / "fuentes" / src.get("file", "")
+            try:
+                path = resolve_source(course, src.get("file", ""), item.get("unit_id") or item.get("unit", ""))
+            except LayoutError:
+                path = None
             reason = None
             current_hash = None
-            if not path.exists():
+            if path is None:
                 reason = "source-missing"
             elif not src.get("sha256"):
                 reason = "missing-fingerprint"
@@ -359,10 +367,7 @@ def cmd_emphasis(args):
 
 
 def progress_map(course: Path) -> dict:
-    p = course / "progreso" / "progress.json"
-    if not p.exists():
-        return {}
-    raw = json.loads(p.read_text(encoding="utf-8"))
+    raw = load_registry(course, "progress")
     return raw.get("concepts", {})
 
 

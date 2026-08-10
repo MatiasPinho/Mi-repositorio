@@ -15,4 +15,10 @@ Load only these shared rules before semantic work:
 
 
 ## RUN
-Resolve the topic, prerequisites and current mastery. Teach progressively: mental model → simple explanation → relevant diagram/figure when it materially helps → example → precise course formulation → active recall/application. Use Humanizer for any substantial explanatory prose, then perform a fidelity check. Do not pre-generate a large static guide unless requested.
+Resolve the topic to its owning stable `unit_id`, then load that unit plus only
+explicit prerequisite records from earlier units. Teach progressively: mental
+model → simple explanation → relevant diagram/figure when it materially helps
+→ example → precise course formulation → active recall/application. Record
+progress in the owning unit. Use Humanizer for substantial explanatory prose,
+then perform a fidelity check. Do not pre-generate a large static guide unless
+requested.

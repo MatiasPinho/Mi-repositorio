@@ -1,3 +1,16 @@
+# V4.0.0
+
+- Introduce `materias/<course>/unidades/<unit-id>/` como límite canónico para
+  fuentes pedagógicas, conocimiento, figuras, progreso, notas, artefactos,
+  assets y ejecuciones.
+- Agrega `study.py units list|sync|migrate`, migración V3 collision-safe y copia
+  de recuperación en `.study/legacy-layout-v3/`.
+- CLI, MCP y pipelines resuelven primero un `unit_id`; MCP suma
+  `study_list_units` y rutas canónicas en `study_get_unit_context`.
+- `artifact_contract_version = 8`: un artefacto de unidad fuera de su directorio
+  canónico es inválido y los artefactos V3 quedan stale.
+- Migra `programacion-1` a nueve unidades sin reprocesar fuentes.
+
 # V3.7.2
 
 Reviewer académico adversarial y contrato de fidelidad reforzado.

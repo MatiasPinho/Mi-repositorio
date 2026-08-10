@@ -15,7 +15,7 @@ function Write-Step([string]$Message) {
 
 $Source = (Resolve-Path $Source).Path
 if (-not (Test-Path (Join-Path $Source "study.py"))) {
-    throw "No encuentro study.py en '$Source'. Ejecutá este script desde la raíz de university-study-system-v3.7.2 o pasá -Source."
+    throw "No encuentro study.py en '$Source'. Ejecutá este script desde la raíz de University Study System o pasá -Source."
 }
 if (-not (Test-Path (Join-Path $Source "VERSION"))) {
     throw "No encuentro VERSION en '$Source'."

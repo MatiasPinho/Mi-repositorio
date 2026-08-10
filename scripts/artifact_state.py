@@ -15,12 +15,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from unit_identity import normalize as normalize_unit_text, resolve_unit, record_unit_id
+if __package__:
+    from .course_layout import artifact_directories, has_unit_layout, load_registry
+    from .unit_identity import normalize as normalize_unit_text, resolve_unit, record_unit_id
+else:
+    from course_layout import artifact_directories, has_unit_layout, load_registry
+    from unit_identity import normalize as normalize_unit_text, resolve_unit, record_unit_id
 
 MANIFEST_VERSION = 1
 # Bump whenever the student-facing generation contract changes in a way that
 # should force summaries/guides/reviews/questions to be regenerated.
-ARTIFACT_CONTRACT_VERSION = 7
+ARTIFACT_CONTRACT_VERSION = 8
 VISUAL_ARTIFACT_TYPES = {"summary", "guide", "rapid-review"}
 GENERATED_DIRS = ("resumenes", "preguntas", "simulacros")
 
@@ -64,7 +69,7 @@ def academic_fingerprint(course: Path) -> str:
 
 
 def scoped_figures(course: Path, scope: str) -> dict[str, Any]:
-    data = read_json(course / "conocimiento" / "figures.json", {"figures": {}})
+    data = load_registry(course, "figures")
     figures = data.get("figures", {}) if isinstance(data, dict) else {}
     target = normalize(scope)
     if not target:
@@ -95,7 +100,7 @@ def figure_fingerprint(course: Path, scope: str) -> tuple[str, int]:
 
 
 def scoped_concepts(course: Path, scope: str) -> tuple[dict[str, Any], str]:
-    data = read_json(course / "conocimiento" / "concepts.json", {"concepts": {}})
+    data = load_registry(course, "concepts")
     concepts = data.get("concepts", {}) if isinstance(data, dict) else {}
     target = normalize(scope)
     if not target:
@@ -131,7 +136,11 @@ def scoped_concepts(course: Path, scope: str) -> tuple[dict[str, Any], str]:
             key = queue.pop(0)
             item = concepts.get(key, {})
             refs = list(item.get("prerequisites", []))
-            refs += [r.get("target", "") for r in item.get("relations", []) if isinstance(r, dict)]
+            refs += [
+                relation.get("target", "")
+                for relation in item.get("relations", [])
+                if isinstance(relation, dict) and relation.get("type") == "depends-on"
+            ]
             for ref in refs:
                 target_key = by_name.get(normalize(ref))
                 if target_key and target_key not in seen:
@@ -220,6 +229,13 @@ def mark_artifact(course: Path, file: str, artifact_type: str, scope: str = "") 
         raise ValueError(str(exc)) from exc
     if not path.exists() or not path.is_file():
         raise ValueError(f"Artifact does not exist: {path}")
+    unit_id = resolve_unit(course, scope).get("unit_id", "") if scope else ""
+    if unit_id and has_unit_layout(course):
+        expected = (course / "unidades" / unit_id).resolve()
+        if not path.is_relative_to(expected):
+            raise ValueError(
+                f"El artefacto de {unit_id} debe vivir dentro de unidades/{unit_id}/"
+            )
     manifest = load_manifest(course)
     fp = current_fingerprints(course, scope or "", artifact_type)
     manifest["artifacts"][rel] = {
@@ -243,8 +259,7 @@ def cmd_mark(args: argparse.Namespace) -> None:
 
 def generated_files(course: Path) -> set[str]:
     rows: set[str] = set()
-    for dirname in GENERATED_DIRS:
-        d = course / dirname
+    for d in artifact_directories(course):
         if not d.exists():
             continue
         for p in d.rglob("*"):

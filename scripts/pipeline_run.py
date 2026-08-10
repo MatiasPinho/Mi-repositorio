@@ -14,7 +14,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from study import resolve_course  # noqa: E402
-from unit_identity import resolve_unit  # noqa: E402
+if __package__:
+    from .course_layout import has_unit_layout, registry_path, run_root  # noqa: E402
+    from .unit_identity import resolve_unit  # noqa: E402
+else:
+    from course_layout import has_unit_layout, registry_path, run_root  # noqa: E402
+    from unit_identity import resolve_unit  # noqa: E402
 from scripts.academic_eval import evaluate_review  # noqa: E402
 
 STAGED = {"resumen", "guia", "repaso"}
@@ -149,7 +154,9 @@ def cmd_start(args: argparse.Namespace) -> None:
     pipeline = args.pipeline
     scope = args.scope or ""
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    base = course / ".study" / "runs" / f"{ts}-{pipeline}-{norm_slug(scope or 'all')}"
+    base = run_root(course, pipeline, scope, ts)
+    if not (scope and has_unit_layout(course)):
+        base = Path(str(base) + f"-{norm_slug(scope or 'all')}")
     candidate = base
     n = 2
     while candidate.exists():
@@ -170,17 +177,20 @@ def cmd_start(args: argparse.Namespace) -> None:
         "engine_snapshot": engine_snapshot(),
     }
     save(candidate / "manifest.json", manifest)
+    unit_id = resolve_unit(course, scope).get("unit_id", "")
+    concepts_path = registry_path(course, "concepts", unit_id) if unit_id and has_unit_layout(course) else registry_path(course, "concepts")
+    figures_path = registry_path(course, "figures", unit_id) if unit_id and has_unit_layout(course) else registry_path(course, "figures")
     inp = {
         "pipeline": pipeline,
         "course": manifest["course"],
         "scope": scope,
-        "unit_id": resolve_unit(course, scope).get("unit_id", ""),
+        "unit_id": unit_id,
         "academic_file": (course / "academico" / "academic.json").relative_to(ROOT).as_posix(),
-        "concepts_file": (course / "conocimiento" / "concepts.json").relative_to(ROOT).as_posix(),
-        "figures_file": (course / "conocimiento" / "figures.json").relative_to(ROOT).as_posix(),
+        "concepts_file": concepts_path.relative_to(ROOT).as_posix(),
+        "figures_file": figures_path.relative_to(ROOT).as_posix(),
         "academic_sha256": sha(course / "academico" / "academic.json"),
-        "concepts_sha256": sha(course / "conocimiento" / "concepts.json"),
-        "figures_sha256": sha(course / "conocimiento" / "figures.json"),
+        "concepts_sha256": sha(concepts_path),
+        "figures_sha256": sha(figures_path),
         "created_at": now(),
     }
     save(candidate / "01-input.json", inp)

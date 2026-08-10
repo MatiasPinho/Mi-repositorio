@@ -21,6 +21,21 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from scripts.course_layout import (
+    LayoutError,
+    UNIT_DIRECTORIES,
+    artifact_directories,
+    existing_unit_roots,
+    has_unit_layout,
+    iter_source_files,
+    load_registry,
+    registry_paths,
+    sync_units,
+    unit_ids,
+    unit_root,
+)
+from scripts.unit_identity import record_unit_id, resolve_unit as resolve_unit_identity, stable_unit_id_from_row
+
 ROOT = Path(__file__).resolve().parent
 COURSES_DIR = ROOT / "materias"
 SCRIPTS_DIR = ROOT / "scripts"
@@ -173,21 +188,28 @@ def material_kind(relative: Path) -> str:
     return "unclassified"
 
 
-def scan_materials(course: Path) -> tuple[dict[str, Any], dict[str, Any]]:
-    source_dir = course / "fuentes"
+def materials_index_path(course: Path, unit: str = "") -> Path:
+    if unit and has_unit_layout(course):
+        return unit_root(course, unit) / ".study" / "materials-index.json"
+    return course / ".study" / "materials-index.json"
+
+
+def scan_materials(course: Path, unit: str = "") -> tuple[dict[str, Any], dict[str, Any]]:
     current: dict[str, Any] = {}
-    if source_dir.exists():
-        for p in sorted(source_dir.rglob("*")):
-            if p.is_file() and p.name not in IGNORED_MATERIALS:
-                stat = p.stat()
-                rel = p.relative_to(source_dir)
-                current[rel.as_posix()] = {
-                    "sha256": sha256(p),
-                    "size": stat.st_size,
-                    "mtime": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
-                    "kind": material_kind(rel),
-                }
-    index = read_json(course / ".study" / "materials-index.json", {})
+    for p, reference, owner in iter_source_files(course, unit):
+        if p.name in IGNORED_MATERIALS:
+            continue
+        stat = p.stat()
+        if not has_unit_layout(course) and reference.startswith("fuentes/"):
+            reference = reference.removeprefix("fuentes/")
+        current[reference] = {
+            "sha256": sha256(p),
+            "size": stat.st_size,
+            "mtime": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
+            "kind": material_kind(Path(reference)),
+            "unit_id": owner or None,
+        }
+    index = read_json(materials_index_path(course, unit), {})
     previous = index.get("files", {}) if isinstance(index, dict) else {}
     added = sorted(set(current) - set(previous))
     removed = sorted(set(previous) - set(current))
@@ -211,8 +233,8 @@ def cmd_course_add(args: argparse.Namespace) -> None:
     print(f"Materia creada: {course_display_name(course)}")
     print(f"Slug: {course.name}")
     print(f"Carpeta: {course}")
-    print(f"Material oficial: {course / 'fuentes' / 'oficiales'}")
-    print(f"Transcripciones: {course / 'fuentes' / 'transcripciones'}")
+    print(f"Fuentes generales: {course / 'fuentes'}")
+    print(f"Contenido por unidad: {course / 'unidades' / '<unit-id>'}")
 
 
 def cmd_course_list(_: argparse.Namespace) -> None:
@@ -226,6 +248,42 @@ def cmd_course_list(_: argparse.Namespace) -> None:
         units = len(academic.get("units", [])) if isinstance(academic, dict) else 0
         assessments = len(academic.get("assessments", [])) if isinstance(academic, dict) else 0
         print(f"  - {course_display_name(course)} [{course.name}]  unidades={units} evaluaciones={assessments}")
+
+
+def cmd_units_list(args: argparse.Namespace) -> None:
+    course = resolve_course(args.course)
+    academic = academic_data(course)
+    rows = academic.get("units", []) if isinstance(academic, dict) else []
+    if not rows:
+        print("No hay unidades declaradas en academic.json.")
+        return
+    print(f"Unidades - {course_display_name(course)}")
+    existing = {path.name for path in existing_unit_roots(course)}
+    for row in rows:
+        unit_id = stable_unit_id_from_row(row)
+        state = "READY" if unit_id in existing else "FALTA SYNC"
+        print(f"  - {unit_id}: {row.get('name', unit_id)} [{state}]")
+
+
+def cmd_units_sync(args: argparse.Namespace) -> None:
+    course = resolve_course(args.course)
+    try:
+        result = sync_units(course)
+    except LayoutError as exc:
+        raise CliError(str(exc)) from exc
+    print(json.dumps(result, ensure_ascii=False, indent=2) if args.json else (
+        f"Unidades sincronizadas: {len(result['units'])} | nuevas={len(result['created'])} "
+        f"| actualizadas={len(result['updated'])} | huérfanas={len(result['orphaned'])}"
+    ))
+
+
+def cmd_units_migrate(args: argparse.Namespace) -> None:
+    course = resolve_course(args.course)
+    cmd = ["migrate_unit_layout.py", "--course", str(course)]
+    if args.apply:
+        cmd.append("--apply")
+    out, _ = run_script(*cmd)
+    print(out)
 
 
 def _count_files(path: Path) -> int:
@@ -278,12 +336,18 @@ def reset_course_content(course: Path) -> dict[str, Any]:
             old_context = ""
     personal_goal = _context_field(old_context, "Objetivo personal") or "9-10 con comprensión real"
 
-    reset_names = [
-        "academico", "conocimiento", "notas", "preguntas", "progreso",
-        "resumenes", "simulacros", "assets",
-    ]
+    canonical = has_unit_layout(course)
+    preserved_units = current_academic.get("units", []) if canonical and isinstance(current_academic, dict) else []
+    reset_names = ["conocimiento", "notas", "preguntas", "progreso", "resumenes", "simulacros", "assets"]
     removed_files = sum(_count_files(course / name) for name in reset_names)
-    removed_files += _count_files(course / ".study")
+    for root in existing_unit_roots(course):
+        for name in ("conocimiento", "notas", "preguntas", "progreso", "resumenes", "simulacros", "assets", ".study"):
+            removed_files += _count_files(root / name)
+    study_dir = course / ".study"
+    if study_dir.exists():
+        removed_files += sum(
+            _count_files(path) for path in study_dir.iterdir() if path.name != "legacy-layout-v3"
+        )
     if context_path.exists():
         removed_files += 1
 
@@ -295,25 +359,37 @@ def reset_course_content(course: Path) -> dict[str, Any]:
                 shutil.rmtree(target)
             else:
                 target.unlink()
-        source = template / name
-        if source.is_dir():
-            shutil.copytree(source, target)
-        elif source.exists():
-            shutil.copy2(source, target)
+    for root in existing_unit_roots(course):
+        for name in ("conocimiento", "notas", "preguntas", "progreso", "resumenes", "simulacros", "assets", ".study"):
+            target = root / name
+            if target.exists():
+                shutil.rmtree(target) if target.is_dir() else target.unlink()
 
-    study_dir = course / ".study"
     if study_dir.exists():
-        shutil.rmtree(study_dir)
+        for path in list(study_dir.iterdir()):
+            if path.name == "legacy-layout-v3":
+                continue
+            shutil.rmtree(path) if path.is_dir() else path.unlink()
 
     academic_path = course / "academico" / "academic.json"
-    academic = read_json(academic_path, {})
+    template_academic = read_json(template / "academico" / "academic.json", {})
+    academic = dict(template_academic) if isinstance(template_academic, dict) else {}
     template_identity = academic.get("identity", {}) if isinstance(academic, dict) else {}
     if not isinstance(template_identity, dict):
         template_identity = {}
     merged_identity = dict(template_identity)
     merged_identity.update(identity)
     academic["identity"] = merged_identity
+    academic["units"] = preserved_units
     academic_path.write_text(json.dumps(academic, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if canonical:
+        sync_units(course)
+    else:
+        for dirname in ("conocimiento", "notas", "preguntas", "progreso", "resumenes", "simulacros", "assets/figures"):
+            (course / dirname).mkdir(parents=True, exist_ok=True)
+        (course / "conocimiento" / "concepts.json").write_text('{"version": 2, "concepts": {}}\n', encoding="utf-8")
+        (course / "conocimiento" / "figures.json").write_text('{"version": 2, "figures": {}}\n', encoding="utf-8")
+        (course / "progreso" / "progress.json").write_text('{"version": 2, "concepts": {}}\n', encoding="utf-8")
 
     fresh_context = (template / "contexto.md").read_text(encoding="utf-8")
     professors = identity.get("professors", [])
@@ -344,7 +420,7 @@ def cmd_course_reset(args: argparse.Namespace) -> None:
     display = course_display_name(course)
     if not args.yes:
         print(f"\nRESET DE MATERIA: {display} [{course.name}]")
-        print("Se conservara fuentes/ y la identidad basica de la materia.")
+        print("Se conservaran las fuentes generales/por unidad, la identidad y el catalogo de unidades.")
         print("Se borraran conocimiento procesado, contexto academico derivado, notas, progreso,")
         print("resumenes, guias, repasos, preguntas, simulacros, figuras generadas y cache .study/.")
         typed = input(f"Escribi {course.name} para confirmar: ").strip()
@@ -360,14 +436,15 @@ def cmd_course_reset(args: argparse.Namespace) -> None:
 
 def cmd_materials_scan(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
-    current, diff = scan_materials(course)
+    selected_unit = getattr(args, "unit", None) or ""
+    current, diff = scan_materials(course, selected_unit)
     transcript_count = sum(1 for meta in current.values() if meta.get("kind") == "transcript")
 
     if args.commit:
-        study_dir = course / ".study"
-        study_dir.mkdir(parents=True, exist_ok=True)
+        index_path = materials_index_path(course, selected_unit)
+        index_path.parent.mkdir(parents=True, exist_ok=True)
         payload = {"updated_at": datetime.now(timezone.utc).isoformat(), "files": current}
-        (study_dir / "materials-index.json").write_text(
+        index_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
 
@@ -396,6 +473,8 @@ def cmd_materials_scan(args: argparse.Namespace) -> None:
 def cmd_transcripts_inspect(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
     cmd = ["inspect", "--course", str(course)]
+    if getattr(args, "unit", None):
+        cmd += ["--unit", args.unit]
     if args.file:
         cmd += ["--file", args.file]
     if args.write:
@@ -454,6 +533,8 @@ def cmd_figures_scan(args: argparse.Namespace) -> None:
             print(f"  Instalar: {capabilities.get('install')}")
         return
     cmd = ["scan", "--course", str(course)]
+    if getattr(args, "unit", None):
+        cmd += ["--unit", args.unit]
     if args.write:
         cmd.append("--write")
     out, _ = run_script("figure_assets.py", *cmd)
@@ -473,6 +554,8 @@ def cmd_figures_scan(args: argparse.Namespace) -> None:
 def cmd_figures_render(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
     cmd = ["render-page", "--course", str(course), "--file", args.file, "--page", str(args.page), "--id", args.id]
+    if getattr(args, "unit", None):
+        cmd += ["--unit", args.unit]
     if args.dpi:
         cmd += ["--dpi", str(args.dpi)]
     if args.clip:
@@ -521,10 +604,15 @@ def cmd_figures_migrate(args: argparse.Namespace) -> None:
 
 def cmd_open(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
-    summary_dir = course / "resumenes"
-    if not summary_dir.exists():
+    if getattr(args, "unit", None):
+        summary_dirs = [unit_root(course, args.unit) / "resumenes"]
+    elif has_unit_layout(course):
+        summary_dirs = [root / "resumenes" for root in existing_unit_roots(course)]
+    else:
+        summary_dirs = [course / "resumenes"]
+    if not any(path.exists() for path in summary_dirs):
         raise CliError("No hay carpeta de resumenes.")
-    files = [p for p in summary_dir.glob("*.html") if p.is_file()]
+    files = [p for summary_dir in summary_dirs for p in summary_dir.glob("*.html") if p.is_file()]
     if args.contains:
         q = slugify(args.contains)
         files = [p for p in files if q in slugify(p.stem)]
@@ -573,8 +661,8 @@ def next_assessment(course: Path) -> dict[str, Any] | None:
     return candidates[0][1] if candidates else None
 
 
-def progress_summary(course: Path) -> dict[str, Any]:
-    data = read_json(course / "progreso" / "progress.json", {"concepts": {}})
+def progress_summary(course: Path, unit: str = "") -> dict[str, Any]:
+    data = load_registry(course, "progress", unit)
     concepts = list(data.get("concepts", {}).values()) if isinstance(data, dict) else []
     if not concepts:
         return {"count": 0, "avg": None, "due": 0, "untested": 0, "weak": []}
@@ -595,18 +683,27 @@ def progress_summary(course: Path) -> dict[str, Any]:
     return {"count": len(concepts), "avg": avg, "due": due, "untested": untested, "weak": weak}
 
 
-def artifact_rows(course: Path) -> list[dict[str, Any]]:
+def artifact_rows(course: Path, unit: str = "") -> list[dict[str, Any]]:
     try:
         out, _ = run_script("artifact_state.py", "status", "--course", str(course))
         rows = json.loads(out or "[]")
-        return rows if isinstance(rows, list) else []
+        if not isinstance(rows, list):
+            return []
+        if unit:
+            unit_id = resolve_unit_identity(course, unit).get("unit_id", "")
+            rows = [
+                row for row in rows
+                if resolve_unit_identity(course, str(row.get("scope", ""))).get("unit_id", "") == unit_id
+                or str(row.get("file", "")).startswith(f"unidades/{unit_id}/")
+            ]
+        return rows
     except (CliError, json.JSONDecodeError):
         return []
 
 
 def cmd_artifacts(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
-    rows = artifact_rows(course)
+    rows = artifact_rows(course, getattr(args, "unit", None) or "")
     if args.json:
         print(json.dumps(rows, ensure_ascii=False, indent=2))
         return
@@ -623,17 +720,20 @@ def cmd_artifacts(args: argparse.Namespace) -> None:
 
 def cmd_status(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
+    selected_unit = getattr(args, "unit", None) or ""
     # Keep the invariant graph concept -> tracked concept without requiring the user to remember a sync command.
     run_script("study_tracker.py", "sync", "--course", str(course))
-    _, materials = scan_materials(course)
-    graph = read_json(course / "conocimiento" / "concepts.json", {"concepts": {}})
-    figure_data = read_json(course / "conocimiento" / "figures.json", {"figures": {}})
-    p = progress_summary(course)
+    _, materials = scan_materials(course, selected_unit)
+    graph = load_registry(course, "concepts", selected_unit)
+    figure_data = load_registry(course, "figures", selected_unit)
+    p = progress_summary(course, selected_unit)
     nxt = next_assessment(course)
 
     print(course_display_name(course))
     print("=" * len(course_display_name(course)))
     print(f"Slug: {course.name}")
+    if selected_unit:
+        print(f"Unidad: {resolve_unit_identity(course, selected_unit).get('unit_id', selected_unit)}")
     print("\nMateriales")
     print(f"  Registrados ahora: {materials['total']}")
     print(f"  Nuevos: {len(materials['added'])} | Modificados: {len(materials['changed'])} | Eliminados: {len(materials['removed'])}")
@@ -649,7 +749,7 @@ def cmd_status(args: argparse.Namespace) -> None:
         print("  Mas debiles:")
         for item in p["weak"]:
             print(f"    - {item.get('name', '?')}: {fmt_pct(item.get('mastery', 0))}")
-    artifacts = artifact_rows(course)
+    artifacts = artifact_rows(course, selected_unit)
     if artifacts:
         stale_count = sum(1 for row in artifacts if row.get("stale"))
         current_count = len(artifacts) - stale_count
@@ -667,6 +767,8 @@ def cmd_due(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
     run_script("study_tracker.py", "sync", "--course", str(course))
     cmd = ["due", "--course", str(course)]
+    if getattr(args, "unit", None):
+        cmd += ["--unit", args.unit]
     if args.on:
         cmd += ["--on", args.on]
     if args.assessment:
@@ -707,18 +809,39 @@ def cmd_validate(args: argparse.Namespace) -> None:
     course = resolve_course(args.course)
 
     structural: list[str] = []
-    required_dirs = [
-        "academico", "conocimiento", "fuentes", "notas", "preguntas",
-        "progreso", "resumenes", "simulacros",
-    ]
+    required_dirs = ["academico", "fuentes"]
+    if has_unit_layout(course):
+        required_dirs.append("unidades")
+    else:
+        required_dirs += ["conocimiento", "notas", "preguntas", "progreso", "resumenes", "simulacros"]
     for dirname in required_dirs:
         if not (course / dirname).is_dir():
             structural.append(f"falta carpeta requerida: {dirname}/")
-    required_json = [
-        course / "academico" / "academic.json",
-        course / "conocimiento" / "concepts.json",
-        course / "progreso" / "progress.json",
-    ]
+    required_json = [course / "academico" / "academic.json"]
+    if has_unit_layout(course):
+        expected = set(unit_ids(course))
+        existing = {path.name for path in existing_unit_roots(course)}
+        for unit_id in sorted(expected):
+            root = course / "unidades" / unit_id
+            if not root.is_dir():
+                structural.append(f"falta unidad canónica: unidades/{unit_id}/")
+                continue
+            for dirname in UNIT_DIRECTORIES:
+                if not (root / dirname).is_dir():
+                    structural.append(f"falta carpeta de unidad: unidades/{unit_id}/{dirname}/")
+            for relative in ("unidad.json", "conocimiento/concepts.json", "conocimiento/figures.json", "progreso/progress.json"):
+                required_json.append(root / relative)
+        for orphan in sorted(existing - expected):
+            structural.append(f"unidad huérfana no declarada en academic.json: unidades/{orphan}/")
+        for kind, row_key in (("concepts", "concepts"), ("figures", "figures"), ("progress", "concepts")):
+            for path in registry_paths(course, kind):
+                data = read_json(path, {row_key: {}})
+                owner = path.parents[1].name
+                for key, item in data.get(row_key, {}).items() if isinstance(data, dict) else []:
+                    if isinstance(item, dict) and record_unit_id(course, item) != owner:
+                        structural.append(f"registro en unidad incorrecta: {path.relative_to(course)}#{key}")
+    else:
+        required_json += [course / "conocimiento" / "concepts.json", course / "progreso" / "progress.json"]
     for path in required_json:
         if not path.exists():
             structural.append(f"falta archivo requerido: {path.relative_to(course)}")
@@ -741,7 +864,7 @@ def cmd_validate(args: argparse.Namespace) -> None:
             structural.append(f"no se pudo validar academic.json: {exc}")
 
     stale: list[dict[str, Any]] = []
-    if (course / "conocimiento" / "concepts.json").exists():
+    if any(path.exists() for path in registry_paths(course, "concepts")):
         try:
             stale_out, _ = run_script("concept_graph.py", "stale", "--course", str(course))
             stale = json.loads(stale_out or "[]")
@@ -749,7 +872,7 @@ def cmd_validate(args: argparse.Namespace) -> None:
             structural.append(f"no se pudo validar concepts.json: {exc}")
 
     figure_issues: list[dict[str, Any]] = []
-    if (course / "conocimiento" / "figures.json").exists():
+    if any(path.exists() for path in registry_paths(course, "figures")):
         try:
             fig_out, _ = run_script("figure_assets.py", "verify", "--course", str(course))
             fig_data = json.loads(fig_out or "{}")
@@ -941,10 +1064,25 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yes", action="store_true", help="Confirmar sin prompt interactivo")
     p.set_defaults(func=cmd_course_reset)
 
+    units = sub.add_parser("units", help="Administrar la estructura canónica por unidades")
+    usub = units.add_subparsers(dest="units_cmd", required=True)
+    p = usub.add_parser("list", help="Listar unidades académicas y su estado estructural")
+    p.add_argument("course")
+    p.set_defaults(func=cmd_units_list)
+    p = usub.add_parser("sync", help="Crear/actualizar unidades desde academic.json")
+    p.add_argument("course")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_units_sync)
+    p = usub.add_parser("migrate", help="Migrar una materia V3 al layout V4 sin perder datos")
+    p.add_argument("course")
+    p.add_argument("--apply", action="store_true", help="Aplicar; sin esta opción solo muestra el plan")
+    p.set_defaults(func=cmd_units_migrate)
+
     materials = sub.add_parser("materials", help="Administrar materiales")
     msub = materials.add_subparsers(dest="materials_cmd", required=True)
     p = msub.add_parser("scan", help="Detectar material nuevo/modificado/eliminado")
     p.add_argument("course")
+    p.add_argument("--unit", help="Limitar el escaneo a una unidad")
     p.add_argument("--commit", action="store_true", help="Registrar el estado actual como procesado")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_materials_scan)
@@ -953,6 +1091,7 @@ def build_parser() -> argparse.ArgumentParser:
     tsub = transcripts.add_subparsers(dest="transcripts_cmd", required=True)
     p = tsub.add_parser("inspect", help="Parsear timestamps y detectar candidatos de enfasis sin IA")
     p.add_argument("course")
+    p.add_argument("--unit", help="Limitar la inspección a una unidad")
     p.add_argument("--file", help="Archivo relativo a fuentes/ o transcripciones/")
     p.add_argument("--write", action="store_true", help="Guardar metadatos normalizados en .study/transcripts/")
     p.add_argument("--json", action="store_true")
@@ -966,11 +1105,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_figures_preflight)
     p = fsub.add_parser("scan", help="Catalogar paginas visualmente densas de PDFs sin IA")
     p.add_argument("course")
+    p.add_argument("--unit", help="Limitar el escaneo a una unidad")
     p.add_argument("--write", action="store_true")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_figures_scan)
     p = fsub.add_parser("render", help="Renderizar una pagina/crop seleccionado como asset local")
     p.add_argument("course")
+    p.add_argument("--unit", help="Unidad dueña de la fuente y el asset")
     p.add_argument("--file", required=True, help="Ruta relativa a fuentes/, ej. oficiales/u2.pdf")
     p.add_argument("--page", required=True, type=int)
     p.add_argument("--id", required=True)
@@ -1003,10 +1144,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("status", help="Resumen de una materia")
     p.add_argument("course")
+    p.add_argument("--unit", help="Mostrar solo una unidad")
     p.set_defaults(func=cmd_status)
 
     p = sub.add_parser("due", help="Repasos pendientes")
     p.add_argument("course")
+    p.add_argument("--unit", help="Mostrar solo una unidad")
     p.add_argument("--on", help="Fecha YYYY-MM-DD")
     p.add_argument("--assessment", help="Id o nombre de evaluacion")
     p.add_argument("--include-not-due", action="store_true", help="Incluir contenido de la evaluacion aunque aun no venza")
@@ -1019,11 +1162,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("artifacts", help="Ver si resumenes/guias/repasos/preguntas estan current o stale")
     p.add_argument("course")
+    p.add_argument("--unit", help="Mostrar solo una unidad")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_artifacts)
 
     p = sub.add_parser("open", help="Abrir el ultimo material HTML en el navegador")
     p.add_argument("course")
+    p.add_argument("--unit", help="Abrir solo artefactos de esta unidad")
     p.add_argument("--type", choices=["summary", "guide", "rapid-review"])
     p.add_argument("--contains", help="Filtrar por unidad/tema en el nombre")
     p.set_defaults(func=cmd_open)

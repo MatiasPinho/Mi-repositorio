@@ -8,6 +8,11 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+if __package__:
+    from .course_layout import sync_units
+else:
+    from course_layout import sync_units
+
 ASSESSMENT_TYPES = {
     "parcial", "recuperatorio", "final", "tp", "integrador", "coloquio",
     "quiz", "diagnostico", "otro"
@@ -64,6 +69,7 @@ def add_unit(args: argparse.Namespace) -> None:
         "status": args.status,
     })
     save(p, data)
+    sync_units(Path(args.course))
     print(json.dumps(units[-1], ensure_ascii=False, indent=2))
 
 

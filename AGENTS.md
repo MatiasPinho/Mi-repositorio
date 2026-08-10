@@ -1,4 +1,4 @@
-# University Study System V3.7.2 — Codex
+# University Study System V4.0.0 — Codex
 
 This project uses a portable shared core. Do not duplicate methodology here.
 

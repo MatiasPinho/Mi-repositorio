@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from study import resolve_course  # noqa: E402
+from scripts.course_layout import iter_source_files  # noqa: E402
 
 
 def require_pymupdf():
@@ -114,12 +115,10 @@ def probe_pdf(path: Path, relative: str | None = None) -> dict[str, Any]:
     }
 
 
-def scan_course(course: Path) -> dict[str, Any]:
-    official = course / "fuentes" / "oficiales"
+def scan_course(course: Path, unit: str = "") -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
-    if official.exists():
-        for path in sorted(official.rglob("*.pdf")):
-            rel = path.relative_to(course / "fuentes").as_posix()
+    for path, rel, _owner in iter_source_files(course, unit):
+        if "oficiales" in {part.lower() for part in path.parts} and path.suffix.lower() == ".pdf":
             rows.append(probe_pdf(path, rel))
     return {
         "version": 1,
@@ -139,6 +138,7 @@ def build_parser() -> argparse.ArgumentParser:
     one.add_argument("file", type=Path)
     scan = sub.add_parser("scan", help="Probe official PDFs in one course")
     scan.add_argument("--course", required=True)
+    scan.add_argument("--unit")
     return ap
 
 
@@ -149,7 +149,7 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if result["ok"] else 1
     course = resolve_course(args.course)
-    result = scan_course(course)
+    result = scan_course(course, args.unit or "")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

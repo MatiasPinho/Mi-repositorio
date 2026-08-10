@@ -56,7 +56,22 @@ When the local `university-study` MCP server is connected, prefer its coarse-gra
 MCP is an adapter, not a new source of truth. Pipelines, handoffs and deterministic scripts remain authoritative. Do not fan out into many tiny MCP calls when one context call is sufficient. If MCP is unavailable, fall back to the existing `study.py`/`scripts/` commands without changing semantics.
 
 ## Portable execution
-All semantic pipelines use explicit handoff files under the course's `.study/runs/<run-id>/` directory. Those files are the portable isolation boundary.
+Unit-scoped semantic pipelines use explicit handoff files under
+`unidades/<unit-id>/.study/runs/<run-id>/`. A truly course-wide action may use
+the course's `.study/runs/<run-id>/`. Those files are the portable isolation
+boundary; never place a unit run in another unit or infer scope from a filename.
+
+## Canonical unit boundary
+
+Resolve every pedagogical request to a stable `unit_id` before reading or
+writing content. Sources, concepts, figures, progress, notes, summaries,
+questions, simulations, assets and run state live below
+`materias/<course>/unidades/<unit-id>/`. Only identity, academic unit catalog,
+assessments, rules and genuinely cross-unit sources stay at course level.
+
+Use `study_get_unit_context` (or `scripts/course_layout.py` through the
+deterministic CLI) as the path authority. V3 root registries are read-only
+compatibility inputs until `study.py units migrate` is applied.
 
 Provider-specific isolation (Claude subagents/context forks, Codex parallel agents/worktrees, etc.) is optional. If used, it must consume and produce the same handoff contracts and may not change the pipeline semantics.
 

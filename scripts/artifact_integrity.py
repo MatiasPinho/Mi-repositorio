@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from study import resolve_course  # noqa: E402
 from scripts.figure_assets import load_registry, registry_issues  # noqa: E402
+from scripts.course_layout import has_unit_layout, unit_root  # noqa: E402
 from scripts.render_study import validate_caption_comments, validate_images  # noqa: E402
 from scripts.unit_identity import record_unit_id, resolve_unit  # noqa: E402
 
@@ -66,10 +67,10 @@ def check(course: Path, md_path: Path, html_path: Path, scope: str, artifact_typ
     reg_issues = registry_issues(course, registry)
     issues.extend(f"figure-registry:{x.get('figure','?')}:{x.get('reason','issue')}" for x in reg_issues)
     figures = registry.get("figures", {}) if isinstance(registry, dict) else {}
-    by_asset: dict[str, list[tuple[str, dict[str, Any]]]] = {}
+    by_asset: dict[tuple[str, str], list[tuple[str, dict[str, Any]]]] = {}
     for key, item in figures.items():
         if isinstance(item, dict) and item.get("asset"):
-            by_asset.setdefault(str(item["asset"]), []).append((key, item))
+            by_asset.setdefault((record_unit_id(course, item), str(item["asset"])), []).append((key, item))
 
     resolved = resolve_unit(course, scope)
     unit_id = resolved.get("unit_id", "")
@@ -78,16 +79,21 @@ def check(course: Path, md_path: Path, html_path: Path, scope: str, artifact_typ
         if isinstance(item, dict) and unit_id and record_unit_id(course, item) == unit_id
     }
     used_registered: set[str] = set()
+    asset_base = unit_root(course, unit_id) if unit_id and has_unit_layout(course) else course
     for src, target in markdown_images(md_path, md_text):
         if target is None:
             continue
         try:
-            rel = target.relative_to(course.resolve()).as_posix()
+            rel = target.relative_to(asset_base.resolve()).as_posix()
         except ValueError:
             continue
         if not rel.startswith("assets/figures/"):
             continue
-        matches = by_asset.get(rel, [])
+        matches = by_asset.get((unit_id, rel), [])
+        if not matches and not has_unit_layout(course):
+            matches = by_asset.get(("", rel), []) + [
+                row for (owner, asset), values in by_asset.items() if asset == rel for row in values
+            ]
         if not matches:
             issues.append(f"unregistered-figure-asset:{rel}")
             continue

@@ -109,11 +109,11 @@ class StudyMCPTests(unittest.TestCase):
                     if deco.func.attr == "resource" and deco.args and isinstance(deco.args[0], ast.Constant):
                         resources.add(deco.args[0].value)
         self.assertEqual(tools, {
-            "study_list_courses", "study_material_changes", "study_get_course_context", "study_get_unit_context",
+            "study_list_courses", "study_material_changes", "study_list_units", "study_get_course_context", "study_get_unit_context",
             "study_get_progress", "study_list_figures", "study_verify_figures", "study_register_derived_figure",
             "study_list_artifacts", "study_validate_artifact", "study_mark_artifact", "study_validate_course",
         })
-        self.assertEqual(len(resources), 4)
+        self.assertEqual(len(resources), 5)
         self.assertFalse(any(x in tools for x in {"delete_file", "reset_course", "write_json", "publish_arbitrary"}))
 
     def test_mcp_preflight_is_machine_readable_even_without_optional_sdk(self):
@@ -215,7 +215,7 @@ class StudyMCPTests(unittest.TestCase):
                     listed = await asyncio.wait_for(session.list_tools(), timeout=10)
                     tool_names = {tool.name for tool in listed.tools}
                     expected = {
-                        "study_list_courses", "study_material_changes", "study_get_course_context", "study_get_unit_context",
+                        "study_list_courses", "study_material_changes", "study_list_units", "study_get_course_context", "study_get_unit_context",
                         "study_get_progress", "study_list_figures", "study_verify_figures", "study_register_derived_figure",
                         "study_list_artifacts", "study_validate_artifact", "study_mark_artifact", "study_validate_course",
                     }
@@ -223,6 +223,7 @@ class StudyMCPTests(unittest.TestCase):
 
                     await call(session, "study_list_courses", {})
                     await call(session, "study_material_changes", {"course": self.slug})
+                    await call(session, "study_list_units", {"course": self.slug})
                     await call(session, "study_get_course_context", {"course": self.slug})
                     unit = await call(session, "study_get_unit_context", {"course": self.slug, "unit": "Unidad 1"})
                     self.assertEqual(unit["unit"]["unit_id"], "unidad-1")

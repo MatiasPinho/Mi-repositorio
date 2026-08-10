@@ -221,10 +221,11 @@ leer dato
             page = out.read_text(encoding="utf-8")
             self.assertIn('src="../assets/figures/x.png"', page)
 
-    def test_figure_registry_exists_in_course_template(self):
-        data = json.loads((ROOT / "materias" / "_plantilla" / "conocimiento" / "figures.json").read_text(encoding="utf-8"))
-        self.assertEqual(data["version"], 2)
-        self.assertEqual(data["figures"], {})
+    def test_course_template_routes_figure_registry_to_units(self):
+        template = ROOT / "materias" / "_plantilla"
+        self.assertFalse((template / "conocimiento" / "figures.json").exists())
+        instructions = (template / "unidades" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("conocimiento/figures.json", instructions)
 
     def test_visual_dependency_is_explicit_and_optional(self):
         req = (ROOT / "requirements-visual.txt").read_text(encoding="utf-8")

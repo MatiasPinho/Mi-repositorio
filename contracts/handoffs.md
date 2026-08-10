@@ -1,7 +1,10 @@
 # Portable handoff contracts
 
-All semantic pipeline runs live under:
-`materias/<course>/.study/runs/<run-id>/`
+Unit-scoped semantic pipeline runs live under:
+`materias/<course>/unidades/<unit-id>/.study/runs/<run-id>/`
+
+Only genuinely course-wide runs may live under
+`materias/<course>/.study/runs/<run-id>/`.
 
 `manifest.json` records pipeline, course, scope, timestamps, status and stage files.
 
@@ -63,10 +66,14 @@ Required fidelity-check keys are fixed. `status` is only `pass`, `fail` or `not_
 Handoff files are working state and are not automatically student artifacts.
 
 ## Plan visual contract
-`02-plan.json` should include a `visuals` section for student-facing content. Each major concept receives one of `visual_required`, `visual_helpful`, `visual_not_needed`. Selected source visuals reference ids from `conocimiento/figures.json`; derived diagrams must be explicitly marked derived.
+`02-plan.json` should include a `visuals` section for student-facing content. Each major concept receives one of `visual_required`, `visual_helpful`, `visual_not_needed`. Selected source visuals reference ids from `unidades/<unit-id>/conocimiento/figures.json`; derived diagrams must be explicitly marked derived.
 
 ## Stable unit identity
 Human labels such as `U1`, `Unidad 1` and `Unidad 1: Conceptos básicos` are display aliases. Unit-scoped canonical records use a stable `unit_id` such as `unidad-1`. Pipeline code must scope concepts/figures by `unit_id`, not by fuzzy comparison of labels.
+
+The stable id is also the storage boundary. A unit handoff may read explicit
+cross-unit prerequisite records, but it writes artifacts, assets and run state
+only under its own `unidades/<unit-id>/` directory.
 
 ## Derived figure registration
 Derived visuals are namespaced as `derived:<id>` and must include `origin: derived`, `unit_id`, `asset`, and non-empty `based_on` provenance. Registration is collision-safe and must go through `study.py figures register-derived`; source records/assets are never overwritten.

@@ -9,6 +9,13 @@ import unicodedata
 from datetime import date, timedelta
 from pathlib import Path
 
+if __package__:
+    from .course_layout import LayoutError, load_registry, save_registry
+    from .unit_identity import record_unit_id, resolve_unit
+else:
+    from course_layout import LayoutError, load_registry, save_registry
+    from unit_identity import record_unit_id, resolve_unit
+
 DEFAULT = {"version": 2, "concepts": {}}
 
 
@@ -17,20 +24,17 @@ def progress_path(course: Path) -> Path:
 
 
 def load(course: Path) -> dict:
-    p = progress_path(course)
-    if not p.exists():
-        p.parent.mkdir(parents=True, exist_ok=True)
-        save(course, {"version": 2, "concepts": {}})
-    data = json.loads(p.read_text(encoding="utf-8"))
+    data = load_registry(course, "progress")
     data.setdefault("version", 2)
     data.setdefault("concepts", {})
     return data
 
 
 def save(course: Path, data: dict) -> None:
-    p = progress_path(course)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    try:
+        save_registry(course, "progress", data)
+    except LayoutError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def key_for(name: str) -> str:
@@ -65,12 +69,9 @@ def ensure(data: dict, concept: str, unit: str = "") -> dict:
 
 
 def knowledge(course: Path) -> dict:
-    p = course / "conocimiento" / "concepts.json"
-    if not p.exists():
-        return {"concepts": {}}
     try:
-        return json.loads(p.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
+        return load_registry(course, "concepts")
+    except (json.JSONDecodeError, OSError, LayoutError):
         return {"concepts": {}}
 
 
@@ -231,8 +232,6 @@ def sync_graph(args):
 def record_graph_error(course: Path, concept: str, error: str) -> None:
     if not error:
         return
-    p = course / "conocimiento" / "concepts.json"
-    p.parent.mkdir(parents=True, exist_ok=True)
     graph = knowledge(course)
     graph.setdefault("version", 2)
     graph.setdefault("concepts", {})
@@ -268,7 +267,10 @@ def record_graph_error(course: Path, concept: str, error: str) -> None:
             {"text": error.strip(), "count": 1, "last_seen": date.today().isoformat()}
         )
     item["last_updated"] = date.today().isoformat()
-    p.write_text(json.dumps(graph, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    try:
+        save_registry(course, "concepts", graph)
+    except LayoutError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def record(args):
@@ -326,7 +328,10 @@ def due(args):
     except ValueError as e:
         raise SystemExit("--on must use YYYY-MM-DD") from e
     items = []
+    target_unit_id = resolve_unit(course, args.unit).get("unit_id", "") if args.unit else ""
     for item in data["concepts"].values():
+        if target_unit_id and record_unit_id(course, item) != target_unit_id:
+            continue
         nr = item.get("next_review")
         g = graph_item(graph, item["name"])
         relevance = scope_relevance(course, g, assessment_id, assessment)
@@ -465,6 +470,7 @@ def main():
     p.add_argument("--course", required=True)
     p.add_argument("--on", help="YYYY-MM-DD")
     p.add_argument("--assessment", help="Assessment id/name currently being prepared")
+    p.add_argument("--unit", help="Limit reviews to one stable unit")
     p.add_argument("--include-not-due", action="store_true", help="Also return confirmed/likely in-scope concepts even when their spaced-review date is later")
     p.set_defaults(func=due)
 

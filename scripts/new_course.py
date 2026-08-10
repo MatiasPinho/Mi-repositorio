@@ -3,20 +3,19 @@ from __future__ import annotations
 import argparse, shutil
 from pathlib import Path
 
+if __package__:
+    from .course_layout import sync_units
+else:
+    from course_layout import sync_units
+
 
 REQUIRED_DIRECTORIES = (
     "academico",
-    "conocimiento",
     "fuentes",
     "fuentes/oficiales",
     "fuentes/transcripciones",
-    "notas",
-    "preguntas",
-    "progreso",
-    "resumenes",
-    "simulacros",
-    "assets",
-    "assets/figures",
+    "unidades",
+    ".study",
 )
 
 
@@ -54,6 +53,7 @@ def main():
         data = json.loads(academic.read_text(encoding="utf-8"))
         data.setdefault("identity", {})["subject"] = args.name
         academic.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    sync_units(target)
     print(target)
 
 if __name__ == "__main__":

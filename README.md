@@ -1,4 +1,4 @@
-# University Study System V3.7.2
+# University Study System V4.0.0
 
 Sistema local para estudiar materias universitarias con **Claude Code o Codex** sobre el mismo núcleo metodológico, con conocimiento canónico trazable, pipelines compartidos, MCP local y salida visual pensada para lectura real.
 
@@ -93,13 +93,34 @@ Crear una materia:
 python study.py course add "Programación I"
 ```
 
-Copiar fuentes a:
+Declarar las unidades en `academico/academic.json` y sincronizar la estructura:
+
+```bash
+python study.py units sync programacion-i
+```
+
+Copiar el contenido de cada unidad a su ámbito canónico:
 
 ```text
-materias/programacion-i/fuentes/
-├── oficiales/
-└── transcripciones/
+materias/programacion-i/
+├── academico/academic.json
+├── fuentes/                         # programa, reglas y material transversal
+└── unidades/
+    └── unidad-1/
+        ├── unidad.json
+        ├── fuentes/{oficiales,transcripciones}/
+        ├── conocimiento/{concepts.json,figures.json}
+        ├── progreso/progress.json
+        ├── notas/
+        ├── resumenes/_source/
+        ├── preguntas/ y simulacros/
+        ├── assets/figures/
+        └── .study/runs/
 ```
+
+La materia conserva globalmente la identidad, el programa académico, las
+evaluaciones y las reglas. Todo contenido pedagógico, seguimiento y artefacto
+pertenece a una unidad estable (`unidad-1`, `unidad-2`, etc.).
 
 Procesarlas:
 
@@ -379,7 +400,7 @@ Renderizar una página seleccionada:
 
 ```bash
 python study.py figures render programacion-i \
-  --file "oficiales/arquitectura.pdf" --page 12 --id jerarquia-memoria
+  --unit unidad-2 --file "oficiales/arquitectura.pdf" --page 12 --id jerarquia-memoria
 ```
 
 Las figuras derivadas usan namespace `derived:`, `unit_id` estable y procedencia `based_on`.
@@ -406,7 +427,9 @@ Las figuras derivadas usan namespace `derived:`, `unit_id` estable y procedencia
 
 # Artefactos STALE
 
-V3.7.2 usa `artifact_contract_version = 7`. Material pedagógico creado con contratos anteriores queda STALE automáticamente aunque las fuentes no hayan cambiado.
+V4.0.0 usa `artifact_contract_version = 8`. Material pedagógico creado con
+contratos anteriores queda STALE automáticamente aunque las fuentes no hayan
+cambiado o todavía esté publicado fuera de su unidad canónica.
 
 ```bash
 python study.py artifacts programacion-i
@@ -416,15 +439,31 @@ python study.py artifacts programacion-i
 
 ---
 
-# Migración
+# Migración de materias V3
 
-Copiá la carpeta de la materia bajo `materias/`. Si las fuentes no cambiaron, no hace falta reprocesarlas sólo por migrar.
+Primero inspeccioná el plan sin modificar archivos:
+
+```bash
+python study.py units migrate programacion-i
+```
+
+Después aplicalo:
+
+```bash
+python study.py units migrate programacion-i --apply
+```
+
+La migración separa fuentes, conocimiento, progreso, figuras y artefactos por
+`unit_id`; deja los materiales transversales en la raíz y conserva una copia de
+recuperación en `.study/legacy-layout-v3/`. No relee PDFs ni transcripciones.
+
+Para registros de figuras V3 que todavía necesiten normalización interna:
 
 ```bash
 python study.py figures migrate programacion-i
 ```
 
-Esto normaliza metadatos legacy de figuras sin releer PDFs ni transcripciones.
+Esto normaliza metadatos legacy de figuras sin releer fuentes.
 
 ---
 

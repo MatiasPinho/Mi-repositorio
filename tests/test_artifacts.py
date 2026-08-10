@@ -103,14 +103,14 @@ class ArtifactStateTests(unittest.TestCase):
             self.assertIn("untracked-artifact", rows[0]["reasons"])
 
 
-    def test_new_marks_use_contract_version_7(self):
+    def test_new_marks_use_contract_version_8(self):
         with tempfile.TemporaryDirectory() as td:
             c = self.make_course(td)
             artifact = c / "resumenes" / "unidad-1-resumen.md"
             artifact.write_text("new", encoding="utf-8")
             self.run_cli("mark", "--course", str(c), "--file", "resumenes/unidad-1-resumen.md", "--type", "summary", "--scope", "Unidad 1")
             manifest = json.loads((c / ".study" / "artifacts.json").read_text(encoding="utf-8"))
-            self.assertEqual(manifest["artifacts"]["resumenes/unidad-1-resumen.md"]["artifact_contract_version"], 7)
+            self.assertEqual(manifest["artifacts"]["resumenes/unidad-1-resumen.md"]["artifact_contract_version"], 8)
             self.assertIn("design_sha256", manifest["artifacts"]["resumenes/unidad-1-resumen.md"])
 
     def test_non_visual_artifact_does_not_depend_on_design_system(self):

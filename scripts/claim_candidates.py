@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from study import resolve_course  # noqa: E402
+from scripts.course_layout import LayoutError, has_unit_layout, iter_source_files, resolve_source  # noqa: E402
 from scripts.transcript_tools import SUPPORTED as TRANSCRIPT_EXTS, parse_file  # noqa: E402
 
 DEFAULT_CASES = ROOT / "tests" / "fixtures" / "claim_candidates" / "cases.jsonl"
@@ -265,7 +266,11 @@ def split_pdf_text(text: str) -> Iterable[str]:
 
 
 def source_label(course: Path, path: Path) -> str:
-    return path.relative_to(course / "fuentes").as_posix()
+    return (
+        path.relative_to(course).as_posix()
+        if has_unit_layout(course)
+        else path.relative_to(course / "fuentes").as_posix()
+    )
 
 
 def transcript_candidates(course: Path, path: Path) -> list[dict[str, Any]]:
@@ -318,39 +323,30 @@ def pdf_candidates(course: Path, path: Path) -> tuple[list[dict[str, Any]], str 
     return rows, None
 
 
-def discover_sources(course: Path) -> list[Path]:
-    fuentes = course / "fuentes"
-    found: list[Path] = []
-    transcripts = fuentes / "transcripciones"
-    if transcripts.exists():
-        found.extend(
-            p for p in transcripts.rglob("*")
-            if p.is_file() and p.suffix.lower() in TRANSCRIPT_EXTS
-        )
-    official = fuentes / "oficiales"
-    if official.exists():
-        found.extend(p for p in official.rglob("*.pdf") if p.is_file())
-    return sorted(set(found))
+def discover_sources(course: Path, unit: str = "") -> list[Path]:
+    return sorted({
+        path for path, _reference, _owner in iter_source_files(course, unit)
+        if path.suffix.lower() in TRANSCRIPT_EXTS | {".pdf"}
+    })
 
 
-def resolve_requested_sources(course: Path, values: list[str] | None) -> list[Path]:
+def resolve_requested_sources(course: Path, values: list[str] | None, unit: str = "") -> list[Path]:
     if not values:
-        return discover_sources(course)
+        return discover_sources(course, unit)
     sources: list[Path] = []
     for value in values:
-        candidate = course / "fuentes" / value
-        if not candidate.exists():
-            candidate = course / value
-        if not candidate.is_file():
-            raise SystemExit(f"Source not found: {value}")
+        try:
+            candidate = resolve_source(course, value, unit)
+        except LayoutError as exc:
+            raise SystemExit(f"Source not found: {value}") from exc
         if candidate.suffix.lower() not in TRANSCRIPT_EXTS | {".pdf"}:
             raise SystemExit(f"Unsupported claim source: {value}")
         sources.append(candidate)
     return sorted(set(sources))
 
 
-def scan_course(course: Path, files: list[str] | None = None) -> dict[str, Any]:
-    paths = resolve_requested_sources(course, files)
+def scan_course(course: Path, files: list[str] | None = None, unit: str = "") -> dict[str, Any]:
+    paths = resolve_requested_sources(course, files, unit)
     candidates: list[dict[str, Any]] = []
     source_rows: list[dict[str, Any]] = []
     for path in paths:
@@ -477,6 +473,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     scan = sub.add_parser("scan")
     scan.add_argument("--course", required=True)
+    scan.add_argument("--unit")
     scan.add_argument("--file", action="append", help="Path relative to fuentes/; repeatable")
     scan.add_argument("--write", action="store_true")
 
@@ -493,7 +490,7 @@ def main() -> int:
         return 0 if result["ok"] else 1
 
     course = resolve_course(args.course)
-    result = scan_course(course, args.file)
+    result = scan_course(course, args.file, args.unit or "")
     if args.write:
         result = write_candidates(course, result)
     print(json.dumps(result, ensure_ascii=False, indent=2))

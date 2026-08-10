@@ -11,7 +11,9 @@ A missing PyMuPDF capability is a declared disabled feature, not a failed ingest
 The scanner records PDF pages with raster images/vector drawings and text density in `.study/figure-pages.json`. This step is deterministic and does not decide academic importance.
 
 ## Semantic figure registry
-During ingestion, create/update `conocimiento/figures.json` only for visuals worth referencing later. A figure record may contain:
+During ingestion, create/update
+`unidades/<unit-id>/conocimiento/figures.json` only for visuals worth
+referencing later. A figure record may contain:
 - `id`;
 - stable `unit_id` plus optional human-readable `unit` / related concept ids;
 - `source_file` and 1-based `page`;

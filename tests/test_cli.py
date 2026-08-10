@@ -17,6 +17,8 @@ def cli(*args: str, input_text: str | None = None) -> subprocess.CompletedProces
         [sys.executable, str(CLI), *args],
         cwd=ROOT,
         text=True,
+        encoding="utf-8",
+        errors="strict",
         input=input_text,
         capture_output=True,
         check=True,
@@ -52,7 +54,7 @@ class StudyCliTests(unittest.TestCase):
         src.write_text("v2", encoding="utf-8")
         changed = cli("materials", "scan", "CLI UnitTest", "--json")
         payload = json.loads(changed.stdout)
-        self.assertEqual(payload["changed"], ["unidad.txt"])
+        self.assertEqual(payload["changed"], ["fuentes/unidad.txt"])
         self.assertNotIn("Materiales -", changed.stdout)
 
 
@@ -62,7 +64,7 @@ class StudyCliTests(unittest.TestCase):
         src.write_text("contenido", encoding="utf-8")
         cp = cli("materials", "scan", "cli-unittest", "--json")
         payload = json.loads(cp.stdout)
-        self.assertIn("oficiales/Programación — lógica 🧠.txt", payload["added"])
+        self.assertIn("fuentes/oficiales/Programación — lógica 🧠.txt", payload["added"])
         self.assertEqual(cp.stderr, "")
         self.assertNotIn("NUEVOS", cp.stdout)
 
@@ -71,7 +73,7 @@ class StudyCliTests(unittest.TestCase):
         (COURSE / "fuentes" / "fuente.txt").write_text("v1", encoding="utf-8")
         cp = cli("materials", "scan", "cli-unittest", "--commit", "--json")
         payload = json.loads(cp.stdout)
-        self.assertEqual(payload["added"], ["fuente.txt"])
+        self.assertEqual(payload["added"], ["fuentes/fuente.txt"])
         self.assertNotIn("Estado actual", cp.stdout)
         self.assertTrue((COURSE / ".study" / "materials-index.json").is_file())
 
@@ -115,6 +117,11 @@ class StudyCliTests(unittest.TestCase):
 
     def test_status_auto_syncs_graph_and_validate_catches_structure(self):
         cli("course", "add", "CLI UnitTest", "--slug", "cli-unittest")
+        academic_path = COURSE / "academico" / "academic.json"
+        academic = json.loads(academic_path.read_text(encoding="utf-8"))
+        academic["units"] = [{"id": "U1", "name": "Unidad 1", "topics": ["Arrays"]}]
+        academic_path.write_text(json.dumps(academic), encoding="utf-8")
+        cli("units", "sync", "cli-unittest")
         subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "concept_graph.py"), "upsert", "--course", str(COURSE), "--concept", "Arrays", "--unit", "U1"],
             cwd=ROOT, text=True, capture_output=True, check=True,
@@ -123,13 +130,18 @@ class StudyCliTests(unittest.TestCase):
         self.assertIn("Conceptos trackeados: 1", status.stdout)
         self.assertIn("Nunca evaluados: 1", status.stdout)
 
-        (COURSE / "preguntas").rmdir()
+        (COURSE / "unidades" / "unidad-1" / "preguntas").rmdir()
         invalid = cli("validate", "cli-unittest")
-        self.assertIn("falta carpeta requerida: preguntas/", invalid.stdout)
+        self.assertIn("falta carpeta de unidad: unidades/unidad-1/preguntas/", invalid.stdout)
 
     def test_artifacts_command_and_validate_report_untracked(self):
         cli("course", "add", "CLI UnitTest", "--slug", "cli-unittest")
-        legacy = COURSE / "resumenes" / "unidad-1-resumen.md"
+        academic_path = COURSE / "academico" / "academic.json"
+        academic = json.loads(academic_path.read_text(encoding="utf-8"))
+        academic["units"] = [{"id": "U1", "name": "Unidad 1"}]
+        academic_path.write_text(json.dumps(academic), encoding="utf-8")
+        cli("units", "sync", "cli-unittest")
+        legacy = COURSE / "unidades" / "unidad-1" / "resumenes" / "unidad-1-resumen.md"
         legacy.write_text("legacy", encoding="utf-8")
         artifacts = cli("artifacts", "cli-unittest")
         self.assertIn("STALE", artifacts.stdout)
@@ -158,14 +170,15 @@ class StudyCliTests(unittest.TestCase):
         academic["assessments"] = [{"id": "p1", "name": "Parcial 1"}]
         academic["rules"] = [{"id": "r1", "text": "regla"}]
         academic_path.write_text(json.dumps(academic, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        cli("units", "sync", "cli-unittest")
+        unit = COURSE / "unidades" / "unidad-1"
 
-        (COURSE / "notas" / "nota.md").write_text("nota vieja", encoding="utf-8")
-        (COURSE / "preguntas" / "preguntas.md").write_text("preguntas", encoding="utf-8")
-        (COURSE / "resumenes" / "u1-resumen.html").write_text("<html></html>", encoding="utf-8")
-        (COURSE / "simulacros" / "simulacro.md").write_text("simulacro", encoding="utf-8")
-        (COURSE / "assets" / "figures" / "vieja.png").write_bytes(b"png")
-        (COURSE / ".study" / "runs").mkdir(parents=True, exist_ok=True)
-        (COURSE / ".study" / "runs" / "old.txt").write_text("old", encoding="utf-8")
+        (unit / "notas" / "nota.md").write_text("nota vieja", encoding="utf-8")
+        (unit / "preguntas" / "preguntas.md").write_text("preguntas", encoding="utf-8")
+        (unit / "resumenes" / "u1-resumen.html").write_text("<html></html>", encoding="utf-8")
+        (unit / "simulacros" / "simulacro.md").write_text("simulacro", encoding="utf-8")
+        (unit / "assets" / "figures" / "vieja.png").write_bytes(b"png")
+        (unit / ".study" / "runs" / "old.txt").write_text("old", encoding="utf-8")
 
         subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "concept_graph.py"), "upsert", "--course", str(COURSE), "--concept", "Arrays", "--unit", "U1"],
@@ -180,23 +193,23 @@ class StudyCliTests(unittest.TestCase):
         self.assertIn("Materia reseteada", reset.stdout)
         self.assertTrue(source.exists())
         self.assertEqual(source.read_text(encoding="utf-8"), "material original")
-        self.assertFalse((COURSE / ".study").exists())
-        self.assertFalse((COURSE / "notas" / "nota.md").exists())
-        self.assertFalse((COURSE / "preguntas" / "preguntas.md").exists())
-        self.assertFalse((COURSE / "resumenes" / "u1-resumen.html").exists())
-        self.assertFalse((COURSE / "simulacros" / "simulacro.md").exists())
-        self.assertFalse((COURSE / "assets" / "figures" / "vieja.png").exists())
+        self.assertTrue((COURSE / ".study" / "layout.json").exists())
+        self.assertFalse((unit / "notas" / "nota.md").exists())
+        self.assertFalse((unit / "preguntas" / "preguntas.md").exists())
+        self.assertFalse((unit / "resumenes" / "u1-resumen.html").exists())
+        self.assertFalse((unit / "simulacros" / "simulacro.md").exists())
+        self.assertFalse((unit / "assets" / "figures" / "vieja.png").exists())
 
         reset_academic = json.loads(academic_path.read_text(encoding="utf-8"))
         self.assertEqual(reset_academic["identity"]["subject"], "CLI UnitTest")
         self.assertEqual(reset_academic["identity"]["institution"], "UTN")
         self.assertEqual(reset_academic["identity"]["professors"], ["Ada", "Alan"])
-        self.assertEqual(reset_academic["units"], [])
+        self.assertEqual(reset_academic["units"], [{"id": "U1", "name": "Unidad 1"}])
         self.assertEqual(reset_academic["assessments"], [])
         self.assertEqual(reset_academic["rules"], [])
 
-        concepts = json.loads((COURSE / "conocimiento" / "concepts.json").read_text(encoding="utf-8"))
-        progress = json.loads((COURSE / "progreso" / "progress.json").read_text(encoding="utf-8"))
+        concepts = json.loads((unit / "conocimiento" / "concepts.json").read_text(encoding="utf-8"))
+        progress = json.loads((unit / "progreso" / "progress.json").read_text(encoding="utf-8"))
         self.assertEqual(concepts["concepts"], {})
         self.assertEqual(progress["concepts"], {})
 
@@ -207,7 +220,12 @@ class StudyCliTests(unittest.TestCase):
         cli("course", "add", "CLI UnitTest", "--slug", "cli-unittest")
         source = COURSE / "fuentes" / "source.txt"
         source.write_text("keep", encoding="utf-8")
-        generated = COURSE / "resumenes" / "old.html"
+        academic_path = COURSE / "academico" / "academic.json"
+        academic = json.loads(academic_path.read_text(encoding="utf-8"))
+        academic["units"] = [{"id": "U1", "name": "Unidad 1"}]
+        academic_path.write_text(json.dumps(academic), encoding="utf-8")
+        cli("units", "sync", "cli-unittest")
+        generated = COURSE / "unidades" / "unidad-1" / "resumenes" / "old.html"
         generated.write_text("old", encoding="utf-8")
 
         cancelled = cli("course", "reset", "cli-unittest", input_text="NO\n")

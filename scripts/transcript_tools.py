@@ -13,6 +13,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+if __package__:
+    from .course_layout import LayoutError, has_unit_layout, iter_source_files, resolve_source, unit_root
+else:
+    from course_layout import LayoutError, has_unit_layout, iter_source_files, resolve_source, unit_root
+
 SUPPORTED = {".txt", ".md", ".srt", ".vtt"}
 IGNORED = {"README.md", ".DS_Store", "Thumbs.db"}
 
@@ -150,18 +155,21 @@ def cue_candidates(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return rows
 
 
-def resolve(course: Path, value: str | None) -> list[Path]:
-    base = course / "fuentes" / "transcripciones"
+def resolve(course: Path, value: str | None, unit: str = "") -> list[Path]:
     if value:
-        candidate = course / "fuentes" / value
-        if not candidate.exists():
-            candidate = base / value
-        if not candidate.exists() or not candidate.is_file():
-            raise SystemExit(f"Transcript not found: {value}")
+        try:
+            candidate = resolve_source(course, value, unit)
+        except LayoutError:
+            try:
+                candidate = resolve_source(course, f"transcripciones/{value}", unit)
+            except LayoutError as exc:
+                raise SystemExit(f"Transcript not found: {value}") from exc
         return [candidate]
-    if not base.exists():
-        return []
-    return sorted(p for p in base.rglob("*") if p.is_file() and p.name not in IGNORED and p.suffix.lower() in SUPPORTED)
+    return [
+        path for path, _reference, _owner in iter_source_files(course, unit)
+        if "transcripciones" in {part.lower() for part in path.parts}
+        and path.name not in IGNORED and path.suffix.lower() in SUPPORTED
+    ]
 
 
 def inspect(path: Path, course: Path) -> dict[str, Any]:
@@ -175,7 +183,11 @@ def inspect(path: Path, course: Path) -> dict[str, Any]:
         else:
             duration = max(s.get("start_seconds") or 0 for s in timed)
     return {
-        "file": path.relative_to(course / "fuentes").as_posix(),
+        "file": (
+            path.relative_to(course).as_posix()
+            if has_unit_layout(course)
+            else path.relative_to(course / "fuentes").as_posix()
+        ),
         "format": path.suffix.lower().lstrip("."),
         "segments": len(segments),
         "timestamped_segments": len(timed),
@@ -189,18 +201,20 @@ def main() -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("inspect")
     p.add_argument("--course", required=True)
+    p.add_argument("--unit", help="Stable unit id or label")
     p.add_argument("--file", help="Path relative to fuentes/ or transcripciones/")
     p.add_argument("--write", action="store_true", help="Persist normalized transcript metadata under .study/transcripts/")
     args = ap.parse_args()
 
     course = Path(args.course)
-    paths = resolve(course, args.file)
+    paths = resolve(course, args.file, args.unit or "")
     rows = [inspect(path, course) for path in paths]
     if args.write:
-        out_dir = course / ".study" / "transcripts"
+        out_base = unit_root(course, args.unit) if args.unit and has_unit_layout(course) else course
+        out_dir = out_base / ".study" / "transcripts"
         out_dir.mkdir(parents=True, exist_ok=True)
         for path, row in zip(paths, rows):
-            rel = path.relative_to(course / "fuentes").as_posix()
+            rel = path.relative_to(out_base).as_posix()
             safe = re.sub(r"[^a-zA-Z0-9._-]+", "_", rel) + ".json"
             (out_dir / safe).write_text(json.dumps(row, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(rows, ensure_ascii=False, indent=2))

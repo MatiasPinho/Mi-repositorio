@@ -1,6 +1,9 @@
 # Concept graph
 
-Keep semantic knowledge in `conocimiento/concepts.json` and dynamic mastery in `progreso/progress.json`.
+Keep semantic knowledge in
+`unidades/<unit-id>/conocimiento/concepts.json` and dynamic mastery in
+`unidades/<unit-id>/progreso/progress.json`. Never rebuild a course-wide mixed
+registry in a V4 matter; merged reads are an in-memory query view only.
 
 A concept may contain: name, unit, concise meaning, precise definition, prerequisites, relations, examples, traps, recurring errors, source references, assessment relevance by assessment, teaching signals and source fingerprints.
 

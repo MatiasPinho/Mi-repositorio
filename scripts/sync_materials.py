@@ -5,6 +5,11 @@ import argparse, hashlib, json
 from datetime import datetime, timezone
 from pathlib import Path
 
+if __package__:
+    from .course_layout import has_unit_layout, iter_source_files, unit_root
+else:
+    from course_layout import has_unit_layout, iter_source_files, unit_root
+
 IGNORED = {"README.md", ".DS_Store", "Thumbs.db"}
 
 
@@ -16,18 +21,18 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def scan(source_dir: Path) -> dict:
+def scan(course: Path, unit: str = "") -> dict:
     files = {}
-    if not source_dir.exists():
-        return files
-    for p in sorted(source_dir.rglob("*")):
-        if p.is_file() and p.name not in IGNORED:
-            rel = p.relative_to(source_dir).as_posix()
+    for p, rel, owner in iter_source_files(course, unit):
+        if p.name not in IGNORED:
+            if not has_unit_layout(course):
+                rel = rel.removeprefix("fuentes/")
             stat = p.stat()
             files[rel] = {
                 "sha256": sha256(p),
                 "size": stat.st_size,
                 "mtime": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
+                "unit_id": owner or None,
             }
     return files
 
@@ -35,14 +40,14 @@ def scan(source_dir: Path) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--course", required=True, help="Course folder, e.g. materias/programacion-1")
+    ap.add_argument("--unit")
     ap.add_argument("--write", action="store_true", help="Persist the new index")
     args = ap.parse_args()
 
     course = Path(args.course)
-    source_dir = course / "fuentes"
-    study_dir = course / ".study"
+    study_dir = unit_root(course, args.unit) / ".study" if args.unit and has_unit_layout(course) else course / ".study"
     index_path = study_dir / "materials-index.json"
-    current = scan(source_dir)
+    current = scan(course, args.unit or "")
     previous = {}
     if index_path.exists():
         previous = json.loads(index_path.read_text(encoding="utf-8")).get("files", {})

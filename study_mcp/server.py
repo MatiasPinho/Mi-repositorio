@@ -45,9 +45,15 @@ def study_list_courses() -> dict:
 
 
 @mcp.tool(annotations=READ)
-def study_material_changes(course: str) -> dict:
+def study_material_changes(course: str, unit: str = "") -> dict:
     """Ver fuentes nuevas, modificadas o eliminadas sin escribir hashes."""
-    return service.material_changes(course)
+    return service.material_changes(course, unit)
+
+
+@mcp.tool(annotations=READ)
+def study_list_units(course: str) -> dict:
+    """Listar unidades estables, estado estructural y rutas canónicas."""
+    return service.list_units(course)
 
 
 @mcp.tool(annotations=READ)
@@ -140,6 +146,12 @@ def resource_academic(course: str) -> str:
 def resource_unit_context(course: str, unit: str) -> str:
     """Contexto canónico agregado de una unidad."""
     return json.dumps(service.get_unit_context(course, unit), ensure_ascii=False, indent=2)
+
+
+@mcp.resource("study://course/{course}/units")
+def resource_units(course: str) -> str:
+    """Catálogo navegable de unidades de una materia."""
+    return json.dumps(service.list_units(course), ensure_ascii=False, indent=2)
 
 
 @mcp.resource("study://course/{course}/progress")

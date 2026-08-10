@@ -8,6 +8,7 @@ Este directorio contiene la documentación técnica del University Study System.
 - [`setup.md`](setup.md): instalación completa, `INSTALAR-STUDY.bat`, `.venv`, preflight de Chromium y paridad con CI.
 - [`runtime-safety.md`](runtime-safety.md): inmutabilidad del motor durante una corrida, carga verificada de lazy images y publicación atómica con SHA-256.
 - [`mcp.md`](mcp.md): adapter MCP local por stdio, herramientas expuestas y límites de seguridad.
+- [`unit-layout.md`](unit-layout.md): contrato V4 materia → unidades, invariantes de rutas y migración V3.
 
 ## Ingesta y calidad de fuentes
 
@@ -111,6 +112,7 @@ Cuando una materia real descubre un fallo:
 | Nueva regla de extracción de claims | `claim-extraction.md` |
 | Autoridad, conflictos o supersession | `semantic-contradictions.md` |
 | MCP / herramientas disponibles | `mcp.md` |
+| Estructura materia/unidades o migración V3 | `unit-layout.md` |
 | Flujo global o experiencia de uso | `../README.md` |
 
 Una modificación de comportamiento no se considera completamente cerrada si cambia un contrato descrito aquí y la documentación correspondiente no se actualiza.
