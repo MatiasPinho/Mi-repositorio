@@ -43,9 +43,10 @@ def good_review():
 class AcademicEvalTests(unittest.TestCase):
     def test_policy_is_versioned_and_loadable(self):
         policy = load_policy(DEFAULT_POLICY)
-        self.assertEqual(policy["version"], 1)
+        self.assertEqual(policy["version"], 2)
         self.assertEqual(policy["score_minimum"], 4)
         self.assertIn("academic_fidelity", policy["score_gates"])
+        self.assertIn("contradiction_issues", policy["issue_fields_must_be_empty"])
 
     def test_good_review_passes(self):
         self.assertEqual(evaluate_review(good_review()), [])
