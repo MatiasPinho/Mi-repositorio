@@ -15,20 +15,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from study import resolve_course  # noqa: E402
 from unit_identity import resolve_unit  # noqa: E402
+from scripts.academic_eval import evaluate_review  # noqa: E402
 
 STAGED = {"resumen", "guia", "repaso"}
 REQUIRED_STAGES = ["02-plan.json", "03-draft.md", "04-humanized.md", "05-review.json"]
 SCRIPT_EXTENSIONS = {".py", ".js", ".ts", ".sh", ".ps1", ".bat", ".cmd"}
-SCORE_GATES = ("academic_fidelity", "clarity", "progression", "explanation", "signal_to_noise", "naturalness", "coverage", "visual_support")
-FIDELITY_CHECKS = (
-    "definitions_taxonomies",
-    "conditions_boundaries",
-    "relations_order",
-    "certainty_conflicts",
-    "assessment_rules",
-    "internal_consistency",
-    "example_separation",
-)
 
 
 def norm_slug(text: str) -> str:
@@ -91,7 +82,8 @@ def cmd_start(args: argparse.Namespace) -> None:
     candidate = base
     n = 2
     while candidate.exists():
-        candidate = Path(str(base) + f"-{n}")
+        candidate = Path(str(base) + f"-{n}"
+        )
         n += 1
     candidate.mkdir(parents=True)
     manifest = {
@@ -127,57 +119,8 @@ def cmd_start(args: argparse.Namespace) -> None:
 
 
 def review_gate(path: Path) -> list[str]:
-    data = load(path, {})
-    issues: list[str] = []
-    if not isinstance(data, dict):
-        return ["review-not-object"]
-    scores = data.get("scores", {})
-    if not isinstance(scores, dict):
-        scores = {}
-    for key in SCORE_GATES:
-        try:
-            if float(scores.get(key, -1)) < 4:
-                issues.append(f"score-{key}-below-4")
-        except (TypeError, ValueError):
-            issues.append(f"score-{key}-invalid")
-    checks = data.get("fidelity_checks")
-    if not isinstance(checks, dict):
-        issues.append("fidelity-checks-missing")
-    else:
-        for key in FIDELITY_CHECKS:
-            item = checks.get(key)
-            if not isinstance(item, dict):
-                issues.append(f"fidelity-{key}-missing")
-                continue
-            status = item.get("status")
-            notes = item.get("notes")
-            if status not in {"pass", "not_applicable"}:
-                issues.append(f"fidelity-{key}-failed")
-            if not isinstance(notes, str) or not notes.strip():
-                issues.append(f"fidelity-{key}-notes-missing")
-
-    claim_checks = data.get("claim_checks")
-    if not isinstance(claim_checks, list) or not claim_checks:
-        issues.append("claim-checks-missing")
-    else:
-        for idx, item in enumerate(claim_checks):
-            if not isinstance(item, dict):
-                issues.append(f"claim-check-{idx}-invalid")
-                continue
-            if item.get("verdict") != "supported":
-                issues.append(f"claim-check-{idx}-not-supported")
-            for field in ("claim", "canonical_basis"):
-                value = item.get(field)
-                if not isinstance(value, str) or not value.strip():
-                    issues.append(f"claim-check-{idx}-{field}-missing")
-
-    for issue_field in ("academic_issues", "pedagogy_issues", "visual_issues"):
-        value = data.get(issue_field)
-        if value:
-            issues.append(f"{issue_field.replace('_', '-')}-present")
-    if data.get("pass") is not True:
-        issues.append("review-pass-false")
-    return issues
+    """Apply the versioned deterministic academic evaluation policy."""
+    return evaluate_review(load(path, {}))
 
 
 def validate_run(run: Path) -> dict[str, Any]:
