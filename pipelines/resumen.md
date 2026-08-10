@@ -37,7 +37,7 @@ Load only these shared rules before semantic work:
 13. `python scripts/pipeline_run.py finish --run <run-dir>`.
 
 ## Environment contract
-A normal `/resumen` run assumes the complete environment installed by `INSTALAR-STUDY.bat` (or `python -m pip install -r requirements.txt` plus `python -m playwright install chromium`). Missing Playwright/Chromium is an environment failure, not permission to silently skip the visual gate. Check the machine before a long run with `python scripts/setup_env.py check`.
+A normal staged summary run assumes the complete environment installed by `INSTALAR-STUDY.bat` (or `python -m pip install -r requirements.txt` plus `python -m playwright install chromium`). Missing Playwright/Chromium is an environment failure, not permission to silently skip the visual gate. Check the machine before a long run with `python scripts/setup_env.py check`.
 
 ## Context discipline
 The writer should not reread full transcripts merely to imitate the teacher. Pull raw evidence only to resolve a missing/ambiguous canonical point. Quotes/timestamps stay internal unless exact wording matters.
