@@ -40,5 +40,8 @@ jobs:
       - name: Verify generated agent assets
         run: python scripts/sync_agent_assets.py verify
 
+      - name: Stressed materials benchmark
+        run: python scripts/stressed_materials.py benchmark
+
       - name: Run release suite
         run: python tests/run_release_tests.py
