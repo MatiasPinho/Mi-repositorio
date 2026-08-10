@@ -1,10 +1,10 @@
-﻿name: University Study CI
+name: University Study CI
 
 on:
   push:
     branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   release-tests:
-    name: ${{ matrix.os }} Â· Python 3.11
+    name: ${{ matrix.os }} · Python 3.11
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
