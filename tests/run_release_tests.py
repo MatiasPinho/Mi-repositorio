@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 import unittest
@@ -28,6 +29,14 @@ def test_ids() -> list[str]:
     return result
 
 
+def utf8_test_env() -> dict[str, str]:
+    """Keep nested Python/CLI subprocesses deterministic across Windows and Linux."""
+    env = os.environ.copy()
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    return env
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", type=int, default=1, help="1-based first test")
@@ -39,6 +48,7 @@ def main() -> int:
     selected = all_ids[start - 1:end]
     failed: list[str] = []
     skipped: list[str] = []
+    test_env = utf8_test_env()
     for absolute_idx, test_id in enumerate(selected, start):
         print(f"[{absolute_idx}/{len(all_ids)}] {test_id}", flush=True)
         try:
@@ -47,6 +57,9 @@ def main() -> int:
                 cwd=ROOT,
                 text=True,
                 capture_output=True,
+                encoding="utf-8",
+                errors="strict",
+                env=test_env,
                 timeout=45,
             )
         except subprocess.TimeoutExpired:
