@@ -17,6 +17,7 @@ Lower the score when:
 
 Hard fail:
 - broken image paths in the published artifact;
+- any rendered figure fails to decode (`complete != true`, `naturalWidth == 0` or `naturalHeight == 0`) in an audited viewport;
 - unreadable/missing alt text for an essential figure;
 - a derived diagram changes academic meaning;
 - the artifact claims an image shows something the reviewer cannot verify from canonical/source evidence;
@@ -25,7 +26,9 @@ Hard fail:
 
 Rendered-browser evidence:
 - `visual_audit.py` must complete with `audit.json -> ok: true` before publication;
+- the auditor must force lazy images through loading/decoding before the full-page screenshots and report `images == loadedImages` for each selected viewport;
 - inspect at least desktop and mobile screenshots for hierarchy, clipping/overflow, figure legibility, spacing and callout readability;
+- horizontal overflow that hides study content on mobile is a visual failure even when a scroll container technically exists;
 - HTML-string checks, registry checks and image-path checks are integrity evidence, not substitutes for rendered visual evidence;
 - missing Playwright/Chromium is an incomplete environment and must be repaired with the project setup, not silently downgraded to a skipped visual review.
 
