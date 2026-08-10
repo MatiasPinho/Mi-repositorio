@@ -42,6 +42,7 @@ def good_review(pass_value=True):
         "academic_issues": [],
         "pedagogy_issues": [] if pass_value else ["needs repair"],
         "visual_issues": [],
+        "contradiction_issues": [],
         "repair_instructions": [] if pass_value else ["repair it"],
     }
 
@@ -72,6 +73,16 @@ class PipelineRunTests(unittest.TestCase):
         (run / "03-draft.md").write_text("draft", encoding="utf-8")
         (run / "04-humanized.md").write_text("human", encoding="utf-8")
 
+    def write_visual_gate(self, run, *, ok=True):
+        audit = run / "visual-audit"
+        audit.mkdir(parents=True, exist_ok=True)
+        (audit / "audit.json").write_text(
+            json.dumps({"ok": ok, "engine": "chromium-set-content"}),
+            encoding="utf-8",
+        )
+        (audit / "desktop.png").write_bytes(b"png")
+        (audit / "mobile.png").write_bytes(b"png")
+
     def test_start_records_portable_inputs(self):
         run = self.start("codex")
         manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
@@ -91,11 +102,13 @@ class PipelineRunTests(unittest.TestCase):
         (run / "06-final.md").write_text("final", encoding="utf-8")
         (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
         (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
+        self.write_visual_gate(run)
         cp = self.run_cmd("validate", "--run", str(run))
         self.assertTrue(json.loads(cp.stdout)["ok"])
         self.run_cmd("finish", "--run", str(run))
         manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["status"], "finished")
+        self.assertEqual(manifest["stages"]["visual-audit/audit.json"], "present")
 
     def test_failed_first_review_requires_repair_and_second_review(self):
         run = self.start("claude")
@@ -112,6 +125,7 @@ class PipelineRunTests(unittest.TestCase):
         (run / "08-final.md").write_text("fixed final", encoding="utf-8")
         (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
         (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
+        self.write_visual_gate(run)
         cp = self.run_cmd("validate", "--run", str(run))
         self.assertTrue(json.loads(cp.stdout)["ok"])
 
@@ -125,7 +139,6 @@ class PipelineRunTests(unittest.TestCase):
         cp = self.run_cmd("validate", "--run", str(run), check=False)
         self.assertNotEqual(cp.returncode, 0)
         self.assertIn("missing-06-repair.md", json.loads(cp.stdout)["errors"])
-
 
     def test_missing_fidelity_checks_fail_gate(self):
         run = self.start()
@@ -165,9 +178,33 @@ class PipelineRunTests(unittest.TestCase):
         (run / "05-review.json").write_text(json.dumps(good_review()), encoding="utf-8")
         (run / "06-final.md").write_text("final", encoding="utf-8")
         (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
+        self.write_visual_gate(run)
         cp = self.run_cmd("validate", "--run", str(run), check=False)
         self.assertNotEqual(cp.returncode, 0)
         self.assertIn("missing-10-integrity.json", json.loads(cp.stdout)["errors"])
+
+    def test_visual_audit_is_required_before_finish(self):
+        run = self.start()
+        self.write_base_stages(run)
+        (run / "05-review.json").write_text(json.dumps(good_review()), encoding="utf-8")
+        (run / "06-final.md").write_text("final", encoding="utf-8")
+        (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
+        (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
+        cp = self.run_cmd("validate", "--run", str(run), check=False)
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertIn("missing-visual-audit.json", json.loads(cp.stdout)["errors"])
+
+    def test_failed_visual_audit_blocks_finish(self):
+        run = self.start()
+        self.write_base_stages(run)
+        (run / "05-review.json").write_text(json.dumps(good_review()), encoding="utf-8")
+        (run / "06-final.md").write_text("final", encoding="utf-8")
+        (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
+        (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
+        self.write_visual_gate(run, ok=False)
+        cp = self.run_cmd("finish", "--run", str(run), check=False)
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertIn("visual-audit-failed", json.loads(cp.stdout)["errors"])
 
     def test_persistent_ad_hoc_course_script_is_rejected(self):
         run = self.start()
@@ -176,6 +213,7 @@ class PipelineRunTests(unittest.TestCase):
         (run / "06-final.md").write_text("final", encoding="utf-8")
         (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
         (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
+        self.write_visual_gate(run)
         (self.course / "fix_unit_scope.py").write_text("print('repair')", encoding="utf-8")
         cp = self.run_cmd("validate", "--run", str(run), check=False)
         self.assertNotEqual(cp.returncode, 0)
