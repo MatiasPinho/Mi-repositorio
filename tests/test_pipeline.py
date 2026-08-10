@@ -1,3 +1,4 @@
+import hashlib
 import json
 import shutil
 import subprocess
@@ -47,6 +48,10 @@ def good_review(pass_value=True):
     }
 
 
+def file_sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 class PipelineRunTests(unittest.TestCase):
     def setUp(self):
         self.slug = "zz-pipeline-" + uuid.uuid4().hex[:8]
@@ -83,12 +88,42 @@ class PipelineRunTests(unittest.TestCase):
         (audit / "desktop.png").write_bytes(b"png")
         (audit / "mobile.png").write_bytes(b"png")
 
+    def write_publication_gate(self, run):
+        source_md = run / ("06-final.md" if (run / "06-final.md").is_file() else "08-final.md")
+        source_html = run / "09-rendered.html"
+        dest_md = self.course / "resumenes" / "_source" / "unidad-1-resumen.md"
+        dest_html = self.course / "resumenes" / "unidad-1-resumen.html"
+        dest_md.parent.mkdir(parents=True, exist_ok=True)
+        dest_html.parent.mkdir(parents=True, exist_ok=True)
+        dest_md.write_bytes(source_md.read_bytes())
+        dest_html.write_bytes(source_html.read_bytes())
+        rows = []
+        for role, source, dest in (
+            ("markdown", source_md, dest_md),
+            ("html", source_html, dest_html),
+        ):
+            rows.append({
+                "role": role,
+                "source": source.relative_to(ROOT).as_posix(),
+                "destination": dest.relative_to(ROOT).as_posix(),
+                "source_sha256": file_sha(source),
+                "destination_sha256": file_sha(dest),
+                "bytes": source.stat().st_size,
+            })
+        (run / "11-publication.json").write_text(
+            json.dumps({"version": 1, "ok": True, "files": rows}),
+            encoding="utf-8",
+        )
+        return dest_md, dest_html
+
     def test_start_records_portable_inputs(self):
         run = self.start("codex")
         manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
         inp = json.loads((run / "01-input.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["executor"], "codex")
         self.assertEqual(manifest["pipeline"], "resumen")
+        self.assertEqual(manifest["version"], 2)
+        self.assertIn("scripts/visual_audit.py", manifest["engine_snapshot"])
         self.assertEqual(inp["scope"], "Unidad 1")
         self.assertEqual(inp["unit_id"], "unidad-1")
         self.assertTrue(inp["academic_sha256"])
@@ -103,12 +138,14 @@ class PipelineRunTests(unittest.TestCase):
         (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
         (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
         self.write_visual_gate(run)
+        self.write_publication_gate(run)
         cp = self.run_cmd("validate", "--run", str(run))
         self.assertTrue(json.loads(cp.stdout)["ok"])
         self.run_cmd("finish", "--run", str(run))
         manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["status"], "finished")
         self.assertEqual(manifest["stages"]["visual-audit/audit.json"], "present")
+        self.assertEqual(manifest["stages"]["11-publication.json"], "present")
 
     def test_failed_first_review_requires_repair_and_second_review(self):
         run = self.start("claude")
@@ -126,6 +163,7 @@ class PipelineRunTests(unittest.TestCase):
         (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
         (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
         self.write_visual_gate(run)
+        self.write_publication_gate(run)
         cp = self.run_cmd("validate", "--run", str(run))
         self.assertTrue(json.loads(cp.stdout)["ok"])
 
@@ -218,6 +256,37 @@ class PipelineRunTests(unittest.TestCase):
         cp = self.run_cmd("validate", "--run", str(run), check=False)
         self.assertNotEqual(cp.returncode, 0)
         self.assertIn("unexpected-course-script:fix_unit_scope.py", json.loads(cp.stdout)["errors"])
+
+    def test_engine_snapshot_blocks_runtime_engine_edits(self):
+        run = self.start()
+        self.write_base_stages(run)
+        (run / "05-review.json").write_text(json.dumps(good_review()), encoding="utf-8")
+        (run / "06-final.md").write_text("final", encoding="utf-8")
+        (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
+        (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
+        self.write_visual_gate(run)
+        self.write_publication_gate(run)
+        manifest_path = run / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["engine_snapshot"]["scripts/visual_audit.py"] = "0" * 64
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        cp = self.run_cmd("validate", "--run", str(run), check=False)
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertIn("engine-modified:scripts/visual_audit.py", json.loads(cp.stdout)["errors"])
+
+    def test_corrupted_published_copy_is_rejected_by_hash(self):
+        run = self.start()
+        self.write_base_stages(run)
+        (run / "05-review.json").write_text(json.dumps(good_review()), encoding="utf-8")
+        (run / "06-final.md").write_text("final", encoding="utf-8")
+        (run / "09-rendered.html").write_text("<html>complete publication</html>", encoding="utf-8")
+        (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
+        self.write_visual_gate(run)
+        _, dest_html = self.write_publication_gate(run)
+        dest_html.write_text("<html>truncated", encoding="utf-8")
+        cp = self.run_cmd("validate", "--run", str(run), check=False)
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertIn("publication-hash-mismatch:html", json.loads(cp.stdout)["errors"])
 
 
 if __name__ == "__main__":
