@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "Deterministic acceptance policy for staged academic artifacts.",
   "score_minimum": 4,
   "score_gates": [
@@ -38,7 +38,8 @@
   "issue_fields_must_be_empty": [
     "academic_issues",
     "pedagogy_issues",
-    "visual_issues"
+    "visual_issues",
+    "contradiction_issues"
   ],
   "require_pass_true": true
 }
