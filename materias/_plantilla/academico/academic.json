@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "identity": {
     "institution": "",
     "career": "",
@@ -12,6 +12,7 @@
   "units": [],
   "assessments": [],
   "rules": [],
+  "claims": [],
   "official_status": {
     "subject_status": "unknown",
     "regularity": "unknown",
