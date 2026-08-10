@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -18,7 +19,26 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from study import resolve_course  # noqa: E402
-from scripts.figure_assets import require_fitz, sha256  # noqa: E402
+
+
+def require_pymupdf():
+    try:
+        with contextlib.redirect_stdout(sys.stderr):
+            import pymupdf  # type: ignore
+        return pymupdf
+    except Exception as exc:
+        raise SystemExit(
+            "PDF diagnostics need PyMuPDF. Install it explicitly with: "
+            f"{sys.executable} -m pip install -r requirements-visual.txt\n{exc}"
+        )
+
+
+def sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def page_probe(page: Any, number: int) -> dict[str, Any]:
@@ -51,7 +71,7 @@ def page_probe(page: Any, number: int) -> dict[str, Any]:
 
 def probe_pdf(path: Path, relative: str | None = None) -> dict[str, Any]:
     """Return a machine-readable PDF diagnostic without leaking library chatter."""
-    fitz = require_fitz()
+    fitz = require_pymupdf()
     label = relative or path.name
     digest = sha256(path)
     try:
