@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "scale": "0-5",
+  "dimensions": {
+    "academic_fidelity": "Cada afirmacion de alto riesgo conserva definiciones, taxonomias, condiciones, relaciones, alcance e incertidumbre del conocimiento canonico y es internamente consistente.",
+    "clarity": "Se entiende en una primera lectura atenta.",
+    "progression": "Presenta conceptos en un orden que facilita aprenderlos.",
+    "explanation": "Explica relaciones y razones; no se limita a enumerar definiciones.",
+    "examples": "Usa ejemplos solo donde aportan comprension y los mantiene simples.",
+    "signal_to_noise": "Evita citas, timestamps, metadatos, administracion y detalle documental innecesarios.",
+    "naturalness": "Se lee como buenos apuntes humanos y no como una salida de IA o una transcripcion limpiada.",
+    "coverage": "Incluye lo importante del alcance sin inflar el texto con material de poco valor.",
+    "visual_support": "Usa figuras y recursos semanticos solo cuando aportan aprendizaje y los interpreta correctamente."
+  },
+  "required_fidelity_checks": [
+    "definitions_taxonomies",
+    "conditions_boundaries",
+    "relations_order",
+    "certainty_conflicts",
+    "assessment_rules",
+    "internal_consistency",
+    "example_separation"
+  ],
+  "hard_fail": [
+    "material academic error",
+    "unsupported high-risk claim",
+    "taxonomy/count drift",
+    "internal contradiction",
+    "unsupported assessment scope",
+    "certainty drift",
+    "silent resolution of material source conflict",
+    "external knowledge presented as course content"
+  ]
+}
