@@ -3,8 +3,9 @@
 
 The complete study environment includes Playwright Chromium because rendered study
 artifacts must receive a real browser audit before publication. The tool injects the
-rendered HTML into Chromium without navigating away from the local artifact, captures
-multiple viewports, and performs objective layout/readability checks before publication.
+rendered HTML into Chromium without navigating away from the local artifact, forces
+lazy images to load, captures multiple viewports, and performs objective layout/
+readability checks before publication.
 """
 from __future__ import annotations
 
@@ -27,8 +28,10 @@ VIEWPORTS = {
 
 def _lum(hex_color: str) -> float:
     rgb = [int(hex_color[i:i+2], 16) / 255 for i in (1, 3, 5)]
+
     def f(v: float) -> float:
         return v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4
+
     r, g, b = map(f, rgb)
     return .2126 * r + .7152 * g + .0722 * b
 
@@ -57,6 +60,7 @@ def token_contrast_checks() -> dict[str, float]:
 
 def inline_local_images(html_text: str, base_dir: Path) -> str:
     pat = re.compile(r'(<img\b[^>]*\bsrc=")([^"]+)(")', re.I)
+
     def repl(m: re.Match[str]) -> str:
         src = m.group(2)
         if re.match(r"^(?:data:|https?:)", src):
@@ -67,6 +71,7 @@ def inline_local_images(html_text: str, base_dir: Path) -> str:
         mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         data = base64.b64encode(path.read_bytes()).decode("ascii")
         return f'{m.group(1)}data:{mime};base64,{data}{m.group(3)}'
+
     return pat.sub(repl, html_text)
 
 
@@ -74,6 +79,7 @@ def _pdf_to_vertical_png(pdf_path: Path, out_png: Path) -> dict:
     import fitz
     from PIL import Image
     import io
+
     doc = fitz.open(pdf_path)
     images = []
     scale = 110 / 72
@@ -83,7 +89,8 @@ def _pdf_to_vertical_png(pdf_path: Path, out_png: Path) -> dict:
     canvas = Image.new("RGB", (max(im.width for im in images), sum(im.height for im in images)), "white")
     y = 0
     for im in images:
-        canvas.paste(im, (0, y)); y += im.height
+        canvas.paste(im, (0, y))
+        y += im.height
     canvas.save(out_png)
     return {"pages": len(images), "width": canvas.width, "height": canvas.height}
 
@@ -98,13 +105,53 @@ def _selected_viewports(names: tuple[str, ...] | None) -> tuple[str, ...]:
     return selected
 
 
+def _force_images_ready(page) -> list[dict]:
+    """Force lazy images through the viewport and wait until each resolves or fails."""
+    return page.evaluate(
+        """async () => {
+          const images = Array.from(document.images);
+          for (const img of images) img.loading = 'eager';
+
+          const maxY = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+          const step = Math.max(320, Math.floor(window.innerHeight * 0.75));
+          for (let y = 0; y <= maxY; y += step) {
+            window.scrollTo(0, y);
+            await new Promise(resolve => setTimeout(resolve, 35));
+          }
+          window.scrollTo(0, 0);
+
+          await Promise.all(images.map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(resolve => {
+              const done = () => resolve();
+              img.addEventListener('load', done, {once: true});
+              img.addEventListener('error', done, {once: true});
+              setTimeout(done, 3000);
+            });
+          }));
+
+          await Promise.all(images.map(img => {
+            if (typeof img.decode !== 'function') return Promise.resolve();
+            return img.decode().catch(() => undefined);
+          }));
+
+          return images.map(img => ({
+            src: img.currentSrc || img.src,
+            complete: Boolean(img.complete),
+            naturalWidth: Number(img.naturalWidth || 0),
+            naturalHeight: Number(img.naturalHeight || 0)
+          }));
+        }"""
+    )
+
+
 def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None = None) -> dict:
     try:
         from playwright.sync_api import sync_playwright
     except Exception as exc:
         raise SystemExit(
             "Visual audit environment is incomplete. Run INSTALAR-STUDY.bat "
-            "or: python -m pip install -r requirements.txt"
+            "or install the isolated environment documented in docs/setup.md"
         ) from exc
 
     selected = _selected_viewports(viewport_names)
@@ -134,8 +181,9 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
         except Exception as exc:
             raise SystemExit(
                 "Playwright Chromium is missing or cannot launch. Run INSTALAR-STUDY.bat "
-                "or: python -m playwright install chromium"
+                "or install the isolated environment documented in docs/setup.md"
             ) from exc
+
         for name in selected:
             vp = VIEWPORTS[name]
             page = browser.new_page(viewport=vp)
@@ -144,26 +192,42 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
             else:
                 page.emulate_media(media="screen", color_scheme="light")
             page.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
-            page.wait_for_timeout(300)
-            metrics = page.evaluate("""() => {
-              const article = document.querySelector('article');
-              const p = document.querySelector('article p');
-              const body = getComputedStyle(document.body);
-              const ps = p ? getComputedStyle(p) : body;
-              const rect = article.getBoundingClientRect();
-              return {
-                clientWidth: document.documentElement.clientWidth,
-                scrollWidth: document.documentElement.scrollWidth,
-                articleWidth: Math.round(rect.width),
-                bodyFontSize: parseFloat(body.fontSize),
-                paragraphLineHeight: parseFloat(ps.lineHeight),
-                paragraphFontSize: parseFloat(ps.fontSize),
-                headings: document.querySelectorAll('h1,h2,h3').length,
-                figures: document.querySelectorAll('figure img').length,
-                callouts: document.querySelectorAll('.callout').length,
-                cards: document.querySelectorAll('[class*=card]').length
-              };
-            }""")
+            page.wait_for_timeout(250)
+
+            image_states = _force_images_ready(page)
+            broken_images = [
+                row for row in image_states
+                if not row["complete"] or row["naturalWidth"] <= 0 or row["naturalHeight"] <= 0
+            ]
+            if broken_images:
+                report["issues"].append(f"{name}:images-not-loaded:{len(broken_images)}/{len(image_states)}")
+
+            metrics = page.evaluate(
+                """() => {
+                  const article = document.querySelector('article');
+                  const p = document.querySelector('article p');
+                  const body = getComputedStyle(document.body);
+                  const ps = p ? getComputedStyle(p) : body;
+                  const rect = article.getBoundingClientRect();
+                  const images = Array.from(document.images);
+                  return {
+                    clientWidth: document.documentElement.clientWidth,
+                    scrollWidth: document.documentElement.scrollWidth,
+                    articleWidth: Math.round(rect.width),
+                    bodyFontSize: parseFloat(body.fontSize),
+                    paragraphLineHeight: parseFloat(ps.lineHeight),
+                    paragraphFontSize: parseFloat(ps.fontSize),
+                    headings: document.querySelectorAll('h1,h2,h3').length,
+                    figures: document.querySelectorAll('figure img').length,
+                    images: images.length,
+                    loadedImages: images.filter(img => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0).length,
+                    callouts: document.querySelectorAll('.callout').length,
+                    cards: document.querySelectorAll('[class*=card]').length
+                  };
+                }"""
+            )
+            metrics["image_states"] = image_states
+
             if metrics["scrollWidth"] > metrics["clientWidth"] + 2:
                 report["issues"].append(f"{name}:horizontal-overflow")
             if name == "desktop" and metrics["bodyFontSize"] < 18:
@@ -171,6 +235,7 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
             if name != "print" and metrics["paragraphFontSize"]:
                 if metrics["paragraphLineHeight"] / metrics["paragraphFontSize"] < 1.45:
                     report["issues"].append(f"{name}:line-height-too-tight")
+
             shot = out_dir / f"{name}.png"
             if name == "print":
                 pdf_path = out_dir / "print.pdf"
@@ -178,6 +243,7 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
                 metrics["print_capture"] = _pdf_to_vertical_png(pdf_path, shot)
             else:
                 page.screenshot(path=str(shot), full_page=True)
+
             report["screenshots"][name] = str(shot)
             report["viewports"][name] = metrics
             page.close()
