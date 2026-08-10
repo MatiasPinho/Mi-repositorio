@@ -19,7 +19,16 @@ from unit_identity import resolve_unit  # noqa: E402
 STAGED = {"resumen", "guia", "repaso"}
 REQUIRED_STAGES = ["02-plan.json", "03-draft.md", "04-humanized.md", "05-review.json"]
 SCRIPT_EXTENSIONS = {".py", ".js", ".ts", ".sh", ".ps1", ".bat", ".cmd"}
-SCORE_GATES = ("clarity", "progression", "explanation", "signal_to_noise", "naturalness", "coverage", "visual_support")
+SCORE_GATES = ("academic_fidelity", "clarity", "progression", "explanation", "signal_to_noise", "naturalness", "coverage", "visual_support")
+FIDELITY_CHECKS = (
+    "definitions_taxonomies",
+    "conditions_boundaries",
+    "relations_order",
+    "certainty_conflicts",
+    "assessment_rules",
+    "internal_consistency",
+    "example_separation",
+)
 
 
 def norm_slug(text: str) -> str:
@@ -131,8 +140,41 @@ def review_gate(path: Path) -> list[str]:
                 issues.append(f"score-{key}-below-4")
         except (TypeError, ValueError):
             issues.append(f"score-{key}-invalid")
-    if data.get("academic_issues"):
-        issues.append("academic-issues-present")
+    checks = data.get("fidelity_checks")
+    if not isinstance(checks, dict):
+        issues.append("fidelity-checks-missing")
+    else:
+        for key in FIDELITY_CHECKS:
+            item = checks.get(key)
+            if not isinstance(item, dict):
+                issues.append(f"fidelity-{key}-missing")
+                continue
+            status = item.get("status")
+            notes = item.get("notes")
+            if status not in {"pass", "not_applicable"}:
+                issues.append(f"fidelity-{key}-failed")
+            if not isinstance(notes, str) or not notes.strip():
+                issues.append(f"fidelity-{key}-notes-missing")
+
+    claim_checks = data.get("claim_checks")
+    if not isinstance(claim_checks, list) or not claim_checks:
+        issues.append("claim-checks-missing")
+    else:
+        for idx, item in enumerate(claim_checks):
+            if not isinstance(item, dict):
+                issues.append(f"claim-check-{idx}-invalid")
+                continue
+            if item.get("verdict") != "supported":
+                issues.append(f"claim-check-{idx}-not-supported")
+            for field in ("claim", "canonical_basis"):
+                value = item.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    issues.append(f"claim-check-{idx}-{field}-missing")
+
+    for issue_field in ("academic_issues", "pedagogy_issues", "visual_issues"):
+        value = data.get(issue_field)
+        if value:
+            issues.append(f"{issue_field.replace('_', '-')}-present")
     if data.get("pass") is not True:
         issues.append("review-pass-false")
     return issues
