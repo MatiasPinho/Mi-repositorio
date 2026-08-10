@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "description": "Deterministic acceptance policy for staged academic artifacts.",
+  "score_minimum": 4,
+  "score_gates": [
+    "academic_fidelity",
+    "clarity",
+    "progression",
+    "explanation",
+    "signal_to_noise",
+    "naturalness",
+    "coverage",
+    "visual_support"
+  ],
+  "fidelity_checks": [
+    "definitions_taxonomies",
+    "conditions_boundaries",
+    "relations_order",
+    "certainty_conflicts",
+    "assessment_rules",
+    "internal_consistency",
+    "example_separation"
+  ],
+  "accepted_fidelity_statuses": [
+    "pass",
+    "not_applicable"
+  ],
+  "require_fidelity_notes": true,
+  "claim_checks": {
+    "required": true,
+    "minimum": 1,
+    "required_verdict": "supported",
+    "required_text_fields": [
+      "claim",
+      "canonical_basis"
+    ]
+  },
+  "issue_fields_must_be_empty": [
+    "academic_issues",
+    "pedagogy_issues",
+    "visual_issues"
+  ],
+  "require_pass_true": true
+}
