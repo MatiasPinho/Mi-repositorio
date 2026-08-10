@@ -25,6 +25,7 @@ Pipelines may omit stages that do not apply, but filenames and semantics must st
 {
   "pass": true,
   "scores": {
+    "academic_fidelity": 5,
     "clarity": 5,
     "progression": 5,
     "explanation": 5,
@@ -34,12 +35,30 @@ Pipelines may omit stages that do not apply, but filenames and semantics must st
     "coverage": 5,
     "visual_support": 5
   },
+  "fidelity_checks": {
+    "definitions_taxonomies": {"status": "pass", "notes": "Named definitions, counts and list membership match canonical state."},
+    "conditions_boundaries": {"status": "pass", "notes": "Conditions, ranges and exceptions preserve canonical meaning."},
+    "relations_order": {"status": "pass", "notes": "Orders, dependencies and distinctions are preserved."},
+    "certainty_conflicts": {"status": "pass", "notes": "Confirmed/likely/unknown/excluded and source conflicts are preserved."},
+    "assessment_rules": {"status": "not_applicable", "notes": "No assessment/course-rule claim appears in this artifact."},
+    "internal_consistency": {"status": "pass", "notes": "Repeated taxonomies, definitions and conditions stay consistent across sections."},
+    "example_separation": {"status": "pass", "notes": "Illustrative assumptions remain clearly separate from official rules."}
+  },
+  "claim_checks": [
+    {
+      "claim": "A representative high-risk claim from the candidate.",
+      "canonical_basis": "Canonical concept/rule/evidence used to verify it.",
+      "verdict": "supported"
+    }
+  ],
   "academic_issues": [],
   "pedagogy_issues": [],
   "visual_issues": [],
   "repair_instructions": []
 }
 ```
+
+Required fidelity-check keys are fixed. `status` is only `pass`, `fail` or `not_applicable`; `not_applicable` needs a concrete reason. `claim_checks` must contain the high-risk assertions actually audited (definitions/taxonomies, conditions, relations, certainty/rules and any other risky claim present). Any verdict other than `supported` requires a failing review and a matching issue/repair instruction.
 
 Handoff files are working state and are not automatically student artifacts.
 
