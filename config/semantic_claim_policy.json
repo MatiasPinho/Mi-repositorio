@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "description": "Deterministic authority profiles for resolving structured academic claims without treating raw transcripts as absolute truth.",
+  "domains": ["academic", "assessment", "administrative"],
+  "source_types": [
+    "official_regulation",
+    "authoritative_textbook",
+    "official_course_notice",
+    "official_course_material",
+    "teacher_explicit",
+    "teacher_transcript",
+    "student_note",
+    "other"
+  ],
+  "profiles": {
+    "academic_truth": {
+      "minimum_gap": 15,
+      "ranks": {
+        "official_regulation": 100,
+        "authoritative_textbook": 95,
+        "official_course_material": 90,
+        "official_course_notice": 85,
+        "teacher_explicit": 75,
+        "teacher_transcript": 55,
+        "student_note": 25,
+        "other": 20
+      }
+    },
+    "assessment_expectation": {
+      "minimum_gap": 15,
+      "ranks": {
+        "official_course_notice": 100,
+        "teacher_explicit": 100,
+        "official_regulation": 90,
+        "official_course_material": 80,
+        "teacher_transcript": 75,
+        "authoritative_textbook": 45,
+        "student_note": 25,
+        "other": 20
+      }
+    }
+  },
+  "supersedes_allowed": {
+    "academic": ["official_regulation", "authoritative_textbook", "official_course_material"],
+    "assessment": ["official_regulation", "official_course_notice", "teacher_explicit"],
+    "administrative": ["official_regulation", "official_course_notice", "teacher_explicit"]
+  }
+}
