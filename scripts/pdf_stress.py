@@ -14,8 +14,7 @@ DEFAULT_CASES = ROOT / "tests" / "fixtures" / "pdf_stress" / "cases.jsonl"
 import sys
 sys.path.insert(0, str(ROOT))
 
-from scripts.figure_assets import require_fitz  # noqa: E402
-from scripts.pdf_probe import probe_pdf, scan_course  # noqa: E402
+from scripts.pdf_probe import probe_pdf, require_pymupdf, scan_course  # noqa: E402
 
 
 def iter_cases(path: Path):
@@ -30,7 +29,7 @@ def iter_cases(path: Path):
 
 
 def _new_doc(path: Path, builder) -> None:
-    fitz = require_fitz()
+    fitz = require_pymupdf()
     doc = fitz.open()
     try:
         builder(fitz, doc)
@@ -40,7 +39,7 @@ def _new_doc(path: Path, builder) -> None:
 
 
 def make_pdf(path: Path, kind: str) -> None:
-    fitz = require_fitz()
+    fitz = require_pymupdf()
     path.parent.mkdir(parents=True, exist_ok=True)
     if kind == "corrupt":
         path.write_bytes(b"%PDF-1.7\nthis is intentionally truncated and invalid\n")
