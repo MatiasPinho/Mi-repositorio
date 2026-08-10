@@ -87,12 +87,12 @@ class StudyMCPTests(unittest.TestCase):
         row = claude["mcpServers"]["university-study"]
         self.assertEqual(row["type"], "stdio")
         self.assertEqual(row["command"], "python")
-        self.assertEqual(row["args"], ["study.py", "mcp", "serve"])
+        self.assertEqual(row["args"], ["scripts/venv_exec.py", "study.py", "mcp", "serve"])
         self.assertNotIn("url", row)
         codex = (ROOT / ".codex" / "config.toml").read_text(encoding="utf-8")
         self.assertIn("[mcp_servers.university-study]", codex)
         self.assertIn('command = "python"', codex)
-        self.assertIn('args = ["study.py", "mcp", "serve"]', codex)
+        self.assertIn('args = ["scripts/venv_exec.py", "study.py", "mcp", "serve"]', codex)
         self.assertNotIn("http", codex.lower())
 
     def test_server_exposes_only_curated_tools_and_resources(self):

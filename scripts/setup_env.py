@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Verify that the complete local study environment is ready.
 
-This preflight intentionally launches Playwright Chromium once. Importing the Python
-package is not enough: the browser binary is a separate installation and visual audit
-must not discover that it is missing in the middle of a study pipeline.
+The normal installation lives in the repository-local `.venv` so unrelated global
+Python packages cannot break the study system. This preflight also launches Playwright
+Chromium once: importing the Python package is not enough because the browser binary is
+a separate installation.
 """
 from __future__ import annotations
 
@@ -12,7 +13,11 @@ import json
 import platform
 import sys
 from importlib import metadata
+from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_VENV = (ROOT / ".venv").resolve()
 
 
 def _package_version(distribution: str) -> str | None:
@@ -28,6 +33,20 @@ def _python_status() -> dict[str, Any]:
         "ready": sys.version_info >= (3, 10),
         "version": version,
         "required": ">=3.10",
+    }
+
+
+def _venv_status() -> dict[str, Any]:
+    try:
+        actual = Path(sys.prefix).resolve()
+    except OSError:
+        actual = Path(sys.prefix)
+    ready = actual == EXPECTED_VENV
+    return {
+        "ready": ready,
+        "version": str(actual),
+        "required": str(EXPECTED_VENV),
+        "reason": None if ready else "not-running-from-project-.venv",
     }
 
 
@@ -83,6 +102,7 @@ def _chromium_status(playwright_ready: bool) -> dict[str, Any]:
 
 def capabilities() -> dict[str, Any]:
     python = _python_status()
+    venv = _venv_status()
     mcp = _mcp_status()
     pymupdf = _simple_package("PyMuPDF", ">=1.24,<2")
     pillow = _simple_package("Pillow", ">=10")
@@ -91,6 +111,7 @@ def capabilities() -> dict[str, Any]:
 
     checks = {
         "python": python,
+        "venv": venv,
         "mcp": mcp,
         "pymupdf": pymupdf,
         "pillow": pillow,
@@ -101,15 +122,16 @@ def capabilities() -> dict[str, Any]:
     return {
         "ready": ready,
         "visual_audit": {
-            "ready": all(
+            "ready": bool(venv["ready"]) and all(
                 bool(checks[name]["ready"])
                 for name in ("pymupdf", "pillow", "playwright", "chromium")
             )
         },
         "checks": checks,
         "install": {
-            "python_packages": f"{sys.executable} -m pip install -r requirements.txt",
-            "chromium": f"{sys.executable} -m playwright install chromium",
+            "create_venv": f"{sys.executable} -m venv .venv",
+            "python_packages": "python scripts/venv_exec.py -m pip install -r requirements.txt",
+            "chromium": "python scripts/venv_exec.py -m playwright install chromium",
             "windows": "INSTALAR-STUDY.bat",
         },
     }
@@ -120,6 +142,7 @@ def _print_human(report: dict[str, Any]) -> None:
     print()
     labels = {
         "python": "Python",
+        "venv": "Project venv",
         "mcp": "MCP",
         "pymupdf": "PyMuPDF",
         "pillow": "Pillow",
@@ -139,15 +162,14 @@ def _print_human(report: dict[str, Any]) -> None:
     print()
     print(f"Environment: {overall}")
     if not report["ready"]:
-        print("Install/repair with INSTALAR-STUDY.bat on Windows, or:")
-        print(f"  {report['install']['python_packages']}")
-        print(f"  {report['install']['chromium']}")
+        print("Install/repair with INSTALAR-STUDY.bat on Windows.")
+        print("Manual setup: create .venv, then install requirements and Chromium inside it.")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Verify the complete University Study environment")
     sub = ap.add_subparsers(dest="command")
-    check = sub.add_parser("check", help="Check Python packages and launch Playwright Chromium")
+    check = sub.add_parser("check", help="Check project venv, packages and Playwright Chromium")
     check.add_argument("--json", action="store_true")
     args = ap.parse_args()
 

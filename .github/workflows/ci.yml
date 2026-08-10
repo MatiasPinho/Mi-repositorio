@@ -28,33 +28,36 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Create isolated project venv
+        run: python -m venv .venv
+
       - name: Install complete study environment
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m playwright install chromium
-          python -m pip check
+          python scripts/venv_exec.py -m pip install --upgrade pip
+          python scripts/venv_exec.py -m pip install -r requirements.txt
+          python scripts/venv_exec.py -m playwright install chromium
+          python scripts/venv_exec.py -m pip check
 
       - name: Complete environment preflight
-        run: python scripts/setup_env.py check --json
+        run: python scripts/venv_exec.py scripts/setup_env.py check --json
 
       - name: MCP preflight
-        run: python study.py mcp preflight --json
+        run: python scripts/venv_exec.py study.py mcp preflight --json
 
       - name: Verify generated agent assets
-        run: python scripts/sync_agent_assets.py verify
+        run: python scripts/venv_exec.py scripts/sync_agent_assets.py verify
 
       - name: Stressed materials benchmark
-        run: python scripts/stressed_materials.py benchmark
+        run: python scripts/venv_exec.py scripts/stressed_materials.py benchmark
 
       - name: PDF stress benchmark
-        run: python scripts/pdf_stress.py benchmark
+        run: python scripts/venv_exec.py scripts/pdf_stress.py benchmark
 
       - name: Semantic contradiction benchmark
-        run: python scripts/semantic_claims.py benchmark
+        run: python scripts/venv_exec.py scripts/semantic_claims.py benchmark
 
       - name: Claim extraction benchmark
-        run: python scripts/claim_candidates.py benchmark
+        run: python scripts/venv_exec.py scripts/claim_candidates.py benchmark
 
       - name: Run release suite
-        run: python tests/run_release_tests.py
+        run: python scripts/venv_exec.py tests/run_release_tests.py
