@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-MODULES = ["tests.test_actions", "tests.test_pipeline", "tests.test_artifacts", "tests.test_system", "tests.test_cli", "tests.test_visual", "tests.test_infrastructure", "tests.test_mcp", "tests.test_academic_eval", "tests.test_stressed_materials", "tests.test_pdf_stress", "tests.test_semantic_claims"]
+MODULES = ["tests.test_actions", "tests.test_pipeline", "tests.test_artifacts", "tests.test_system", "tests.test_cli", "tests.test_visual", "tests.test_infrastructure", "tests.test_mcp", "tests.test_academic_eval", "tests.test_stressed_materials", "tests.test_pdf_stress", "tests.test_semantic_claims", "tests.test_claim_candidates"]
 
 
 def test_ids() -> list[str]:
