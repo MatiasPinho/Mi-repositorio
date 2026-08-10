@@ -2,7 +2,7 @@
 
 El MCP es una interfaz local y opcional sobre el mismo core determinístico que usa `study.py`.
 No reemplaza pipelines, skills ni archivos canónicos. Claude Code y Codex llaman herramientas MCP;
-el servidor delega mutaciones en los scripts existentes.
+el servidor llama funciones determinísticas del core dentro del mismo proceso; no lanza subprocesses Python.
 
 ## Instalar
 
@@ -29,8 +29,8 @@ Lectura:
 - `study_validate_course`
 
 Escritura segura:
-- `study_register_derived_figure` — delega en `figure_assets.py register-derived`; no sobrescribe IDs/assets.
-- `study_mark_artifact` — delega en `artifact_state.py mark`.
+- `study_register_derived_figure` — usa el helper collision-safe de `figure_assets.py`; no sobrescribe IDs/assets.
+- `study_mark_artifact` — usa directamente el helper de `artifact_state.py`.
 
 ## Resources
 
@@ -48,6 +48,17 @@ siguen funcionando mediante `study.py` y `scripts/` sin degradación funcional.
 
 No se exponen herramientas de borrado, reset, edición arbitraria de JSON ni publicación libre en V1.
 
+
 ## Diseño de compatibilidad
 
 `requirements-mcp.txt` fija la línea MCP Python SDK 1.x. El adapter está separado del core para que una futura actualización del protocolo afecte sólo esta capa y no obligue a migrar `academic.json`, `concepts.json`, `figures.json` ni los pipelines.
+
+## Test stdio end-to-end
+
+Con el SDK MCP instalado, la suite levanta un servidor real por `stdio`, negocia una sesión de cliente, lista las 12 tools y ejecuta cada una con timeout:
+
+```powershell
+python -m unittest tests.test_mcp.StudyMCPTests.test_stdio_e2e_curated_tools_return_without_hanging -v
+```
+
+Si `mcp` no está instalado, ese único test se marca como `skipped`; los tests del core in-process siguen ejecutándose.
