@@ -1,8 +1,10 @@
 # University Study System V3.7.2
 
-Sistema local para estudiar materias universitarias con **Claude Code o Codex** usando el mismo núcleo metodológico y una salida visual pensada para lectura real, no Markdown crudo.
+Sistema local para estudiar materias universitarias con **Claude Code o Codex** sobre el mismo núcleo metodológico, con conocimiento canónico trazable, pipelines compartidos, MCP local opcional y salida visual pensada para lectura real.
 
-V3.7.2 conserva la arquitectura portable de V3, mantiene el **MCP local por stdio** como interfaz segura y refuerza el reviewer académico adversarial. Usa como superficie visual un **manual universitario contemporáneo**: gutter semántico, prosa de lectura larga, aparato editorial para figuras/tablas/código y fidelidad estructural al rediseño de referencia de Claude. Claude y Codex siguen siendo **motores de ejecución** del mismo core portable.
+La infraestructura puede ser estricta y auditable; el material que recibe el estudiante debe seguir siendo **normal, humano, claro y didáctico**.
+
+> Mapa técnico y protocolos de mantenimiento: [`docs/README.md`](docs/README.md)
 
 ## Principio central
 
@@ -10,8 +12,12 @@ V3.7.2 conserva la arquitectura portable de V3, mantiene el **MCP local por stdi
                          FUENTES
                             │
                             ▼
-                    CONOCIMIENTO CANÓNICO
-                  academic + concepts + evidence
+                   EVIDENCIA LOCALIZADA
+              hashes + páginas + timestamps
+                            │
+                            ▼
+                  CONOCIMIENTO CANÓNICO
+           academic + concepts + claims + evidence
                             │
                             ▼
                     PIPELINE COMPARTIDO
@@ -22,12 +28,14 @@ V3.7.2 conserva la arquitectura portable de V3, mantiene el **MCP local por stdi
                  │                     │
                  └──────────┬──────────┘
                             │
-                       mismo resultado
+                       mismo contrato
 ```
 
-La infraestructura interna puede ser obsesivamente trazable. El material que lee el estudiante debe ser **normal, humano, claro y didáctico**.
+Claude y Codex son **motores de ejecución**. La metodología, las reglas, los contratos, la policy académica y el estado canónico viven fuera del proveedor.
 
-## Inicio rápido
+---
+
+# Inicio rápido
 
 En Windows podés abrir `INICIAR-STUDY.bat`, o desde terminal:
 
@@ -35,7 +43,7 @@ En Windows podés abrir `INICIAR-STUDY.bat`, o desde terminal:
 python study.py
 ```
 
-Activar el MCP local (opcional, recomendado para Claude Code/Codex):
+Activar el MCP local, opcional pero recomendado:
 
 ```bash
 python -m pip install -r requirements-mcp.txt
@@ -49,14 +57,6 @@ Crear una materia:
 ```bash
 python study.py course add "Programación I"
 ```
-
-Resetear una materia para reprocesarla desde cero, conservando los archivos originales de `fuentes/` y la identidad básica:
-
-```bash
-python study.py course reset programacion-i
-```
-
-El comando pide escribir exactamente el slug de la materia antes de borrar. También está disponible como **opción 13** del menú interactivo (`python study.py`). El reset elimina conocimiento procesado, contexto académico derivado, notas, progreso, resúmenes/guías/repasos, preguntas, simulacros, figuras generadas y `.study/`; después todos los materiales fuente vuelven a aparecer como nuevos para `/procesar`. Para automatización existe `--yes`.
 
 Copiar fuentes a:
 
@@ -83,40 +83,42 @@ Después generás sólo lo que necesitás:
 
 En Codex reemplazá `/` por `$`.
 
+Resetear una materia para reprocesarla desde cero, conservando fuentes e identidad básica:
+
+```bash
+python study.py course reset programacion-i
+```
+
+El reset elimina conocimiento derivado, progreso, artefactos, figuras generadas y `.study/`; las fuentes vuelven a aparecer como nuevas para `/procesar`. Requiere confirmar exactamente el slug salvo que se use `--yes`.
+
 ---
 
-# Arquitectura V3
+# Arquitectura
 
-## 1. Una sola fuente de verdad
+## 1. Core portable
 
 ```text
 core/                    router mínimo
-rules/                   responsabilidades pequeñas y separadas
+rules/                   reglas por responsabilidad
 pipelines/               orden de ejecución
 contracts/               contratos entre etapas
 vendor/humanizer/        Humanizer canónico
 config/actions.json      definición de acciones
+config/*_policy.json     policies determinísticas versionadas
 ```
 
-`.claude/skills/` y `.agents/skills/` contienen **adaptadores finos generados**, no metodología duplicada.
+`.claude/skills/` y `.agents/skills/` contienen adaptadores finos generados, no metodología duplicada.
 
-Si cambiás una acción o Humanizer:
+Regenerar y verificar adapters:
 
 ```bash
 python scripts/sync_agent_assets.py generate
-```
-
-Verificar que Claude y Codex no divergieron:
-
-```bash
 python scripts/sync_agent_assets.py verify
 ```
 
 ## 2. Progressive disclosure
 
-Una acción sólo carga las reglas que necesita.
-
-Por ejemplo, `/resumen` carga pedagogía, escritura y evaluación. `/procesar` carga reglas de fuentes, ingestión y auditoría, pero **no Humanizer ni reglas de prosa**.
+Cada acción carga sólo las reglas necesarias. `/resumen` carga pedagogía, escritura y evaluación; `/procesar` carga fuentes, ingesta y auditoría, pero no Humanizer ni reglas de prosa.
 
 Esto reduce ruido de contexto y evita que reglas irrelevantes compitan entre sí.
 
@@ -136,31 +138,95 @@ study.py + scripts/
 estado canónico local
 ```
 
-El MCP **no reemplaza** el core ni los pipelines. Expone lecturas agregadas como `study_get_unit_context` y escrituras acotadas como `study_register_derived_figure` para evitar que el agente tenga que reabrir, filtrar o editar registries delicados a mano. No hay tools V1 para borrar materias, resetear, escribir JSON arbitrario ni publicar archivos libres.
+El MCP no reemplaza el core ni los pipelines. Expone herramientas gruesas y acotadas; no ofrece borrado libre, reset remoto, JSON arbitrario ni publicación de archivos sin contrato. Si MCP no está conectado, las mismas operaciones siguen disponibles por `study.py` y scripts.
 
-La interfaz es deliberadamente gruesa: una llamada debe traer un contexto coherente, no generar decenas de micro-llamadas. Si el MCP no está conectado, las mismas operaciones continúan por `study.py`/`scripts/`. Ver `docs/mcp.md`.
+Ver [`docs/mcp.md`](docs/mcp.md).
 
-## 4. `/procesar` sigue siendo sólo ingesta
+---
+
+# `/procesar`: ingesta, no generación
+
+`/procesar` no genera resumen, guía, repaso, preguntas ni simulacro. Su trabajo es convertir fuentes nuevas o modificadas en conocimiento canónico trazable.
+
+Flujo vigente:
 
 ```text
-fuentes nuevas/modificadas
+FUENTES NUEVAS / MODIFICADAS
         ↓
-clasificación
+scan + SHA-256
         ↓
-lectura semántica
+PDF health / visual preflight
         ↓
-academic.json
-concepts.json
-contexto.md
+claim candidate extraction
         ↓
-auditoría
+claim_candidates
+(página/timestamp + excerpt)
         ↓
-tracker + hashes
+REVISIÓN SEMÁNTICA
+   ↙                ↘
+reject              accept
+                      ↓
+               claims canónicos
+                      ↓
+          semantic contradiction resolver
+              ┌───────┴────────┐
+              │                │
+       academic_truth   assessment_expectation
+              └───────┬────────┘
+                      ↓
+academic.json + concepts.json + contexto.md
+                      ↓
+auditoría + tracker + hashes + estado STALE
 ```
 
-No genera resumen, guía, repaso, preguntas ni simulacro.
+## Candidatos no son verdad
 
-## 5. Pipeline de `/resumen`
+`scripts/claim_candidates.py` detecta señales de alto valor —por ejemplo alcance de examen, notas mínimas, definiciones explícitas y señales de cambio— y las registra bajo:
+
+```text
+academico/academic.json -> claim_candidates
+```
+
+Cada candidato conserva evidencia localizable como:
+
+```text
+transcripciones/clase-08.srt#00:47:21
+oficiales/programa.pdf#page=3
+```
+
+Un candidato puede ser `semantic_ready` y aun así **no ser verdadero**. Sólo la revisión semántica de `/procesar` puede aceptarlo o rechazarlo y convertirlo en un claim canónico.
+
+Una transcripción cruda conserva su clasificación `teacher_transcript`; no se transforma automáticamente en `teacher_explicit` y nunca puede declarar por sí sola que otra fuente quedó reemplazada.
+
+Ver [`docs/claim-extraction.md`](docs/claim-extraction.md).
+
+## Dos vistas cuando las fuentes chocan
+
+El resolver semántico separa dos preguntas:
+
+- `academic_truth`: qué valor está mejor respaldado como conocimiento académico;
+- `assessment_expectation`: qué valor está mejor respaldado como lo que la cátedra espera en una evaluación.
+
+Ejemplo:
+
+```text
+bibliografía fuerte  → A
+profesor confirmado  → B
+
+academic_truth         = A
+assessment_expectation = B
+status                 = split-view
+```
+
+Si la evidencia no permite resolver con suficiente separación de autoridad, el estado queda `unresolved`. El sistema no elige silenciosamente.
+
+Ver [`docs/semantic-contradictions.md`](docs/semantic-contradictions.md).
+
+---
+
+# Pipeline de artefactos
+
+## `/resumen`, `/guia` y `/repaso`
 
 ```text
 CONOCIMIENTO CANÓNICO + FIGURAS
@@ -186,47 +252,103 @@ CONOCIMIENTO CANÓNICO + FIGURAS
 7. RENDER DETERMINÍSTICO
         ↓
    HTML DE ESTUDIO
+        ↓
+8. INTEGRITY GATE
 ```
-
-El Markdown es fuente portable para Claude/Codex y versionado. **El HTML es el artefacto normal de lectura.** Colores, tipografía, ancho de línea, callouts, índice y comportamiento de impresión los controla `scripts/render_study.py` + `assets/study-theme.css`, no la improvisación del modelo.
 
 No hay loops infinitos: máximo dos reviews.
 
-## 7. Design system congelado
+El Markdown es la fuente portable entre Claude y Codex. **El HTML es el artefacto normal de lectura.** Layout, tipografía, callouts, impresión y estilos provienen de `scripts/render_study.py` y `assets/study-theme.css`, no de improvisación del modelo.
 
-La V3.6 separa explícitamente **design time** de **study time**. El theme aprobado es **contemporary technical manual**: papel cálido, tinta oscura, una columna de prosa estable y un gutter izquierdo que carga números de sección y etiquetas académicas sin cortar la lectura. Figuras, tablas y código pueden usar más ancho que la prosa.
+## Quality gate versionado
 
-```text
-DESIGN TIME
-frontend-design + study-design
-        ↓
-design/*.css
-        ↓
-visual_audit + study-design-reviewer
-        ↓
-assets/study-theme.css
+El reviewer genera scores, fidelity checks, claim checks e issues estructurados. La aceptación final no queda librada al mismo modelo: `pipeline_run.review_gate()` delega en `config/academic_eval_policy.json`.
 
-STUDY TIME
-/resumen /guia /repaso
-        ↓
-Markdown semántico
-        ↓
-renderer determinístico
-        ↓
-HTML
-```
+La policy exige, entre otras cosas:
 
-Las skills de diseño existen en ambos motores:
+- score mínimo en dimensiones principales;
+- fidelity checks completos;
+- claims representativos respaldados;
+- ausencia de `academic_issues`, `pedagogy_issues`, `visual_issues` y `contradiction_issues`;
+- `pass: true`.
+
+Después del render existe un segundo gate determinístico de integridad para captions, imágenes, `unit_id`, procedencia y registros de figuras.
+
+Ver [`docs/academic-eval.md`](docs/academic-eval.md).
+
+## Humanizer
+
+Existe una sola fuente canónica:
 
 ```text
-Claude: /study-design
-Codex:  $study-design
-
-Claude: /study-design-reviewer
-Codex:  $study-design-reviewer
+vendor/humanizer/SKILL.md
 ```
 
-No se cargan durante un resumen normal. El escritor sólo decide roles semánticos como `DEFINITION`, `EXAMPLE`, `WARNING`, `CONNECTION` o `RECALL`; nunca colores, fuentes o márgenes.
+Puede mejorar ritmo, sintaxis, transiciones y naturalidad. No puede cambiar hechos, definiciones, fórmulas, código, fechas, alcance, condiciones ni nivel de certeza. Después de Humanizer siempre hay revisión académica.
+
+---
+
+# Stress testing y CI
+
+El proyecto mantiene benchmarks congelados para convertir fallos reales en regresiones reproducibles sin subir material privado.
+
+## Stressed Materials
+
+Cubre Unicode, renombres, contenido del mismo tamaño con hash distinto, duplicados, archivos vacíos, cambios sólo de `mtime`, CP1252, UTF-16 y VTT malformado.
+
+```bash
+python scripts/stressed_materials.py benchmark
+```
+
+Ver [`docs/stressed-materials.md`](docs/stressed-materials.md).
+
+## PDF Stress
+
+Cubre capa de texto, image-only/likely scanned, rotación, páginas vacías, vectores/tablas, PDFs corruptos, cifrados, Unicode y lotes mixtos. No hace OCR.
+
+```bash
+python scripts/pdf_stress.py benchmark
+```
+
+Ver [`docs/pdf-stress.md`](docs/pdf-stress.md).
+
+## Semantic Contradictions
+
+Congela reglas de autoridad, `split-view`, conflictos no resueltos y supersession autorizada.
+
+```bash
+python scripts/semantic_claims.py benchmark
+```
+
+## Claim Extraction
+
+Congela qué frases generan candidatos, cuáles quedan ambiguas y cuáles no deben convertirse en claims.
+
+```bash
+python scripts/claim_candidates.py benchmark
+```
+
+## Academic Evaluation
+
+Congela casos aceptados/rechazados por la policy académica.
+
+```bash
+python scripts/academic_eval.py benchmark
+```
+
+## Release suite
+
+```bash
+python tests/run_release_tests.py
+```
+
+GitHub Actions ejecuta los benchmarks y la release suite en **Ubuntu y Windows con Python 3.11**. Una regresión nueva debe reducirse a un fixture sintético, demostrar el fallo y quedar protegida por CI.
+
+---
+
+# Design system y lectura visual
+
+El theme aprobado es un **contemporary technical manual**: columna de lectura estable, gutter semántico, figuras/tablas/código con ancho adicional y roles visuales consistentes.
 
 Fuente visual canónica:
 
@@ -240,112 +362,47 @@ design/
 └── print.css
 ```
 
-Regenerar el theme:
+Regenerar theme:
 
 ```bash
 python scripts/build_design.py
 ```
 
-La tipografía principal usa Source Serif 4 + IBM Plex mediante Google Fonts como mejora progresiva. Si no hay conexión, los fallbacks del sistema mantienen el documento plenamente legible; no se distribuyen binarios de fuentes dentro del proyecto.
+Skills de diseño:
 
-Auditar una muestra visual (herramienta de mantenimiento, no necesaria para estudiar):
+```text
+Claude: /study-design
+Codex:  $study-design
+
+Claude: /study-design-reviewer
+Codex:  $study-design-reviewer
+```
+
+No se cargan durante un resumen normal. El escritor usa roles semánticos como `DEFINITION`, `EXAMPLE`, `WARNING`, `CONNECTION` o `RECALL`, nunca colores o márgenes.
+
+Los HTML guardan fingerprint del design system. Si cambia el theme, resumen/guía/repaso pueden pasar a `STALE` con `design-system-changed`; preguntas y simulacros no se invalidan por cambios puramente visuales.
+
+## Figuras de PDFs
 
 ```bash
-pip install -r requirements-design.txt
-python -m playwright install chromium
-python scripts/visual_audit.py docs/design-samples/architecture.html --out visual-tests/architecture
+python study.py figures preflight programacion-i
+# si informa DISABLED:
+python -m pip install -r requirements-visual.txt
+python study.py figures scan programacion-i --write
 ```
 
-Los HTML de resumen/guía/repaso guardan también un fingerprint del design system. Si cambia el theme, pasan a `STALE` con `design-system-changed`; preguntas y simulacros no se regeneran por un cambio puramente visual.
-
-### El profesor no redacta el resumen
-
-Las transcripciones sirven internamente para extraer:
-
-- significado;
-- importancia;
-- ejemplos;
-- errores frecuentes;
-- alcance o reglas cuando están realmente respaldados;
-- evidencia/timestamps para auditoría.
-
-Pero el redactor trabaja principalmente desde el conocimiento canónico ya destilado. No recibe la transcripción completa por defecto, evitando convertir el resumen en frases del profesor ligeramente limpiadas.
-
-## 5. Handoffs portables
-
-Las etapas se comunican mediante archivos en:
-
-```text
-materias/<materia>/.study/runs/<run-id>/
-```
-
-Para un resumen:
-
-```text
-01-input.json
-02-plan.json
-03-draft.md
-04-humanized.md
-05-review.json
-06-final.md
-09-rendered.html
-10-integrity.json
-```
-
-Si el primer review falla:
-
-```text
-06-repair.md
-07-review.json
-08-final.md
-09-rendered.html
-10-integrity.json
-```
-
-Esto funciona como frontera de contexto tanto en Claude como en Codex. Un proveedor puede usar subagentes/contextos aislados como optimización, pero el pipeline **no depende** de ellos.
-
-El scaffold y quality gate son determinísticos:
+El scanner encuentra páginas visualmente candidatas; no decide relevancia académica. Una página seleccionada puede renderizarse con:
 
 ```bash
-python scripts/pipeline_run.py start --course programacion-i --pipeline resumen --scope "Unidad 1"
-python scripts/pipeline_run.py validate --run <run-dir>
-python scripts/pipeline_run.py finish --run <run-dir>
+python study.py figures render programacion-i \
+  --file "oficiales/arquitectura.pdf" --page 12 --id jerarquia-memoria
 ```
 
-Normalmente estas órdenes las ejecuta la skill, no vos.
+Las figuras derivadas usan namespace `derived:`, `unit_id` estable y procedencia `based_on`.
 
-## 6. Quality gate
+---
 
-El reviewer puntúa de 0 a 5:
-
-- claridad;
-- progresión;
-- explicación real vs enumeración;
-- ejemplos;
-- señal/ruido;
-- naturalidad;
-- cobertura;
-- soporte visual.
-
-Además busca errores académicos. Para aprobar, fidelidad debe estar limpia y las dimensiones principales deben tener al menos 4/5.
-
-La consigna del reviewer es **buscar razones para rechazar**, no defender el texto que acaba de producir otro paso. Después del render hay un segundo gate determinístico (`artifact_integrity.py`): no se publica nada si captions, imágenes, registro de figuras, `unit_id` o procedencia no cierran.
-
-## 7. Humanizer
-
-Existe una sola copia canónica:
-
-```text
-vendor/humanizer/SKILL.md
-```
-
-`sync_agent_assets.py` la instala de forma idéntica en Claude y Codex.
-
-Humanizer puede mejorar ritmo, sintaxis, transiciones y naturalidad. No puede cambiar hechos, definiciones, fórmulas, código, fechas, alcance, condiciones ni niveles `confirmed/likely/unknown/excluded`.
-
-Después de Humanizer siempre hay auditoría académica.
-
-## 8. Reglas separadas por responsabilidad
+# Reglas y responsabilidades
 
 ```text
 rules/
@@ -359,81 +416,12 @@ rules/
 │   ├── concept-graph.md
 │   └── figures.md
 ├── pedagogy/
-│   ├── learning-principles.md
-│   ├── concept-ordering.md
-│   └── examples.md
 ├── visual/
-│   ├── study-document.md
-│   ├── figures.md
-│   └── active-reading.md
 ├── writing/
-│   ├── student-prose.md
-│   ├── summary.md
-│   ├── guide.md
-│   ├── review.md
-│   └── explain.md
 └── evaluation/
-    ├── academic-fidelity.md
-    ├── pedagogy-rubric.md
-    └── quality-gates.md
 ```
 
-Agregar reglas no es gratis. Una regla debe vivir en la responsabilidad correcta y sólo cargarse cuando sea necesaria.
-
----
-
-# Lectura visual y figuras
-
-## HTML, no Markdown crudo
-
-`/resumen`, `/guia` y `/repaso` publican:
-
-```text
-resumenes/
-├── unidad-1-resumen.html       ← abrir/leer
-└── _source/
-    └── unidad-1-resumen.md     ← fuente portable interna
-```
-
-Abrir el último HTML:
-
-```bash
-python study.py open programacion-i --type summary
-```
-
-La hoja de estilo usa una columna legible de ~42rem, cuerpo de ~19px, interlineado generoso, alto contraste y colores semánticos estables. No se usa subrayado para enfatizar; queda reservado para links.
-
-## Figuras de PDFs
-
-Soporte visual opcional:
-
-```bash
-python study.py figures preflight programacion-i
-# si informa DISABLED:
-python -m pip install -r requirements-visual.txt
-python study.py figures scan programacion-i --write
-```
-
-El scanner sólo detecta páginas visualmente candidatas; **no decide qué imagen es importante académicamente**. Claude/Codex hace esa decisión dentro del pipeline usando los conceptos/fuentes del scope.
-
-Para renderizar una página seleccionada:
-
-```bash
-python study.py figures render programacion-i \
-  --file "oficiales/arquitectura.pdf" --page 12 --id jerarquia-memoria
-```
-
-El asset queda en `materias/<materia>/assets/figures/`. Las figuras derivadas se registran de forma segura con `python study.py figures register-derived ...`: reciben namespace `derived:`, `unit_id` estable y procedencia `based_on`, y el comando rechaza ids o assets que colisionen.
-
-Al migrar una materia ya procesada desde V3.6.2, ejecutá una sola vez:
-
-```bash
-python study.py figures migrate programacion-i
-```
-
-Esto **no reprocesa PDFs ni transcripciones**; sólo normaliza metadatos legacy de figuras derivadas.
-
-Regla: palabras + imágenes relevantes sí; imágenes decorativas no. La figura se pone al lado de su explicación y se indica qué relación conceptual mirar.
+Agregar reglas no es gratis. Cada regla debe vivir en la responsabilidad correcta y cargarse sólo cuando la acción la necesita.
 
 ---
 
@@ -441,7 +429,7 @@ Regla: palabras + imágenes relevantes sí; imágenes decorativas no. La figura 
 
 | Acción | Claude | Codex | Función |
 |---|---|---|---|
-| Procesar | `/procesar` | `$procesar` | ingesta y conocimiento |
+| Procesar | `/procesar` | `$procesar` | ingesta, evidencia y conocimiento canónico |
 | Aprender | `/aprender` | `$aprender` | primera comprensión |
 | Estudiar | `/estudiar` | `$estudiar` | sesión adaptativa |
 | Resumen | `/resumen` | `$resumen` | apuntes normales y claros |
@@ -453,7 +441,9 @@ Regla: palabras + imágenes relevantes sí; imágenes decorativas no. La figura 
 | Auditar | `/auditar` | `$auditar` | verificación contra fuentes |
 | Estado | `/estado` | `$estado` | progreso, evaluaciones y stale |
 
-## Artefactos STALE
+---
+
+# Artefactos STALE
 
 V3.7.2 usa `artifact_contract_version = 7`. Material pedagógico creado con contratos anteriores queda STALE automáticamente aunque las fuentes no hayan cambiado.
 
@@ -461,26 +451,32 @@ V3.7.2 usa `artifact_contract_version = 7`. Material pedagógico creado con cont
 python study.py artifacts programacion-i
 ```
 
-`/procesar` detecta los STALE pero no los regenera. La acción correspondiente los actualiza cuando realmente los necesitás.
+`/procesar` detecta artefactos STALE pero no los regenera. La acción correspondiente los actualiza cuando realmente se necesitan.
 
 ---
 
-# Migrar desde V3.0/V2.9
+# Migración
 
-Copiá tu carpeta de materia completa:
+Para una materia de una versión anterior, copiá la carpeta completa bajo `materias/`. No reproceses fuentes sólo por migrar si no cambiaron.
 
-```text
-V3.0/materias/programacion-i/
-        ↓
-V3.7.2/materias/programacion-i/
+Para normalizar metadatos legacy de figuras derivadas:
+
+```bash
+python study.py figures migrate programacion-i
 ```
 
-No vuelvas a procesar las fuentes si no cambiaron. Ejecutá `python study.py figures migrate programacion-i` para normalizar metadatos de figuras legacy sin releer fuentes. Los artefactos visuales cuyo scope de figuras estaba mal pueden aparecer STALE y regenerarse normalmente.
+Esto no relee PDFs ni transcripciones.
 
-Abrí una sesión nueva de Claude Code/Codex sobre la raíz V3.7.2 y probá:
+Abrí una sesión nueva de Claude Code/Codex en la raíz y probá una acción normal:
 
 ```text
 /resumen Programacion-I "Unidad 1"
 ```
 
-El benchmark del proyecto sigue siendo simple: **el resultado V3 tiene que ser claramente mejor para estudiar que subir los mismos archivos a un modelo y pedir “resumime esto”.** La infraestructura adicional sólo se conserva si mejora ese resultado.
+---
+
+# Documentación técnica
+
+El índice canónico está en [`docs/README.md`](docs/README.md). Ahí se indica qué documento modificar cuando cambia un contrato de ingesta, PDF, claims, contradicciones, evaluación o MCP.
+
+El criterio del proyecto sigue siendo simple: **la infraestructura sólo se conserva si mejora de forma comprobable la calidad, fidelidad o robustez del material de estudio frente a subir los mismos archivos y pedir “resumime esto”.**
