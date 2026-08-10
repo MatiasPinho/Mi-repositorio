@@ -1,0 +1,9 @@
+{"id":"scope-included","text":"Unidad 4 entra en el primer parcial.","expected_count":1,"expected_kind":"assessment-scope","expected":{"semantic_ready":true,"hints.domain":"assessment","hints.subject":"primer-parcial","hints.predicate":"includes","hints.object":"Unidad 4","hints.value":true}}
+{"id":"scope-excluded","text":"Unidad 4 no entra en el final.","expected_count":1,"expected_kind":"assessment-scope","expected":{"semantic_ready":true,"hints.subject":"final","hints.object":"Unidad 4","hints.value":false}}
+{"id":"scope-before-form","text":"En el parcial entra Unidad 2.","expected_count":1,"expected_kind":"assessment-scope","expected":{"semantic_ready":true,"hints.subject":"parcial","hints.object":"Unidad 2","hints.value":true}}
+{"id":"pronoun-remains-review-only","text":"Esto entra en el parcial.","expected_count":1,"expected_kind":"assessment-scope","expected":{"semantic_ready":false,"hints.object":""}}
+{"id":"passing-grade","text":"La materia se aprueba con 6.","expected_count":1,"expected_kind":"grading-rule","expected":{"semantic_ready":true,"hints.predicate":"minimum-passing-grade","hints.value":6}}
+{"id":"explicit-definition","text":"Una pila se define como una estructura LIFO.","expected_count":1,"expected_kind":"definition","expected":{"semantic_ready":true,"hints.domain":"academic","hints.subject":"pila","hints.value":"una estructura LIFO"}}
+{"id":"change-signal-never-self-resolves","text":"Finalmente el parcial va a ser escrito.","expected_count":1,"expected_kind":"change-signal","expected":{"semantic_ready":false,"hints.domain":"assessment","hints.change_signal":true}}
+{"id":"importance-is-not-a-claim","text":"Esto es muy importante para el parcial.","expected_count":0}
+{"id":"ordinary-sentence-is-ignored","text":"Hoy vamos a practicar ejercicios de listas.","expected_count":0}

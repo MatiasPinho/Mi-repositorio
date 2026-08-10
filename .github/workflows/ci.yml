@@ -49,5 +49,8 @@ jobs:
       - name: Semantic contradiction benchmark
         run: python scripts/semantic_claims.py benchmark
 
+      - name: Claim extraction benchmark
+        run: python scripts/claim_candidates.py benchmark
+
       - name: Run release suite
         run: python tests/run_release_tests.py

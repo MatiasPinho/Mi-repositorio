@@ -13,6 +13,7 @@
   "assessments": [],
   "rules": [],
   "claims": [],
+  "claim_candidates": [],
   "official_status": {
     "subject_status": "unknown",
     "regularity": "unknown",
