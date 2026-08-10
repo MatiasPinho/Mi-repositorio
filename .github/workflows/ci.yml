@@ -46,5 +46,8 @@ jobs:
       - name: PDF stress benchmark
         run: python scripts/pdf_stress.py benchmark
 
+      - name: Semantic contradiction benchmark
+        run: python scripts/semantic_claims.py benchmark
+
       - name: Run release suite
         run: python tests/run_release_tests.py
