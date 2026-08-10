@@ -77,17 +77,28 @@ class CompleteSetupTests(unittest.TestCase):
             self.assertEqual(render.returncode, 0, render.stdout + render.stderr)
 
             audit = subprocess.run(
-                [sys.executable, str(AUDIT), str(html), "--out", str(out)],
+                [
+                    sys.executable,
+                    str(AUDIT),
+                    str(html),
+                    "--out",
+                    str(out),
+                    "--viewports",
+                    "desktop,mobile",
+                ],
                 cwd=ROOT,
                 text=True,
                 capture_output=True,
-                timeout=40,
+                timeout=35,
             )
             self.assertEqual(audit.returncode, 0, audit.stdout + audit.stderr)
-            report = json.loads(audit.stdout)
+            report_path = out / "audit.json"
+            self.assertTrue(report_path.is_file())
+            report = json.loads(report_path.read_text(encoding="utf-8"))
             self.assertTrue(report["ok"])
             self.assertEqual(report["engine"], "chromium-set-content")
-            for name in ("desktop", "tablet", "mobile", "print"):
+            self.assertEqual(report["selected_viewports"], ["desktop", "mobile"])
+            for name in ("desktop", "mobile"):
                 self.assertTrue((out / f"{name}.png").is_file(), name)
 
 
