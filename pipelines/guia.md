@@ -37,7 +37,7 @@ Load only these shared rules before semantic work:
 13. `python scripts/pipeline_run.py finish --run <run-dir>`.
 
 ## Environment contract
-A normal `/guia` run assumes the complete environment installed by `INSTALAR-STUDY.bat` (or `python -m pip install -r requirements.txt` plus `python -m playwright install chromium`). Check readiness with `python scripts/setup_env.py check`.
+A normal staged guide run assumes the complete environment installed by `INSTALAR-STUDY.bat` (or `python -m pip install -r requirements.txt` plus `python -m playwright install chromium`). Check readiness with `python scripts/setup_env.py check`.
 
 ## Context discipline
 The writer should not reread full transcripts merely to imitate the teacher. Pull raw evidence only to resolve a missing/ambiguous canonical point. Quotes/timestamps stay internal unless exact wording matters.
