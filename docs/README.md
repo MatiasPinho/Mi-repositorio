@@ -5,6 +5,7 @@ Este directorio contiene la documentación técnica del University Study System.
 ## Arquitectura y operación
 
 - [`../README.md`](../README.md): visión general, inicio rápido, arquitectura vigente, acciones y flujo de estudio.
+- [`setup.md`](setup.md): instalación completa, `INSTALAR-STUDY.bat`, preflight de Chromium y paridad con CI.
 - [`mcp.md`](mcp.md): adapter MCP local por stdio, herramientas expuestas y límites de seguridad.
 
 ## Ingesta y calidad de fuentes
@@ -17,6 +18,7 @@ Este directorio contiene la documentación técnica del University Study System.
 ## Evaluación y publicación de artefactos
 
 - [`academic-eval.md`](academic-eval.md): policy versionada del quality gate académico, benchmark congelado y reglas para evolucionar el contrato.
+- `rules/evaluation/visual-rubric.md`: contrato de soporte visual y evidencia renderizada obligatoria para resumen/guía/repaso.
 
 ## Flujo canónico de evidencia
 
@@ -39,14 +41,30 @@ conocimiento canónico
   ↓
 artefactos de estudio
   ↓
-academic evaluation gate + integrity gate
+academic evaluation gate
+  ↓
+render + integrity gate
+  ↓
+Chromium visual audit + screenshot inspection
+  ↓
+publicación
 ```
 
 `claim_candidates` nunca son verdad por sí mismos. Sólo una revisión semántica puede aceptarlos y convertirlos en `claims`. Una transcripción cruda conserva valor como evidencia, pero no adquiere automáticamente autoridad de `teacher_explicit` ni puede declarar `supersedes`.
 
+Los artefactos HTML de resumen, guía y repaso tampoco pueden finalizar sólo porque sus rutas sean válidas: `pipeline_run.py` exige un `visual-audit/audit.json` exitoso y capturas desktop/mobile antes de permitir `finish`.
+
 ## Benchmarks de CI
 
-GitHub Actions ejecuta en Windows y Ubuntu, antes de la release suite:
+GitHub Actions instala primero el entorno completo y verifica que Chromium pueda arrancar:
+
+```bash
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+python scripts/setup_env.py check --json
+```
+
+Después ejecuta en Windows y Ubuntu:
 
 ```bash
 python scripts/stressed_materials.py benchmark
@@ -67,6 +85,8 @@ La suite completa se ejecuta con:
 python tests/run_release_tests.py
 ```
 
+Incluye un smoke test que renderiza un documento sintético y ejecuta el auditor real de Chromium.
+
 ## Regla para nuevas regresiones
 
 Cuando una materia real descubre un fallo:
@@ -82,6 +102,7 @@ Cuando una materia real descubre un fallo:
 
 | Cambio | Documento principal |
 |---|---|
+| Instalación / dependencias / Chromium | `setup.md` |
 | Política del reviewer / quality gate | `academic-eval.md` |
 | Fallo de archivo/transcripción | `stressed-materials.md` |
 | Fallo estructural de PDF | `pdf-stress.md` |
