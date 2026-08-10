@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Design-time screenshot and mechanical audit for rendered study HTML.
+"""Screenshot and mechanically audit rendered study HTML.
 
-Normal study generation does not depend on a browser. This maintenance tool injects the
-rendered HTML into Chromium without navigating away from the local artifact, captures multiple
-viewports, and performs a few objective checks before an AI/human visual review.
+The complete study environment includes Playwright Chromium because rendered study
+artifacts must receive a real browser audit before publication. The tool injects the
+rendered HTML into Chromium without navigating away from the local artifact, captures
+multiple viewports, and performs objective layout/readability checks before publication.
 """
 from __future__ import annotations
 
@@ -69,7 +70,6 @@ def inline_local_images(html_text: str, base_dir: Path) -> str:
     return pat.sub(repl, html_text)
 
 
-
 def _pdf_to_vertical_png(pdf_path: Path, out_png: Path) -> dict:
     import fitz
     from PIL import Image
@@ -87,11 +87,15 @@ def _pdf_to_vertical_png(pdf_path: Path, out_png: Path) -> dict:
     canvas.save(out_png)
     return {"pages": len(images), "width": canvas.width, "height": canvas.height}
 
+
 def audit(html_path: Path, out_dir: Path) -> dict:
     try:
         from playwright.sync_api import sync_playwright
     except Exception as exc:
-        raise SystemExit("Install design-time dependency: pip install -r requirements-design.txt") from exc
+        raise SystemExit(
+            "Visual audit environment is incomplete. Run INSTALAR-STUDY.bat "
+            "or: python -m pip install -r requirements.txt"
+        ) from exc
 
     html_text = inline_local_images(html_path.read_text(encoding="utf-8"), html_path.parent)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -113,7 +117,13 @@ def audit(html_path: Path, out_dir: Path) -> dict:
         kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
         if executable:
             kwargs["executable_path"] = executable
-        browser = pw.chromium.launch(**kwargs)
+        try:
+            browser = pw.chromium.launch(**kwargs)
+        except Exception as exc:
+            raise SystemExit(
+                "Playwright Chromium is missing or cannot launch. Run INSTALAR-STUDY.bat "
+                "or: python -m playwright install chromium"
+            ) from exc
         for name, vp in VIEWPORTS.items():
             page = browser.new_page(viewport=vp)
             if name == "print":
@@ -173,6 +183,7 @@ def main() -> int:
     report = audit(Path(args.html), Path(args.out))
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["ok"] else 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
