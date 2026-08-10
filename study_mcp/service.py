@@ -1,13 +1,11 @@
 """Transport-agnostic service layer exposed by the local Study MCP server.
 
-All state mutations delegate to the same deterministic scripts used by study.py.
-The MCP adapter never writes academic JSON registries directly.
+MCP calls the deterministic Python core in-process. It never spawns child Python
+processes and never edits academic registries directly.
 """
 from __future__ import annotations
 
 import json
-import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -20,6 +18,11 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import study  # noqa: E402
+import academic_context  # noqa: E402
+import artifact_integrity  # noqa: E402
+import artifact_state  # noqa: E402
+import concept_graph  # noqa: E402
+import figure_assets  # noqa: E402
 from artifact_state import scoped_concepts, scoped_figures  # noqa: E402
 from unit_identity import record_unit_id, resolve_unit, stable_unit_id_from_row  # noqa: E402
 
@@ -40,31 +43,6 @@ def _read(path: Path, default: Any) -> Any:
         return study.read_json(path, default)
     except Exception as exc:
         raise StudyMCPError(str(exc)) from exc
-
-
-def _run(script: str, *args: str) -> dict[str, Any] | list[Any] | str:
-    env = os.environ.copy()
-    env["PYTHONIOENCODING"] = "utf-8"
-    env["PYTHONUTF8"] = "1"
-    cp = subprocess.run(
-        [sys.executable, str(SCRIPTS / script), *args],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        encoding="utf-8",
-        errors="replace",
-        env=env,
-    )
-    if cp.returncode != 0:
-        message = (cp.stderr or cp.stdout or f"Fallo {script}").strip()
-        raise StudyMCPError(message)
-    text = cp.stdout.strip()
-    if not text:
-        return {}
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        return text
 
 
 def _unit_row(course: Path, unit_id: str) -> dict[str, Any] | None:
@@ -93,6 +71,17 @@ def _progress_rows(course: Path, unit: str = "") -> dict[str, Any]:
         if str(key) in allowed
         or (isinstance(value, dict) and (str(value.get("id", "")) in allowed or str(value.get("name", "")) in allowed))
     }
+
+
+def _artifact_file(course: Path, value: str) -> Path:
+    """Resolve artifact candidates from absolute, project-relative or course-relative paths."""
+    raw = Path(value)
+    candidates = [raw] if raw.is_absolute() else [ROOT / raw, course / raw]
+    for candidate in candidates:
+        path = candidate.resolve()
+        if path.is_file():
+            return path
+    raise StudyMCPError(f"File not found: {value}")
 
 
 def list_courses() -> dict[str, Any]:
@@ -184,10 +173,10 @@ def list_figures(course_name: str, unit: str = "") -> dict[str, Any]:
 
 def verify_figures(course_name: str) -> dict[str, Any]:
     course = _course(course_name)
-    result = _run("figure_assets.py", "verify", "--course", str(course))
-    if not isinstance(result, dict):
-        raise StudyMCPError("figure_assets.py verify no devolvió JSON")
-    return result
+    try:
+        return figure_assets.verify_registry(course)
+    except (ValueError, SystemExit, OSError, json.JSONDecodeError) as exc:
+        raise StudyMCPError(str(exc)) from exc
 
 
 def register_derived_figure(
@@ -202,30 +191,22 @@ def register_derived_figure(
     kind: str = "diagram",
     role: str = "supporting",
 ) -> dict[str, Any]:
-    if not based_on:
-        raise StudyMCPError("based_on debe contener al menos una referencia canónica")
     course = _course(course_name)
-    args = [
-        "register-derived", "--course", str(course), "--id", figure_id,
-        "--unit", unit, "--asset", asset, "--kind", kind, "--role", role,
-        "--description", description,
-    ]
-    for value in concepts or []:
-        args += ["--concept", value]
-    for value in learner_focus or []:
-        args += ["--learner-focus", value]
-    for value in based_on:
-        args += ["--based-on", value]
-    result = _run("figure_assets.py", *args)
-    if not isinstance(result, dict):
-        raise StudyMCPError("register-derived no devolvió JSON")
-    return result
+    try:
+        return figure_assets.register_derived(
+            course, figure_id, unit, asset, description, based_on,
+            concepts=concepts, learner_focus=learner_focus, kind=kind, role=role,
+        )
+    except (ValueError, SystemExit, OSError, json.JSONDecodeError) as exc:
+        raise StudyMCPError(str(exc)) from exc
 
 
 def list_artifacts(course_name: str) -> dict[str, Any]:
     course = _course(course_name)
-    result = _run("artifact_state.py", "status", "--course", str(course))
-    rows = result if isinstance(result, list) else []
+    try:
+        rows = artifact_state.all_status(course)
+    except (ValueError, SystemExit, OSError, json.JSONDecodeError) as exc:
+        raise StudyMCPError(str(exc)) from exc
     return {"course": course.name, "count": len(rows), "artifacts": rows}
 
 
@@ -237,47 +218,88 @@ def validate_artifact(
     artifact_type: str,
 ) -> dict[str, Any]:
     course = _course(course_name)
-    result = _run(
-        "artifact_integrity.py",
-        "--course", str(course),
-        "--markdown", markdown,
-        "--html", html,
-        "--scope", scope,
-        "--type", artifact_type,
-    )
-    if not isinstance(result, dict):
-        raise StudyMCPError("artifact_integrity.py no devolvió JSON")
-    return result
+    if artifact_type not in {"summary", "guide", "rapid-review"}:
+        raise StudyMCPError(f"Unsupported artifact type for integrity gate: {artifact_type}")
+    md_path = _artifact_file(course, markdown)
+    html_path = _artifact_file(course, html)
+    try:
+        return artifact_integrity.check(course, md_path, html_path, scope, artifact_type)
+    except (ValueError, SystemExit, OSError, json.JSONDecodeError) as exc:
+        raise StudyMCPError(str(exc)) from exc
 
 
 def mark_artifact(course_name: str, file: str, artifact_type: str, scope: str = "") -> dict[str, Any]:
     course = _course(course_name)
-    result = _run(
-        "artifact_state.py", "mark", "--course", str(course), "--file", file,
-        "--type", artifact_type, "--scope", scope,
-    )
-    if not isinstance(result, dict):
-        raise StudyMCPError("artifact_state.py mark no devolvió JSON")
-    return result
+    try:
+        return artifact_state.mark_artifact(course, file, artifact_type, scope)
+    except (ValueError, SystemExit, OSError, json.JSONDecodeError) as exc:
+        raise StudyMCPError(str(exc)) from exc
 
 
 def validate_course(course_name: str) -> dict[str, Any]:
+    """Run structural/academic/knowledge/figure/artifact validation in-process."""
     course = _course(course_name)
-    env = os.environ.copy()
-    env["PYTHONIOENCODING"] = "utf-8"
-    env["PYTHONUTF8"] = "1"
-    cp = subprocess.run(
-        [sys.executable, str(ROOT / "study.py"), "validate", course.name],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        encoding="utf-8",
-        errors="replace",
-        env=env,
-    )
+    structural: list[str] = []
+    required_dirs = [
+        "academico", "conocimiento", "fuentes", "notas", "preguntas",
+        "progreso", "resumenes", "simulacros",
+    ]
+    for dirname in required_dirs:
+        if not (course / dirname).is_dir():
+            structural.append(f"falta carpeta requerida: {dirname}/")
+
+    required_json = [
+        course / "academico" / "academic.json",
+        course / "conocimiento" / "concepts.json",
+        course / "progreso" / "progress.json",
+    ]
+    for path in required_json:
+        if not path.exists():
+            structural.append(f"falta archivo requerido: {path.relative_to(course)}")
+            continue
+        try:
+            json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            structural.append(f"JSON invalido: {path.relative_to(course)}")
+    if not (course / "contexto.md").exists():
+        structural.append("falta archivo requerido: contexto.md")
+
+    academic_issues: list[dict[str, Any]] = []
+    academic_path = course / "academico" / "academic.json"
+    if academic_path.exists():
+        try:
+            academic_data = json.loads(academic_path.read_text(encoding="utf-8"))
+            academic_issues = academic_context.validate_data(academic_data).get("issues", [])
+        except (json.JSONDecodeError, OSError, ValueError, SystemExit) as exc:
+            structural.append(f"no se pudo validar academic.json: {exc}")
+
+    stale: list[dict[str, Any]] = []
+    if (course / "conocimiento" / "concepts.json").exists():
+        try:
+            stale = concept_graph.stale_rows(course)
+        except (json.JSONDecodeError, OSError, ValueError, SystemExit) as exc:
+            structural.append(f"no se pudo validar concepts.json: {exc}")
+
+    figure_issues: list[dict[str, Any]] = []
+    if (course / "conocimiento" / "figures.json").exists():
+        try:
+            figure_issues = figure_assets.verify_registry(course).get("issues", [])
+        except (json.JSONDecodeError, OSError, ValueError, SystemExit) as exc:
+            structural.append(f"no se pudo validar figures.json: {exc}")
+
+    try:
+        stale_artifacts = [row for row in artifact_state.all_status(course) if row.get("stale")]
+    except (json.JSONDecodeError, OSError, ValueError, SystemExit) as exc:
+        structural.append(f"no se pudo validar artefactos: {exc}")
+        stale_artifacts = []
+
+    academic_errors = [row for row in academic_issues if str(row.get("severity", row.get("level", ""))).lower() == "error"]
     return {
-        "ok": cp.returncode == 0,
+        "ok": not structural and not academic_errors and not stale and not figure_issues and not stale_artifacts,
         "course": course.name,
-        "stdout": cp.stdout.strip(),
-        "stderr": cp.stderr.strip(),
+        "structural": structural,
+        "academic_issues": academic_issues,
+        "stale_concepts": stale,
+        "figure_issues": figure_issues,
+        "stale_artifacts": stale_artifacts,
     }
