@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import subprocess
 import sys
@@ -114,6 +115,53 @@ class CompleteSetupTests(unittest.TestCase):
             self.assertEqual(report["selected_viewports"], ["desktop", "mobile"])
             for name in ("desktop", "mobile"):
                 self.assertTrue((out / f"{name}.png").is_file(), name)
+
+    def test_visual_audit_forces_all_lazy_images_to_load_before_full_page_capture(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            html = td / "lazy.html"
+            image = td / "tiny.png"
+            out = td / "audit"
+            image.write_bytes(base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII="
+            ))
+            blocks = []
+            for idx in range(6):
+                blocks.append(
+                    f'<div style="height:1100px"><p>Bloque {idx + 1}</p></div>'
+                    f'<figure><img src="tiny.png" loading="lazy" alt="figura {idx + 1}"></figure>'
+                )
+            html.write_text(
+                "<!doctype html><html><head><style>"
+                "body{font-size:18px;line-height:1.6;margin:0}p{line-height:1.6}"
+                "article{width:100%;max-width:720px;margin:auto}img{width:40px;height:40px}"
+                "</style></head><body><article><p>Inicio</p>"
+                + "".join(blocks)
+                + "</article></body></html>",
+                encoding="utf-8",
+            )
+
+            audit = subprocess.run(
+                [
+                    sys.executable,
+                    str(AUDIT),
+                    str(html),
+                    "--out",
+                    str(out),
+                    "--viewports",
+                    "mobile",
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                timeout=35,
+            )
+            self.assertEqual(audit.returncode, 0, audit.stdout + audit.stderr)
+            report = json.loads((out / "audit.json").read_text(encoding="utf-8"))
+            mobile = report["viewports"]["mobile"]
+            self.assertEqual(mobile["images"], 6)
+            self.assertEqual(mobile["loadedImages"], 6)
+            self.assertTrue(all(row["complete"] and row["naturalWidth"] > 0 for row in mobile["image_states"]))
 
 
 if __name__ == "__main__":

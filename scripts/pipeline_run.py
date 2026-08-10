@@ -20,6 +20,29 @@ from scripts.academic_eval import evaluate_review  # noqa: E402
 STAGED = {"resumen", "guia", "repaso"}
 REQUIRED_STAGES = ["02-plan.json", "03-draft.md", "04-humanized.md", "05-review.json"]
 SCRIPT_EXTENSIONS = {".py", ".js", ".ts", ".sh", ".ps1", ".bat", ".cmd"}
+ENGINE_PROTECTED_DIRS = (
+    "scripts",
+    "pipelines",
+    "rules",
+    "config",
+    "contracts",
+    "core",
+    "design",
+    "study_mcp",
+    "tests",
+)
+ENGINE_PROTECTED_FILES = (
+    "study.py",
+    "unit_identity.py",
+    "requirements.txt",
+    "requirements-mcp.txt",
+    "requirements-visual.txt",
+    "requirements-design.txt",
+    ".mcp.json",
+    ".codex/config.toml",
+    "INSTALAR-STUDY.bat",
+    "INICIAR-STUDY.bat",
+)
 
 
 def norm_slug(text: str) -> str:
@@ -63,6 +86,47 @@ def course_script_snapshot(course: Path) -> list[str]:
     return sorted(rows)
 
 
+def engine_snapshot() -> dict[str, str]:
+    """Hash the checked-in engine surface that a study run must never mutate."""
+    rows: dict[str, str] = {}
+    for dirname in ENGINE_PROTECTED_DIRS:
+        root = ROOT / dirname
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(ROOT)
+            if "__pycache__" in rel.parts or path.suffix.lower() in {".pyc", ".pyo"}:
+                continue
+            digest = sha(path)
+            if digest:
+                rows[rel.as_posix()] = digest
+    for rel_text in ENGINE_PROTECTED_FILES:
+        path = ROOT / rel_text
+        digest = sha(path)
+        if digest:
+            rows[Path(rel_text).as_posix()] = digest
+    return dict(sorted(rows.items()))
+
+
+def _validate_engine_snapshot(manifest: dict[str, Any], errors: list[str]) -> None:
+    before = manifest.get("engine_snapshot")
+    if not isinstance(before, dict):
+        errors.append("missing-engine-snapshot")
+        return
+    after = engine_snapshot()
+    before_keys = set(before)
+    after_keys = set(after)
+    for rel in sorted(after_keys - before_keys):
+        errors.append(f"engine-added:{rel}")
+    for rel in sorted(before_keys - after_keys):
+        errors.append(f"engine-removed:{rel}")
+    for rel in sorted(before_keys & after_keys):
+        if before.get(rel) != after.get(rel):
+            errors.append(f"engine-modified:{rel}")
+
+
 def resolve_run(value: str) -> Path:
     p = Path(value)
     if not p.is_absolute():
@@ -71,6 +135,13 @@ def resolve_run(value: str) -> Path:
     if not p.is_dir() or not (p / "manifest.json").exists():
         raise SystemExit(f"Invalid run directory: {value}")
     return p
+
+
+def _resolve_repo_path(value: Any) -> Path:
+    p = Path(str(value))
+    if not p.is_absolute():
+        p = ROOT / p
+    return p.resolve()
 
 
 def cmd_start(args: argparse.Namespace) -> None:
@@ -86,7 +157,7 @@ def cmd_start(args: argparse.Namespace) -> None:
         n += 1
     candidate.mkdir(parents=True)
     manifest = {
-        "version": 1,
+        "version": 2,
         "pipeline": pipeline,
         "course": course.relative_to(ROOT).as_posix(),
         "scope": scope,
@@ -96,6 +167,7 @@ def cmd_start(args: argparse.Namespace) -> None:
         "finished_at": None,
         "stages": {},
         "course_script_snapshot": course_script_snapshot(course),
+        "engine_snapshot": engine_snapshot(),
     }
     save(candidate / "manifest.json", manifest)
     inp = {
@@ -122,6 +194,13 @@ def review_gate(path: Path) -> list[str]:
     return evaluate_review(load(path, {}))
 
 
+def _accepted_markdown(run: Path) -> Path:
+    first = run / "05-review.json"
+    if first.is_file() and not review_gate(first):
+        return run / "06-final.md"
+    return run / "08-final.md"
+
+
 def _validate_visual_audit(run: Path, errors: list[str]) -> None:
     audit_dir = run / "visual-audit"
     report_path = audit_dir / "audit.json"
@@ -141,6 +220,64 @@ def _validate_visual_audit(run: Path, errors: list[str]) -> None:
         shot = audit_dir / name
         if not shot.is_file() or shot.stat().st_size <= 0:
             errors.append(f"missing-visual-screenshot:{name}")
+
+
+def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]) -> None:
+    report_path = run / "11-publication.json"
+    if not report_path.is_file():
+        errors.append("missing-11-publication.json")
+        return
+    try:
+        report = load(report_path, {})
+    except (json.JSONDecodeError, OSError):
+        errors.append("publication-invalid-json")
+        return
+    if not isinstance(report, dict) or report.get("ok") is not True:
+        errors.append("publication-failed")
+        return
+    rows = report.get("files")
+    if not isinstance(rows, list):
+        errors.append("publication-files-missing")
+        return
+    by_role = {row.get("role"): row for row in rows if isinstance(row, dict) and row.get("role")}
+    if set(by_role) != {"markdown", "html"}:
+        errors.append("publication-roles-invalid")
+        return
+
+    course_rel = manifest.get("course", "")
+    course = (ROOT / str(course_rel)).resolve() if course_rel else None
+    if not course or not course.is_dir():
+        errors.append("publication-course-invalid")
+        return
+    publish_root = (course / "resumenes").resolve()
+    expected_sources = {
+        "markdown": _accepted_markdown(run).resolve(),
+        "html": (run / "09-rendered.html").resolve(),
+    }
+
+    for role, expected_source in expected_sources.items():
+        row = by_role[role]
+        source = _resolve_repo_path(row.get("source", ""))
+        destination = _resolve_repo_path(row.get("destination", ""))
+        if source != expected_source:
+            errors.append(f"publication-source-invalid:{role}")
+        try:
+            destination.relative_to(publish_root)
+        except ValueError:
+            errors.append(f"publication-destination-outside-course:{role}")
+        if not source.is_file() or not destination.is_file():
+            errors.append(f"publication-file-missing:{role}")
+            continue
+        source_hash = sha(source)
+        destination_hash = sha(destination)
+        if (
+            source_hash != destination_hash
+            or row.get("source_sha256") != source_hash
+            or row.get("destination_sha256") != destination_hash
+        ):
+            errors.append(f"publication-hash-mismatch:{role}")
+        if row.get("bytes") != source.stat().st_size or destination.stat().st_size != source.stat().st_size:
+            errors.append(f"publication-size-mismatch:{role}")
 
 
 def validate_run(run: Path) -> dict[str, Any]:
@@ -185,6 +322,8 @@ def validate_run(run: Path) -> dict[str, Any]:
                 errors.append("integrity-gate-failed")
 
         _validate_visual_audit(run, errors)
+        _validate_publication(run, manifest, errors)
+        _validate_engine_snapshot(manifest, errors)
 
         course_rel = manifest.get("course", "")
         course = (ROOT / str(course_rel)).resolve() if course_rel else None
@@ -225,6 +364,7 @@ def cmd_finish(args: argparse.Namespace) -> None:
     manifest["stages"]["visual-audit/audit.json"] = "present"
     manifest["stages"]["visual-audit/desktop.png"] = "present"
     manifest["stages"]["visual-audit/mobile.png"] = "present"
+    manifest["stages"]["11-publication.json"] = "present"
     save(run / "manifest.json", manifest)
     print(json.dumps({"ok": True, "run": run.relative_to(ROOT).as_posix()}, ensure_ascii=False, indent=2))
 
