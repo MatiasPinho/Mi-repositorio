@@ -1,0 +1,10 @@
+{"id":"text-layer-basic","kind":"text","filename":"texto.pdf","expected":{"ok":true,"pages":1,"text_pages":1,"image_only_pages":0,"blank_pages":0,"rotated_pages":0},"page_expected":{"has_text_layer":true,"image_only":false,"blank":false,"rotation":0,"words_min":4}}
+{"id":"image-only-scan","kind":"image-only","filename":"escaneo.pdf","expected":{"ok":true,"pages":1,"text_pages":0,"image_only_pages":1,"blank_pages":0},"page_expected":{"has_text_layer":false,"image_only":true,"likely_scanned":true,"images_min":1}}
+{"id":"rotated-page","kind":"rotated","filename":"rotado.pdf","expected":{"ok":true,"pages":1,"text_pages":1,"rotated_pages":1},"page_expected":{"rotation":90,"has_text_layer":true}}
+{"id":"vector-table","kind":"table","filename":"tabla.pdf","expected":{"ok":true,"pages":1,"text_pages":1},"page_expected":{"drawings_min":1,"words_min":4}}
+{"id":"blank-page","kind":"blank","filename":"blanco.pdf","expected":{"ok":true,"pages":1,"text_pages":0,"image_only_pages":0,"blank_pages":1},"page_expected":{"blank":true,"has_text_layer":false,"images":0}}
+{"id":"corrupt-pdf-fails-soft","kind":"corrupt","filename":"corrupto.pdf","expected":{"ok":false,"pages":0,"error_type":"unreadable"}}
+{"id":"encrypted-pdf-is-reported","kind":"encrypted","filename":"protegido.pdf","expected":{"ok":false,"pages":0,"error_type":"encrypted"}}
+{"id":"unicode-pdf-filename","kind":"text","filename":"Programación — teoría 📘.pdf","expected":{"ok":true,"pages":1,"file":"Programación — teoría 📘.pdf","text_pages":1}}
+{"id":"mixed-multipage","kind":"multipage","filename":"mixto.pdf","expected":{"ok":true,"pages":3,"text_pages":2,"blank_pages":1,"rotated_pages":1}}
+{"id":"batch-survives-corrupt-file","kind":"batch","expected":{"total":2,"healthy":1,"unreadable":1,"needs_attention_contains":"oficiales/corrupto.pdf"}}
