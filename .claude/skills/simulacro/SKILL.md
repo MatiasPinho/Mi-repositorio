@@ -1,7 +1,7 @@
 ---
 name: simulacro
-description: Genera y administra un simulacro de una evaluación registrada.
-argument-hint: "[materia] [evaluacion]"
+description: Genera y administra un simulacro de una evaluación registrada dentro de una unidad.
+argument-hint: "[materia] [evaluacion] [unidad]"
 disable-model-invocation: true
 ---
 # Acción portable: simulacro
