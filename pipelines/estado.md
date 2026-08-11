@@ -18,6 +18,8 @@ grouped by stable unit. Upcoming assessments remain course-wide. Do not invent
 a probability of passing.
 
 For each unit, derive observed-topic coverage from the progress of its
-`concept_ids` (tested/total and aggregate concept mastery). Report explicitly
-unassigned concepts as their own gap. Never write those derived mastery values
-back into `topics.json`.
+`concept_ids` (tested/total and mastery tracking coverage). Report aggregate
+topic mastery only when every assigned concept has a progress record; otherwise
+label the known-concept average as partial and show its denominator. Report
+explicitly unassigned concepts as their own gap. Never write those derived
+mastery values back into `topics.json`.

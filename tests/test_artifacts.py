@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from scripts.course_layout import sync_units
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "artifact_state.py"
 
@@ -26,6 +28,26 @@ class ArtifactStateTests(unittest.TestCase):
             },
         }), encoding="utf-8")
         (c / "conocimiento" / "figures.json").write_text(json.dumps({"version": 1, "figures": {}}), encoding="utf-8")
+        return c
+
+    def make_v4_course(self, td: str) -> Path:
+        c = Path(td) / "course"
+        (c / "academico").mkdir(parents=True)
+        (c / "fuentes").mkdir()
+        (c / "contexto.md").write_text("# Artifact topics\n", encoding="utf-8")
+        (c / "academico" / "academic.json").write_text(json.dumps({
+            "version": 2,
+            "units": [{"id": "U1", "name": "Unidad 1", "topics": ["Variables"]}],
+            "assessments": [],
+        }), encoding="utf-8")
+        sync_units(c)
+        (c / "unidades/unidad-1/conocimiento/concepts.json").write_text(json.dumps({
+            "version": 2,
+            "concepts": {
+                "variables": {"id": "variables", "name": "Variables", "unit_id": "unidad-1", "unit": "U1"},
+                "loops": {"id": "loops", "name": "Loops", "unit_id": "unidad-1", "unit": "U1"},
+            },
+        }), encoding="utf-8")
         return c
 
     def run_cli(self, *args: str):
@@ -92,6 +114,68 @@ class ArtifactStateTests(unittest.TestCase):
             artifact.write_text("ok", encoding="utf-8")
             self.run_cli("mark", "--course", str(c), "--file", "resumenes/unidad-1-resumen.md", "--type", "summary", "--scope", "Unidad 1")
             topics["topics"]["variables"]["name"] = "Variables y asignación"
+            topics_path.write_text(json.dumps(topics), encoding="utf-8")
+            rows = self.run_cli("status", "--course", str(c))
+            self.assertTrue(rows[0]["stale"])
+            self.assertIn("topic-knowledge-changed", rows[0]["reasons"])
+
+    def test_observed_topic_metadata_change_does_not_mark_stale(self):
+        with tempfile.TemporaryDirectory() as td:
+            c = self.make_v4_course(td)
+            topics_path = c / "unidades/unidad-1/conocimiento/topics.json"
+            topics = {
+                "version": 1,
+                "unit_id": "unidad-1",
+                "topics": {
+                    "variables": {
+                        "id": "variables",
+                        "unit_id": "unidad-1",
+                        "name": "Variables",
+                        "aliases": [],
+                        "concept_ids": ["variables"],
+                        "declared_matches": [],
+                        "evidence": [],
+                    }
+                },
+                "unassigned_concept_ids": [],
+            }
+            topics_path.write_text(json.dumps(topics), encoding="utf-8")
+            artifact = c / "unidades/unidad-1/resumenes/unidad-1-resumen.md"
+            artifact.write_text("ok", encoding="utf-8")
+            self.run_cli("mark", "--course", str(c), "--file", "unidades/unidad-1/resumenes/unidad-1-resumen.md", "--type", "summary", "--scope", "Unidad 1")
+            topics["topics"]["variables"]["aliases"] = ["Datos mutables"]
+            topics["topics"]["variables"]["declared_matches"] = ["Conceptos básicos"]
+            topics["topics"]["variables"]["evidence"] = [{"file": "clase.pdf", "page": 2}]
+            topics_path.write_text(json.dumps(topics), encoding="utf-8")
+            rows = self.run_cli("status", "--course", str(c))
+            self.assertFalse(rows[0]["stale"])
+
+    def test_observed_topic_assignment_change_marks_stale(self):
+        with tempfile.TemporaryDirectory() as td:
+            c = self.make_v4_course(td)
+            topics_path = c / "unidades/unidad-1/conocimiento/topics.json"
+            topics = {
+                "version": 1,
+                "unit_id": "unidad-1",
+                "topics": {
+                    "variables": {
+                        "id": "variables",
+                        "unit_id": "unidad-1",
+                        "name": "Variables",
+                        "aliases": [],
+                        "concept_ids": ["variables"],
+                        "declared_matches": [],
+                        "evidence": [],
+                    }
+                },
+                "unassigned_concept_ids": ["loops"],
+            }
+            topics_path.write_text(json.dumps(topics), encoding="utf-8")
+            artifact = c / "unidades/unidad-1/resumenes/unidad-1-resumen.md"
+            artifact.write_text("ok", encoding="utf-8")
+            self.run_cli("mark", "--course", str(c), "--file", "unidades/unidad-1/resumenes/unidad-1-resumen.md", "--type", "summary", "--scope", "Unidad 1")
+            topics["topics"]["variables"]["concept_ids"] = ["loops"]
+            topics["unassigned_concept_ids"] = ["variables"]
             topics_path.write_text(json.dumps(topics), encoding="utf-8")
             rows = self.run_cli("status", "--course", str(c))
             self.assertTrue(rows[0]["stale"])

@@ -47,8 +47,10 @@ Cuando el MCP está disponible, los agentes deben preferirlo para leer contexto 
 operaciones expuestas arriba. `study_get_unit_context` devuelve también las
 rutas canónicas de la unidad, mantiene separados `unit.declared_topics`
 (temario oficial) y `topics` (catálogo observado), e incluye `topic_progress`
-derivado desde el progreso de conceptos. Las lecturas agregadas nunca cambian
-su propiedad. El filesystem sigue disponible para escribir handoffs, drafts, SVGs y
+derivado desde el progreso de conceptos. Esa vista informa
+`mastery_coverage`/`mastery_complete`; una media parcial queda separada en
+`tracked_mastery_average` y nunca se presenta como dominio completo. Las
+lecturas agregadas nunca cambian su propiedad. El filesystem sigue disponible para escribir handoffs, drafts, SVGs y
 otros archivos que todavía no tienen una operación MCP. Si el MCP no está conectado, los pipelines
 siguen funcionando mediante `study.py` y `scripts/` sin degradación funcional.
 

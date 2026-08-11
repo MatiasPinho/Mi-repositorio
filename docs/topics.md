@@ -77,9 +77,19 @@ como unassigned, de manera visible y validable.
 python scripts/venv_exec.py study.py topics progress <course> --unit unidad-1
 ```
 
-El resultado calcula `tested_concept_count`, `tested_coverage` y
-`average_mastery` desde `progress.json`. Es una vista de consulta: nunca duplica
-esos valores dentro de `topics.json`.
+El resultado separa cobertura de evaluación y cobertura de dominio. Calcula
+`tested_concept_count`/`tested_coverage` según intentos y
+`tracked_concept_count`/`mastery_coverage` según conceptos con registro de
+progreso. `tracked_mastery_average` describe sólo la porción registrada;
+`average_mastery` se informa únicamente cuando `mastery_complete` es verdadero,
+es decir, cuando todos los conceptos del tema tienen progreso. Así una media
+parcial nunca se presenta como dominio total del tema. Es una vista de consulta:
+nunca duplica esos valores dentro de `topics.json`.
+
+El fingerprint de artefactos usa sólo la organización que puede cambiar su
+cobertura: `topic_id`, nombre, asignaciones de conceptos y conceptos sin tema.
+Editar aliases, evidencia o `declared_matches` no vuelve obsoleto por sí solo un
+resumen, cuestionario o simulacro.
 
 ## Sync y migración
 

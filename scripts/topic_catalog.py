@@ -588,15 +588,21 @@ def topic_progress(course: Path, unit: str) -> dict[str, Any]:
                 if int(row.get("attempts", 0) or 0) > 0:
                     tested += 1
         total = len(concept_ids)
-        average = None
+        tracked_count = len(tracked)
+        tracked_average = None
         if tracked:
-            average = sum(float(row.get("mastery", 0) or 0) for row in tracked) / len(tracked)
+            tracked_average = sum(float(row.get("mastery", 0) or 0) for row in tracked) / tracked_count
+        mastery_complete = total > 0 and tracked_count == total
         return {
             "concept_count": total,
-            "tracked_concept_count": len(tracked),
+            "tracked_concept_count": tracked_count,
+            "untracked_concept_count": total - tracked_count,
+            "mastery_coverage": tracked_count / total if total else None,
+            "mastery_complete": mastery_complete,
             "tested_concept_count": tested,
             "tested_coverage": tested / total if total else None,
-            "average_mastery": average,
+            "tracked_mastery_average": tracked_average,
+            "average_mastery": tracked_average if mastery_complete else None,
         }
 
     topics: dict[str, Any] = {}

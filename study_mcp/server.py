@@ -70,7 +70,7 @@ def study_get_unit_context(course: str, unit: str) -> dict:
 
 @mcp.tool(annotations=READ)
 def study_get_progress(course: str, unit: str = "") -> dict:
-    """Consultar progreso; por unidad incluye la agregación derivada por tema."""
+    """Consultar progreso; por unidad separa dominio temático completo y parcial."""
     return service.get_progress(course, unit)
 
 
