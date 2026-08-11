@@ -50,8 +50,9 @@ El JSON es la fuente semántica. El HTML es una derivación determinística y au
 Cada pregunta tiene:
 
 - `id` estable dentro del quiz;
-- `topic_id` observado, o `null` sólo para conceptos explícitamente unassigned;
+- `topic_id` como tema primario para cobertura/resultados; puede ser `null` cuando al menos un concepto objetivo está explícitamente unassigned;
 - `concept_ids` canónicos de la misma unidad;
+- una pregunta integradora puede combinar conceptos de distintos temas siempre que `topic_id` esté representado por al menos uno de ellos;
 - `difficulty`: `basic`, `intermediate` o `advanced`;
 - `prompt`;
 - `code` opcional para ejercicios de programación;
@@ -59,7 +60,7 @@ Cada pregunta tiene:
 - exactamente un `correct_option_id`;
 - feedback breve para cada opción.
 
-`scripts/quiz_artifact.py` rechaza referencias a conceptos inexistentes, asignaciones concepto↔tema inválidas, IDs/opciones duplicadas, meta-opciones como “todas/ninguna de las anteriores” y HTML que no preserve el mismo JSON de origen.
+`scripts/quiz_artifact.py` rechaza referencias a conceptos inexistentes, un tema primario que no esté representado por los conceptos objetivo, IDs/opciones duplicadas, meta-opciones como “todas/ninguna de las anteriores” y HTML que no preserve el mismo JSON de origen.
 
 ## Calidad semántica
 
@@ -72,7 +73,7 @@ Cada pregunta tiene:
 - feedback útil;
 - cobertura temática flexible.
 
-Los temas observados son guardrails de cobertura, no cuotas ni pesos de examen.
+Los temas observados son guardrails de cobertura, no cuotas ni pesos de examen. En preguntas integradoras, el resultado por tema usa el `topic_id` primario para no contar una misma pregunta varias veces.
 
 ## Modos del HTML
 
