@@ -1,7 +1,7 @@
 ---
 name: procesar
 description: Ingiere material nuevo o modificado sin generar apuntes pedagógicos.
-argument-hint: "[materia]"
+argument-hint: "[materia] [unidad opcional]"
 disable-model-invocation: true
 ---
 # Acción portable: procesar
