@@ -60,6 +60,12 @@ ENGINE_PROTECTED_FILES = (
     "INSTALAR-STUDY.bat",
     "INICIAR-STUDY.bat",
 )
+CANONICAL_INPUTS = (
+    ("academic", "academic_file", "academic_sha256"),
+    ("concepts", "concepts_file", "concepts_sha256"),
+    ("topics", "topics_file", "topics_sha256"),
+    ("figures", "figures_file", "figures_sha256"),
+)
 
 
 def norm_slug(text: str) -> str:
@@ -159,6 +165,27 @@ def _resolve_repo_path(value: Any) -> Path:
     if not p.is_absolute():
         p = ROOT / p
     return p.resolve()
+
+
+def _validate_canonical_snapshot(run: Path, errors: list[str]) -> None:
+    """Reject a staged run if any canonical input changed after 01-input.json."""
+    try:
+        inp = load(run / "01-input.json", {})
+    except (json.JSONDecodeError, OSError):
+        errors.append("canonical-input-invalid-json")
+        return
+    if not isinstance(inp, dict):
+        errors.append("canonical-input-invalid")
+        return
+    for label, file_key, hash_key in CANONICAL_INPUTS:
+        raw_path = str(inp.get(file_key, "")).strip()
+        if not raw_path:
+            errors.append(f"canonical-input-path-missing:{label}")
+            continue
+        expected = inp.get(hash_key)
+        actual = sha(_resolve_repo_path(raw_path))
+        if expected != actual:
+            errors.append(f"canonical-changed:{label}")
 
 
 def cmd_start(args: argparse.Namespace) -> None:
@@ -292,6 +319,7 @@ def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]
         "markdown": _accepted_markdown(run).resolve(),
         "html": (run / "09-rendered.html").resolve(),
     }
+    version = int(report.get("version", 1) or 1)
 
     for role, expected_source in expected_sources.items():
         row = by_role[role]
@@ -309,14 +337,30 @@ def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]
             continue
         source_hash = sha(source)
         destination_hash = sha(destination)
-        if (
-            source_hash != destination_hash
-            or row.get("source_sha256") != source_hash
-            or row.get("destination_sha256") != destination_hash
-        ):
-            errors.append(f"publication-hash-mismatch:{role}")
-        if row.get("bytes") != source.stat().st_size or destination.stat().st_size != source.stat().st_size:
-            errors.append(f"publication-size-mismatch:{role}")
+        if version >= 3:
+            published_hash = row.get("published_sha256")
+            if row.get("source_sha256") != source_hash:
+                errors.append(f"publication-source-mutated:{role}")
+            if published_hash != destination_hash or row.get("destination_sha256") != destination_hash:
+                errors.append(f"publication-hash-mismatch:{role}")
+            if row.get("source_bytes") != source.stat().st_size:
+                errors.append(f"publication-source-size-mismatch:{role}")
+            if row.get("bytes") != destination.stat().st_size:
+                errors.append(f"publication-size-mismatch:{role}")
+            transform = row.get("transform")
+            if transform not in {"identity", "rebase-local-image-refs-v1"}:
+                errors.append(f"publication-transform-invalid:{role}")
+            if transform == "identity" and source_hash != destination_hash:
+                errors.append(f"publication-identity-mismatch:{role}")
+        else:
+            if (
+                source_hash != destination_hash
+                or row.get("source_sha256") != source_hash
+                or row.get("destination_sha256") != destination_hash
+            ):
+                errors.append(f"publication-hash-mismatch:{role}")
+            if row.get("bytes") != source.stat().st_size or destination.stat().st_size != source.stat().st_size:
+                errors.append(f"publication-size-mismatch:{role}")
 
 
 def validate_run(run: Path) -> dict[str, Any]:
@@ -360,6 +404,7 @@ def validate_run(run: Path) -> dict[str, Any]:
             if not isinstance(payload, dict) or payload.get("ok") is not True:
                 errors.append("integrity-gate-failed")
 
+        _validate_canonical_snapshot(run, errors)
         _validate_visual_audit(run, errors)
         _validate_publication(run, manifest, errors)
         _validate_engine_snapshot(manifest, errors)
