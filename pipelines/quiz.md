@@ -19,7 +19,8 @@ Generate a persistent, self-contained multiple-choice quiz for one processed uni
 3. Start a run with `python scripts/venv_exec.py scripts/quiz_run.py start --course <course-folder> --unit <unit-id>`. The quiz run reuses the shared engine/canonical snapshot machinery. Do not modify engine or canonical knowledge during the run.
 4. **AUTHOR QUIZ JSON** → write `<run-dir>/02-quiz.json` with contract version 1:
    - root: `version`, `unit_id`, `title`, optional `subtitle`, `questions`;
-   - every question: stable `id`, `topic_id` (or `null` only for explicitly unassigned concepts), one or more same-unit `concept_ids`, `difficulty` (`basic|intermediate|advanced`), `prompt`, optional `code`, four options and one `correct_option_id`;
+   - every question: stable `id`, primary coverage `topic_id` (or `null` when the primary target is explicitly unassigned), one or more same-unit `concept_ids`, `difficulty` (`basic|intermediate|advanced`), `prompt`, optional `code`, four options and one `correct_option_id`;
+   - `topic_id` must be represented by at least one target `concept_id`, but integrative questions may reference additional concepts from other observed topics in the same unit;
    - every option: `id` (`a|b|c|d`), `text`, concise `feedback`.
    Build questions only from canonical knowledge. Cross-unit prerequisites may help formulate/explain but must not become target concepts. Use observed topics as a flexible coverage guard, not a quota. Include unassigned concepts when pedagogically relevant.
 5. Run deterministic validation:
