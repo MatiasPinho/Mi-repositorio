@@ -140,31 +140,45 @@ class BrowserQuizTests(unittest.TestCase):
             self.assertEqual(result["modes"]["exam"]["score"], "100%")
             self.assertEqual(result["modes"]["exam"]["answered"], 2)
 
-    def test_validator_rejects_cross_topic_or_unknown_concepts(self):
+    def test_validator_allows_integrative_questions_when_primary_topic_is_represented(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as td:
+            root = Path(td)
+            course = make_course(root)
+            quiz = valid_quiz()
+            quiz["questions"][0]["concept_ids"] = ["variable", "precedencia"]
+
+            result = validate_quiz_document(quiz, course=course, unit="unidad-1")
+
+            self.assertTrue(result["ok"], result)
+
+    def test_validator_rejects_unknown_concepts_and_unrepresented_primary_topic(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as td:
             root = Path(td)
             course = make_course(root)
             quiz = valid_quiz()
             quiz["questions"][0]["concept_ids"] = ["precedencia", "no-existe"]
-            result = validate_quiz_document(quiz, course=course, unit="unidad-1")
-            self.assertFalse(result["ok"])
-            self.assertIn("q1:concept-outside-topic:precedencia:variables", result["errors"])
-            self.assertIn("q1:unknown-concept:no-existe", result["errors"])
 
-    def test_unassigned_concepts_require_null_topic(self):
+            result = validate_quiz_document(quiz, course=course, unit="unidad-1")
+
+            self.assertFalse(result["ok"])
+            self.assertIn("q1:unknown-concept:no-existe", result["errors"])
+            self.assertIn("q1:primary-topic-not-represented:variables", result["errors"])
+
+    def test_unassigned_primary_topic_can_include_supporting_assigned_concepts(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as td:
             root = Path(td)
             course = make_course(root)
             quiz = valid_quiz()
-            quiz["questions"][0]["concept_ids"] = ["suelto"]
+            quiz["questions"][0]["concept_ids"] = ["suelto", "precedencia"]
             quiz["questions"][0]["topic_id"] = None
+
             result = validate_quiz_document(quiz, course=course, unit="unidad-1")
             self.assertTrue(result["ok"], result)
 
-            quiz["questions"][0]["topic_id"] = "variables"
+            quiz["questions"][0]["concept_ids"] = ["precedencia"]
             result = validate_quiz_document(quiz, course=course, unit="unidad-1")
             self.assertFalse(result["ok"])
-            self.assertIn("q1:concept-outside-topic:suelto:variables", result["errors"])
+            self.assertIn("q1:unassigned-primary-topic-not-represented", result["errors"])
 
     def test_publish_is_identity_and_keeps_sources_immutable(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as td:
