@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 import uuid
@@ -12,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 from scripts.pipeline_run import engine_snapshot, sha
 from scripts.publish_quiz import publish_quiz
 from scripts.quiz_artifact import check_command, render_command, validate_quiz_document
+from scripts.quiz_browser_check import run_check as run_browser_check
 from scripts.quiz_run import validate_quiz_run
 
 
@@ -120,6 +123,23 @@ class BrowserQuizTests(unittest.TestCase):
             self.assertNotIn('<link rel="stylesheet"', text.lower())
             self.assertIn("no actualiza <code>progress.json</code>", text)
 
+    def test_real_chromium_exercises_practice_and_exam_interactions(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as td:
+            root = Path(td)
+            course = make_course(root)
+            source = root / "quiz.json"
+            html = root / "quiz.html"
+            source.write_text(json.dumps(valid_quiz(), ensure_ascii=False, indent=2), encoding="utf-8")
+            rendered = render_command(course, "unidad-1", source, html)
+            self.assertTrue(rendered["ok"], rendered)
+
+            result = run_browser_check(source, html)
+
+            self.assertTrue(result["ok"], result)
+            self.assertTrue(result["modes"]["practice"]["feedback_visible_after_check"])
+            self.assertEqual(result["modes"]["exam"]["score"], "100%")
+            self.assertEqual(result["modes"]["exam"]["answered"], 2)
+
     def test_validator_rejects_cross_topic_or_unknown_concepts(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as td:
             root = Path(td)
@@ -170,6 +190,37 @@ class BrowserQuizTests(unittest.TestCase):
                 self.assertEqual(row["transform"], "identity")
                 self.assertEqual(row["source_sha256"], row["destination_sha256"])
 
+    def test_quiz_run_cli_starts_inside_resolved_unit(self):
+        slug = "zz-quiz-cli-" + uuid.uuid4().hex[:8]
+        course = ROOT / "materias" / slug
+        try:
+            unit = course / "unidades" / "unidad-1"
+            (course / "academico").mkdir(parents=True)
+            (unit / "conocimiento").mkdir(parents=True)
+            (course / "academico" / "academic.json").write_text(
+                json.dumps({"units": [{"id": "U1", "name": "Unidad 1"}]}),
+                encoding="utf-8",
+            )
+            (unit / "conocimiento" / "concepts.json").write_text(json.dumps({"version": 2, "concepts": {}}), encoding="utf-8")
+            (unit / "conocimiento" / "topics.json").write_text(json.dumps({"version": 1, "unit_id": "unidad-1", "topics": {}, "unassigned_concept_ids": []}), encoding="utf-8")
+            (unit / "conocimiento" / "figures.json").write_text(json.dumps({"version": 2, "figures": {}}), encoding="utf-8")
+
+            cp = subprocess.run(
+                [sys.executable, "scripts/quiz_run.py", "start", "--course", slug, "--unit", "unidad-1"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                encoding="utf-8",
+            )
+
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            payload = json.loads(cp.stdout)
+            run = ROOT / payload["run_dir"]
+            self.assertTrue(run.is_relative_to(unit / ".study" / "runs"))
+            self.assertEqual(json.loads((run / "01-input.json").read_text(encoding="utf-8"))["unit_id"], "unidad-1")
+        finally:
+            shutil.rmtree(course, ignore_errors=True)
+
     def test_full_quiz_run_contract_binds_review_canonical_state_and_publication(self):
         slug = "zz-quiz-" + uuid.uuid4().hex[:8]
         course = ROOT / "materias" / slug
@@ -214,6 +265,16 @@ class BrowserQuizTests(unittest.TestCase):
             render_command(course, "unidad-1", final, rendered)
             integrity = check_command(course, "unidad-1", final, rendered)
             (run / "10-integrity.json").write_text(json.dumps(integrity), encoding="utf-8")
+            (run / "10-interaction.json").write_text(
+                json.dumps({
+                    "ok": True,
+                    "engine": "playwright-chromium",
+                    "source_sha256": sha(final),
+                    "html_sha256": sha(rendered),
+                    "modes": {"practice": {"ok": True}, "exam": {"ok": True}},
+                }),
+                encoding="utf-8",
+            )
 
             visual = run / "visual-audit"
             visual.mkdir()
