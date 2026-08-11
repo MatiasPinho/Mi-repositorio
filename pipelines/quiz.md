@@ -50,16 +50,17 @@ Generate a persistent, self-contained multiple-choice quiz for one processed uni
    - **Examen:** no correctness feedback until final submission.
    Both modes show final score, per-topic results and question-by-question review. The HTML must not call network resources and must not write `progress.json`.
 9. **INTEGRITY GATE** → `python scripts/venv_exec.py scripts/quiz_artifact.py check --course <course-folder> --unit <unit-id> --input <run-dir>/04-final.json --html <run-dir>/09-rendered.html --write <run-dir>/10-integrity.json`. Require `ok: true`.
-10. **BROWSER VISUAL GATE** → run `python scripts/venv_exec.py scripts/visual_audit.py <run-dir>/09-rendered.html --out <run-dir>/visual-audit`. Require exit code 0 and `visual-audit/audit.json -> ok: true`. Inspect at least desktop/mobile screenshots; check navigation, option wrapping, code overflow and result layout. A static HTML inspection is not a substitute.
-11. **ATOMIC PUBLISH** → publish the exact validated JSON/HTML bytes:
+10. **REAL-BROWSER INTERACTION GATE** → `python scripts/venv_exec.py scripts/quiz_browser_check.py --json <run-dir>/04-final.json --html <run-dir>/09-rendered.html --write <run-dir>/10-interaction.json`. Require `ok: true`. This gate must actually click through both modes in Playwright Chromium: practice cannot reveal correctness before `Comprobar`, exam cannot reveal correctness before submission, and an all-correct exam must finish at 100% with per-topic and question review rendered.
+11. **BROWSER VISUAL GATE** → run `python scripts/venv_exec.py scripts/visual_audit.py <run-dir>/09-rendered.html --out <run-dir>/visual-audit`. Require exit code 0 and `visual-audit/audit.json -> ok: true`. Inspect at least desktop/mobile screenshots; check option wrapping, code overflow, hierarchy and controls. The interaction gate proves behavior; the visual gate proves the page remains legible/responsive. Neither substitutes for the other.
+12. **ATOMIC PUBLISH** → publish the exact validated JSON/HTML bytes:
     `python scripts/venv_exec.py scripts/publish_quiz.py --json <run-dir>/04-final.json --html <run-dir>/09-rendered.html --dest-json <unit-root>/preguntas/_source/<unit-id>-quiz.json --dest-html <unit-root>/preguntas/<unit-id>-quiz.html --report <run-dir>/11-publication.json`.
     The run sources remain immutable. Re-running `quiz` replaces the unit's current quiz atomically rather than accumulating stale random banks.
-12. Mark only the published HTML as artifact type `quiz`, scope `<unit-id>`, using MCP `study_mark_artifact` or `artifact_state.py mark`.
-13. Finish with `python scripts/venv_exec.py scripts/quiz_run.py finish --run <run-dir>`. Finish rejects a changed canonical snapshot, failed review/integrity/visual gate, publication mismatch or engine mutation.
-14. Return the final HTML path prominently. The JSON is the semantic source and may be linked secondarily.
+13. Mark only the published HTML as artifact type `quiz`, scope `<unit-id>`, using MCP `study_mark_artifact` or `artifact_state.py mark`.
+14. Finish with `python scripts/venv_exec.py scripts/quiz_run.py finish --run <run-dir>`. Finish rejects a changed canonical snapshot, failed review/integrity/interaction/visual gate, publication mismatch or engine mutation.
+15. Return the final HTML path prominently. The JSON is the semantic source and may be linked secondarily.
 
 ## BROWSER/PROGRESS BOUNDARY
 The quiz is a local study aid, not a secure proctoring environment. Correct answers necessarily exist inside the offline HTML so JavaScript can grade without a server. Browser answers are ephemeral and **must not update canonical mastery automatically** in V1. Progress integration belongs to a future explicit result-import contract, not hidden JavaScript/file-system behavior.
 
 ## Engine failure contract
-If renderer, visual audit, publication or run validation fails, stop with **ENGINE FAILURE**. Do not patch engine files inside the active study run; fix the engine separately and rerun the quiz action.
+If renderer, browser interaction, visual audit, publication or run validation fails, stop with **ENGINE FAILURE**. Do not patch engine files inside the active study run; fix the engine separately and rerun the quiz action.
