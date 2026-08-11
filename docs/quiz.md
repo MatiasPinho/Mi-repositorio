@@ -35,15 +35,25 @@ unidades/<unit-id>/
     ├── 01-input.json
     ├── 02-quiz.json
     ├── 03-review.json
-    ├── 04-final.json
+    ├── 04-final.json                    # si review 1 pasa
+    ├── 04-repair.json                   # sólo si review 1 falla
+    ├── 05-review.json                   # sólo sobre 04-repair
+    ├── 06-final.json                    # sólo si review 2 pasa
     ├── 09-rendered.html
     ├── 10-integrity.json
     ├── 10-interaction.json
-    ├── 11-publication.json
-    └── visual-audit/
+    ├── interaction-audit/
+    │   ├── practice-feedback.png
+    │   ├── exam-question-mobile.png
+    │   └── exam-result-mobile.png
+    ├── visual-audit/
+    │   ├── audit.json
+    │   ├── desktop.png
+    │   └── mobile.png
+    └── 11-publication.json
 ```
 
-El JSON es la fuente semántica. El HTML es una derivación determinística y autocontenida.
+El JSON es la fuente semántica. El HTML es una derivación determinística y autocontenida. El candidato rechazado y su review nunca se reescriben: hay como máximo una reparación separada y un segundo review.
 
 ## Contrato de pregunta
 
@@ -75,6 +85,8 @@ Cada pregunta tiene:
 
 Los temas observados son guardrails de cobertura, no cuotas ni pesos de examen. En preguntas integradoras, el resultado por tema usa el `topic_id` primario para no contar una misma pregunta varias veces.
 
+El review queda ligado por SHA-256 al candidato evaluado. Si el primer review falla, sus issues/checks se conservan como evidencia; el motor sólo permite `04-repair.json → 05-review.json → 06-final.json`. No existe un tercer ciclo.
+
 ## Modos del HTML
 
 ### Práctica
@@ -103,14 +115,15 @@ V1 no intenta escribir archivos desde el navegador ni actualizar mastery de mane
 Antes de publicar:
 
 1. validación estructural/canónica del JSON;
-2. review MCQ independiente ligado por SHA-256 al candidato;
+2. review MCQ independiente ligado por SHA-256, con como máximo una reparación + segundo review;
 3. render determinístico;
 4. integrity check JSON↔HTML;
-5. **interaction gate en Chromium real**: Playwright entra a Práctica y Examen, selecciona respuestas, comprueba que no haya feedback prematuro y verifica el resultado final;
-6. Chromium visual audit + screenshots desktop/mobile;
-7. publicación atómica exacta de JSON/HTML;
-8. revalidación de academic/concepts/topics/figures y engine snapshot al cerrar el run.
+5. **interaction gate en Chromium real**: Playwright entra a Práctica y Examen, prueba una respuesta incorrecta con feedback y completa un examen 100% correcto sin revelar feedback antes de entregar;
+6. el interaction gate persiste tres estados reales: feedback desktop, pregunta móvil y resultados móviles;
+7. Chromium visual audit de la pantalla inicial + inspección humana de `visual-audit/desktop.png`, `visual-audit/mobile.png` y las tres capturas de `interaction-audit/`;
+8. publicación atómica exacta de JSON/HTML;
+9. revalidación de academic/concepts/topics/figures y engine snapshot al cerrar el run.
 
-El interaction gate y el visual gate son distintos: el primero demuestra comportamiento; el segundo demuestra legibilidad/responsividad.
+El interaction gate y el visual gate son distintos: el primero demuestra comportamiento; las capturas y la inspección visual demuestran legibilidad/responsividad de los estados que el usuario realmente utiliza.
 
 Reejecutar `quiz` reemplaza atómicamente el quiz actual de esa unidad; no acumula bancos aleatorios obsoletos por defecto.
