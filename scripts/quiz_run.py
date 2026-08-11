@@ -8,12 +8,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-from scripts import pipeline_run as shared
-from scripts.course_layout import LayoutError, unit_root
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts import pipeline_run as shared  # noqa: E402
+from scripts.course_layout import LayoutError, unit_root  # noqa: E402
 
 REQUIRED_REVIEW_CHECKS = (
     "canonical_fidelity",
@@ -29,10 +33,12 @@ def _validate_review(run: Path, errors: list[str]) -> None:
     candidate = run / "02-quiz.json"
     review_path = run / "03-review.json"
     final = run / "04-final.json"
+    missing = False
     for path in (candidate, review_path, final):
         if not path.is_file():
             errors.append(f"missing-{path.name}")
-    if errors:
+            missing = True
+    if missing:
         return
     try:
         review = shared.load(review_path, {})
@@ -78,6 +84,35 @@ def _validate_integrity(run: Path, errors: list[str]) -> None:
         errors.append("quiz-integrity-json-hash-mismatch")
     if payload.get("html_sha256") != shared.sha(run / "09-rendered.html"):
         errors.append("quiz-integrity-html-hash-mismatch")
+
+
+def _validate_interaction(run: Path, errors: list[str]) -> None:
+    path = run / "10-interaction.json"
+    if not path.is_file():
+        errors.append("missing-10-interaction.json")
+        return
+    try:
+        payload = shared.load(path, {})
+    except (json.JSONDecodeError, OSError):
+        errors.append("quiz-interaction-invalid-json")
+        return
+    if not isinstance(payload, dict) or payload.get("ok") is not True:
+        errors.append("quiz-interaction-failed")
+        return
+    if payload.get("engine") != "playwright-chromium":
+        errors.append("quiz-interaction-wrong-engine")
+    if payload.get("source_sha256") != shared.sha(run / "04-final.json"):
+        errors.append("quiz-interaction-json-hash-mismatch")
+    if payload.get("html_sha256") != shared.sha(run / "09-rendered.html"):
+        errors.append("quiz-interaction-html-hash-mismatch")
+    modes = payload.get("modes")
+    if not isinstance(modes, dict):
+        errors.append("quiz-interaction-modes-missing")
+        return
+    for mode in ("practice", "exam"):
+        row = modes.get(mode)
+        if not isinstance(row, dict) or row.get("ok") is not True:
+            errors.append(f"quiz-interaction-mode-failed:{mode}")
 
 
 def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]) -> None:
@@ -170,6 +205,7 @@ def validate_quiz_run(run: Path) -> dict[str, Any]:
 
     _validate_review(run, errors)
     _validate_integrity(run, errors)
+    _validate_interaction(run, errors)
     shared._validate_canonical_snapshot(run, errors)
     shared._validate_visual_audit(run, errors)
     _validate_publication(run, manifest, errors)
@@ -220,6 +256,7 @@ def cmd_finish(args: argparse.Namespace) -> None:
         if p.is_file() and p.name != "manifest.json"
     }
     for rel in (
+        "10-interaction.json",
         "visual-audit/audit.json",
         "visual-audit/desktop.png",
         "visual-audit/mobile.png",
