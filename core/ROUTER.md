@@ -47,6 +47,7 @@ Do not read every rule file for every task. Follow the pipeline's `READ` section
 - `rules/evaluation/academic-fidelity.md`
 - `rules/evaluation/pedagogy-rubric.md`
 - `rules/evaluation/quality-gates.md`
+- `rules/evaluation/multiple-choice.md`
 
 ## Deterministic work
 Use `study.py` and scripts for directory creation, hashes, stale status, due review, assessment listings, run manifests and structural validation. Do not spend model reasoning on deterministic administration.
@@ -73,4 +74,4 @@ Use `study_get_unit_context` (or `scripts/course_layout.py` through the determin
 Provider-specific isolation (Claude subagents/context forks, Codex parallel agents/worktrees, etc.) is optional. If used, it must consume and produce the same handoff contracts and may not change the pipeline semantics.
 
 ## Actions
-`procesar`, `aprender`, `estudiar`, `resumen`, `guia`, `repaso`, `preguntas`, `simulacro`, `explicar`, `auditar`, `estado` each map to `pipelines/<name>.md`.
+`procesar`, `aprender`, `estudiar`, `resumen`, `guia`, `repaso`, `preguntas`, `quiz`, `simulacro`, `explicar`, `auditar`, `estado` each map to `pipelines/<name>.md`.
