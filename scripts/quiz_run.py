@@ -27,6 +27,11 @@ REQUIRED_REVIEW_CHECKS = (
     "feedback_quality",
     "topic_coverage",
 )
+INTERACTION_SCREENSHOTS = {
+    "practice_feedback": "practice-feedback.png",
+    "exam_question_mobile": "exam-question-mobile.png",
+    "exam_result_mobile": "exam-result-mobile.png",
+}
 
 
 def _load_review(path: Path, errors: list[str], label: str) -> dict[str, Any] | None:
@@ -76,12 +81,17 @@ def _validate_review_binding(
     if not isinstance(checks, dict):
         errors.append(f"{label}-checks-missing")
         return
+    seen_false = False
     for name in REQUIRED_REVIEW_CHECKS:
         value = checks.get(name)
         if not isinstance(value, bool):
             errors.append(f"{label}-check-invalid:{name}")
         elif require_pass and value is not True:
             errors.append(f"{label}-check-failed:{name}")
+        elif value is False:
+            seen_false = True
+    if not require_pass and not seen_false:
+        errors.append(f"{label}-failed-without-failed-check")
 
 
 def _accepted_json(run: Path) -> Path:
@@ -179,11 +189,28 @@ def _validate_interaction(run: Path, errors: list[str]) -> None:
     modes = payload.get("modes")
     if not isinstance(modes, dict):
         errors.append("quiz-interaction-modes-missing")
+    else:
+        for mode in ("practice", "exam"):
+            row = modes.get(mode)
+            if not isinstance(row, dict) or row.get("ok") is not True:
+                errors.append(f"quiz-interaction-mode-failed:{mode}")
+
+    screenshots = payload.get("screenshots")
+    if not isinstance(screenshots, dict):
+        errors.append("quiz-interaction-screenshots-missing")
         return
-    for mode in ("practice", "exam"):
-        row = modes.get(mode)
-        if not isinstance(row, dict) or row.get("ok") is not True:
-            errors.append(f"quiz-interaction-mode-failed:{mode}")
+    audit_root = (run / "interaction-audit").resolve()
+    for key, filename in INTERACTION_SCREENSHOTS.items():
+        expected = (audit_root / filename).resolve()
+        raw = str(screenshots.get(key, "")).strip()
+        if not raw:
+            errors.append(f"quiz-interaction-screenshot-report-missing:{key}")
+            continue
+        reported = Path(raw).resolve()
+        if reported != expected:
+            errors.append(f"quiz-interaction-screenshot-path-invalid:{key}")
+        if not expected.is_file() or expected.stat().st_size <= 0:
+            errors.append(f"quiz-interaction-screenshot-missing:{key}")
 
 
 def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]) -> None:
@@ -328,6 +355,9 @@ def cmd_finish(args: argparse.Namespace) -> None:
     }
     for rel in (
         "10-interaction.json",
+        "interaction-audit/practice-feedback.png",
+        "interaction-audit/exam-question-mobile.png",
+        "interaction-audit/exam-result-mobile.png",
         "visual-audit/audit.json",
         "visual-audit/desktop.png",
         "visual-audit/mobile.png",
