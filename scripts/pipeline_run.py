@@ -15,10 +15,22 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from study import resolve_course  # noqa: E402
 if __package__:
-    from .course_layout import has_unit_layout, registry_path, run_root  # noqa: E402
+    from .course_layout import (  # noqa: E402
+        LayoutError,
+        has_unit_layout,
+        registry_path,
+        run_root,
+        unit_root,
+    )
     from .unit_identity import resolve_unit  # noqa: E402
 else:
-    from course_layout import has_unit_layout, registry_path, run_root  # noqa: E402
+    from course_layout import (  # noqa: E402
+        LayoutError,
+        has_unit_layout,
+        registry_path,
+        run_root,
+        unit_root,
+    )
     from unit_identity import resolve_unit  # noqa: E402
 from scripts.academic_eval import evaluate_review  # noqa: E402
 
@@ -259,7 +271,20 @@ def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]
     if not course or not course.is_dir():
         errors.append("publication-course-invalid")
         return
-    publish_root = (course / "resumenes").resolve()
+    unit_layout = has_unit_layout(course)
+    if unit_layout:
+        run_input = load(run / "01-input.json", {})
+        unit_id = str(run_input.get("unit_id", "")).strip() if isinstance(run_input, dict) else ""
+        if not unit_id:
+            errors.append("publication-unit-missing")
+            return
+        try:
+            publish_root = (unit_root(course, unit_id) / "resumenes").resolve()
+        except LayoutError:
+            errors.append(f"publication-unit-invalid:{unit_id}")
+            return
+    else:
+        publish_root = (course / "resumenes").resolve()
     expected_sources = {
         "markdown": _accepted_markdown(run).resolve(),
         "html": (run / "09-rendered.html").resolve(),
@@ -274,7 +299,8 @@ def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]
         try:
             destination.relative_to(publish_root)
         except ValueError:
-            errors.append(f"publication-destination-outside-course:{role}")
+            boundary = "unit" if unit_layout else "course"
+            errors.append(f"publication-destination-outside-{boundary}:{role}")
         if not source.is_file() or not destination.is_file():
             errors.append(f"publication-file-missing:{role}")
             continue

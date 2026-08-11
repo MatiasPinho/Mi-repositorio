@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+from scripts.course_layout import sync_units
 from scripts.pipeline_run import review_gate
 
 SCRIPT = ROOT / "scripts" / "pipeline_run.py"
@@ -88,11 +89,12 @@ class PipelineRunTests(unittest.TestCase):
         (audit / "desktop.png").write_bytes(b"png")
         (audit / "mobile.png").write_bytes(b"png")
 
-    def write_publication_gate(self, run):
+    def write_publication_gate(self, run, publish_root=None):
         source_md = run / ("06-final.md" if (run / "06-final.md").is_file() else "08-final.md")
         source_html = run / "09-rendered.html"
-        dest_md = self.course / "resumenes" / "_source" / "unidad-1-resumen.md"
-        dest_html = self.course / "resumenes" / "unidad-1-resumen.html"
+        publish_root = publish_root or self.course / "resumenes"
+        dest_md = publish_root / "_source" / "unidad-1-resumen.md"
+        dest_html = publish_root / "unidad-1-resumen.html"
         dest_md.parent.mkdir(parents=True, exist_ok=True)
         dest_html.parent.mkdir(parents=True, exist_ok=True)
         dest_md.write_bytes(source_md.read_bytes())
@@ -115,6 +117,27 @@ class PipelineRunTests(unittest.TestCase):
             encoding="utf-8",
         )
         return dest_md, dest_html
+
+    def enable_v4_layout(self):
+        shutil.rmtree(self.course / "conocimiento")
+        (self.course / "academico" / "academic.json").write_text(
+            json.dumps({
+                "identity": {"subject": "Pipeline Test"},
+                "units": [{"id": "U1", "name": "Unidad 1", "topics": ["Tema 1"]}],
+            }),
+            encoding="utf-8",
+        )
+        (self.course / "fuentes").mkdir()
+        sync_units(self.course)
+
+    def write_passing_run(self, run, publish_root=None):
+        self.write_base_stages(run)
+        (run / "05-review.json").write_text(json.dumps(good_review()), encoding="utf-8")
+        (run / "06-final.md").write_text("final", encoding="utf-8")
+        (run / "09-rendered.html").write_text("<html>ok</html>", encoding="utf-8")
+        (run / "10-integrity.json").write_text(json.dumps({"ok": True}), encoding="utf-8")
+        self.write_visual_gate(run)
+        self.write_publication_gate(run, publish_root)
 
     def test_start_records_portable_inputs(self):
         run = self.start("codex")
@@ -146,6 +169,29 @@ class PipelineRunTests(unittest.TestCase):
         self.assertEqual(manifest["status"], "finished")
         self.assertEqual(manifest["stages"]["visual-audit/audit.json"], "present")
         self.assertEqual(manifest["stages"]["11-publication.json"], "present")
+
+    def test_v4_publication_finishes_inside_resolved_unit(self):
+        self.enable_v4_layout()
+        run = self.start()
+        publish_root = self.course / "unidades" / "unidad-1" / "resumenes"
+        self.write_passing_run(run, publish_root)
+
+        cp = self.run_cmd("validate", "--run", str(run))
+        self.assertTrue(json.loads(cp.stdout)["ok"])
+        self.run_cmd("finish", "--run", str(run))
+        manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["status"], "finished")
+
+    def test_v4_publication_rejects_legacy_course_root(self):
+        self.enable_v4_layout()
+        run = self.start()
+        self.write_passing_run(run, self.course / "resumenes")
+
+        cp = self.run_cmd("validate", "--run", str(run), check=False)
+        self.assertNotEqual(cp.returncode, 0)
+        errors = json.loads(cp.stdout)["errors"]
+        self.assertIn("publication-destination-outside-unit:markdown", errors)
+        self.assertIn("publication-destination-outside-unit:html", errors)
 
     def test_failed_first_review_requires_repair_and_second_review(self):
         run = self.start("claude")

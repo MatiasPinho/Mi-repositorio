@@ -9,6 +9,8 @@
   `study_list_units` y rutas canónicas en `study_get_unit_context`.
 - `artifact_contract_version = 8`: un artefacto de unidad fuera de su directorio
   canónico es inválido y los artefactos V3 quedan stale.
+- Corrige el cierre de pipelines V4 para validar la publicación dentro de
+  `unidades/<unit-id>/resumenes/`, conservando compatibilidad con materias V3.
 - Migra `programacion-1` a nueve unidades sin reprocesar fuentes.
 
 # V3.7.2
