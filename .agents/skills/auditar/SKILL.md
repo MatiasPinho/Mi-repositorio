@@ -1,6 +1,6 @@
 ---
 name: auditar
-description: Audita conocimiento o artefactos contra las fuentes.
+description: Audita conocimiento o artefactos de una unidad contra las fuentes.
 ---
 # Acción portable: auditar
 

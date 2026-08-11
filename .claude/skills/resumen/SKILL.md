@@ -1,7 +1,7 @@
 ---
 name: resumen
 description: Genera o actualiza un resumen humano, claro y estudiable.
-argument-hint: "[materia] [unidad/tema]"
+argument-hint: "[materia] [unidad]"
 disable-model-invocation: true
 ---
 # Acción portable: resumen

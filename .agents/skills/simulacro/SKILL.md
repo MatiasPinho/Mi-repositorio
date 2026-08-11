@@ -1,6 +1,6 @@
 ---
 name: simulacro
-description: Genera y administra un simulacro de una evaluación registrada.
+description: Genera y administra un simulacro de una evaluación registrada dentro de una unidad.
 ---
 # Acción portable: simulacro
 

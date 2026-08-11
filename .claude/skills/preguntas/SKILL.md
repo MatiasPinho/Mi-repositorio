@@ -1,7 +1,7 @@
 ---
 name: preguntas
-description: Practica active recall sin mostrar respuestas antes del intento.
-argument-hint: "[materia] [unidad/tema] [cantidad opcional]"
+description: Practica active recall por unidad sin mostrar respuestas antes del intento.
+argument-hint: "[materia] [unidad] [cantidad opcional]"
 disable-model-invocation: true
 ---
 # Acción portable: preguntas

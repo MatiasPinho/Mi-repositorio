@@ -1,4 +1,4 @@
-# University Study V3 — Portable Core Router
+# University Study V4 — Portable Core Router
 
 This directory is the **single methodological source of truth** for Claude Code and Codex.
 Provider wrappers must stay thin. They route an action to a pipeline; they do not duplicate methodology.
@@ -26,6 +26,7 @@ Do not read every rule file for every task. Follow the pipeline's `READ` section
 - `rules/ingestion/material-processing.md`
 - `rules/ingestion/transcripts.md`
 - `rules/ingestion/concept-graph.md`
+- `rules/ingestion/topics.md`
 
 ### Pedagogy
 - `rules/pedagogy/learning-principles.md`
@@ -51,9 +52,9 @@ Do not read every rule file for every task. Follow the pipeline's `READ` section
 Use `study.py` and scripts for directory creation, hashes, stale status, due review, assessment listings, run manifests and structural validation. Do not spend model reasoning on deterministic administration.
 
 ## MCP fast path
-When the local `university-study` MCP server is connected, prefer its coarse-grained read tools (`study_get_course_context`, `study_get_unit_context`, `study_list_figures`, `study_list_artifacts`, etc.) instead of reopening and filtering the same canonical JSON files manually. Prefer MCP write tools for operations they explicitly cover, especially `study_register_derived_figure` and `study_mark_artifact`; do not bypass them by editing registries directly.
+When the local `university-study` MCP server is connected, prefer its coarse-grained read tools (`study_get_course_context`, `study_get_unit_context`, `study_list_units`, `study_list_artifacts`, etc.) instead of reopening and filtering the same canonical JSON files manually. Prefer MCP write tools for operations they explicitly cover, especially `study_register_derived_figure` and `study_mark_artifact`; do not bypass them by editing registries directly.
 
-MCP is an adapter, not a new source of truth. Pipelines, handoffs and deterministic scripts remain authoritative. Do not fan out into many tiny MCP calls when one context call is sufficient. If MCP is unavailable, fall back to the existing `study.py`/`scripts/` commands without changing semantics.
+MCP is an adapter, not a new source of truth. Pipelines, handoffs and deterministic scripts remain authoritative. Do not fan out into many tiny MCP calls when one context call is sufficient. Topic/concept lookup must follow the exact resolution rules defined by the owning pipeline; never use fuzzy matching to silently choose an academic scope.
 
 ## Portable execution
 Unit-scoped semantic pipelines use explicit handoff files under
@@ -63,15 +64,11 @@ boundary; never place a unit run in another unit or infer scope from a filename.
 
 ## Canonical unit boundary
 
-Resolve every pedagogical request to a stable `unit_id` before reading or
-writing content. Sources, observed topics, concepts, figures, progress, notes, summaries,
-questions, simulations, assets and run state live below
-`materias/<course>/unidades/<unit-id>/`. Only identity, academic unit catalog,
-assessments, rules and genuinely cross-unit sources stay at course level.
+Resolve every pedagogical request that produces/evaluates unit material to a stable `unit_id` before reading or writing content. Sources, observed topics, concepts, figures, progress, notes, summaries, questions, simulations, assets and run state live below `materias/<course>/unidades/<unit-id>/`. Only identity, academic unit catalog, assessments, rules and genuinely cross-unit sources stay at course level.
 
-Use `study_get_unit_context` (or `scripts/course_layout.py` through the
-deterministic CLI) as the path authority. V3 root registries are read-only
-compatibility inputs until `study.py units migrate` is applied.
+`academic.json -> units[].topics` is the declared syllabus. `unidades/<unit-id>/conocimiento/topics.json` is the observed canonical thematic structure reconstructed from processed material. They are deliberately separate.
+
+Use `study_get_unit_context` (or `scripts/course_layout.py` through the deterministic CLI) as the path authority. V3 root registries are read-only compatibility inputs until `study.py units migrate` is applied.
 
 Provider-specific isolation (Claude subagents/context forks, Codex parallel agents/worktrees, etc.) is optional. If used, it must consume and produce the same handoff contracts and may not change the pipeline semantics.
 

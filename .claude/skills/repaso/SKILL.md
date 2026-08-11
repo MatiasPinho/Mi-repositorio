@@ -1,7 +1,7 @@
 ---
 name: repaso
 description: Genera un repaso high-yield de 5–10 minutos para contenido ya aprendido.
-argument-hint: "[materia] [unidad/tema]"
+argument-hint: "[materia] [unidad]"
 disable-model-invocation: true
 ---
 # Acción portable: repaso

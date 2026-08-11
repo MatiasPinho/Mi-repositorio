@@ -15,10 +15,8 @@ Load only these shared rules before semantic work:
 
 
 ## RUN
-Resolve the topic to its owning stable `unit_id`, then load that unit plus only
-explicit prerequisite records from earlier units. Teach progressively: mental
-model → simple explanation → relevant diagram/figure when it materially helps
-→ example → precise course formulation → active recall/application. Record
-progress in the owning unit. Use Humanizer for substantial explanatory prose,
-then perform a fidelity check. Do not pre-generate a large static guide unless
-requested.
+1. Resolve the requested topic to exactly one observed topic and owning stable `unit_id`. With Study MCP, call `study_list_units(course)` and inspect `study_get_unit_context(course, unit)` only for candidate units; otherwise inspect each unit's `conocimiento/topics.json`. Match only an exact normalized topic `id`, `name` or `aliases` value. Never fuzzy-resolve. Zero matches means topic not found; multiple matches are ambiguous and require the unit/topic to be disambiguated.
+2. Require canonical knowledge for the owning unit. If its concept registry is empty, stop with **NEEDS_INGESTION**. If the caller requested the final learning action and orchestration is available, `procesar` may be executed first as a separate prerequisite action, then `aprender` must restart from step 1. Never edit canonical knowledge inside the learning action itself.
+3. Load the resolved topic's `concept_ids` plus only explicit prerequisite records from earlier units. Do not silently teach neighboring topics merely because they are in the same unit.
+4. Teach progressively: mental model → simple explanation → relevant diagram/figure when it materially helps → example → precise course formulation → active recall/application.
+5. Record meaningful progress in the owning unit. Use Humanizer for substantial explanatory prose, then perform a fidelity check. Do not pre-generate a large static guide unless requested.

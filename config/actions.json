@@ -2,12 +2,12 @@
   "procesar": {
     "mode": "INGEST",
     "description": "Ingiere material nuevo o modificado sin generar apuntes pedagógicos.",
-    "hint": "[materia]"
+    "hint": "[materia] [unidad opcional]"
   },
   "aprender": {
     "mode": "LEARN",
-    "description": "Enseña una unidad o tema por primera vez con comprensión progresiva.",
-    "hint": "[materia] [unidad/tema]"
+    "description": "Enseña un tema observado por primera vez con comprensión progresiva.",
+    "hint": "[materia] [tema]"
   },
   "estudiar": {
     "mode": "TODAY",
@@ -17,27 +17,27 @@
   "resumen": {
     "mode": "SUMMARY",
     "description": "Genera o actualiza un resumen humano, claro y estudiable.",
-    "hint": "[materia] [unidad/tema]"
+    "hint": "[materia] [unidad]"
   },
   "guia": {
     "mode": "GUIDE",
     "description": "Genera una guía de estudio exhaustiva pero pedagógica.",
-    "hint": "[materia] [unidad/tema]"
+    "hint": "[materia] [unidad]"
   },
   "repaso": {
     "mode": "REVIEW",
     "description": "Genera un repaso high-yield de 5–10 minutos para contenido ya aprendido.",
-    "hint": "[materia] [unidad/tema]"
+    "hint": "[materia] [unidad]"
   },
   "preguntas": {
     "mode": "RECALL",
-    "description": "Practica active recall sin mostrar respuestas antes del intento.",
-    "hint": "[materia] [unidad/tema] [cantidad opcional]"
+    "description": "Practica active recall por unidad sin mostrar respuestas antes del intento.",
+    "hint": "[materia] [unidad] [cantidad opcional]"
   },
   "simulacro": {
     "mode": "EXAM",
-    "description": "Genera y administra un simulacro de una evaluación registrada.",
-    "hint": "[materia] [evaluacion]"
+    "description": "Genera y administra un simulacro de una evaluación registrada dentro de una unidad.",
+    "hint": "[materia] [evaluacion] [unidad]"
   },
   "explicar": {
     "mode": "EXPLAIN",
@@ -46,12 +46,12 @@
   },
   "auditar": {
     "mode": "AUDIT",
-    "description": "Audita conocimiento o artefactos contra las fuentes.",
-    "hint": "[materia] [unidad/tema/todo]"
+    "description": "Audita conocimiento o artefactos de una unidad contra las fuentes.",
+    "hint": "[materia] [unidad]"
   },
   "estado": {
     "mode": "STATUS",
     "description": "Muestra estado académico, dominio, repasos y artefactos.",
-    "hint": "[materia] [evaluacion opcional]"
+    "hint": "[materia] [unidad opcional]"
   }
 }

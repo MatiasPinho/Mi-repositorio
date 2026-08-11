@@ -1,7 +1,7 @@
 ---
 name: guia
 description: Genera una guía de estudio exhaustiva pero pedagógica.
-argument-hint: "[materia] [unidad/tema]"
+argument-hint: "[materia] [unidad]"
 disable-model-invocation: true
 ---
 # Acción portable: guia

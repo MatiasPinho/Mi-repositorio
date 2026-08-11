@@ -1,7 +1,7 @@
 ---
 name: auditar
-description: Audita conocimiento o artefactos contra las fuentes.
-argument-hint: "[materia] [unidad/tema/todo]"
+description: Audita conocimiento o artefactos de una unidad contra las fuentes.
+argument-hint: "[materia] [unidad]"
 disable-model-invocation: true
 ---
 # Acción portable: auditar
