@@ -29,6 +29,8 @@ Use this rule for persistent browser quizzes and any generated MCQ bank.
 
 ## Coverage and difficulty
 - Use observed topics as a coverage guard, never as fixed quotas or inferred assessment weights.
+- `topic_id` is the question's primary coverage bucket. At least one target concept must belong to it; an integrative question may additionally reference concepts from other observed topics in the same unit.
+- A `null` `topic_id` is valid only when at least one target concept is explicitly unassigned; assigned concepts may still appear as supporting targets in an integrative question.
 - Prefer concept/application questions over trivia.
 - Mix `basic`, `intermediate` and `advanced` where the canonical material supports it; difficulty labels describe reasoning demand, not arbitrary wording complexity.
 - Explicitly unassigned concepts remain eligible and must not disappear from the coverage audit.
