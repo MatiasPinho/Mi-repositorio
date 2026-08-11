@@ -29,6 +29,7 @@ class V4ActionContractTests(unittest.TestCase):
             "guia": "[materia] [unidad]",
             "repaso": "[materia] [unidad]",
             "preguntas": "[materia] [unidad] [cantidad opcional]",
+            "quiz": "[materia] [unidad] [cantidad opcional]",
             "simulacro": "[materia] [evaluacion] [unidad]",
             "explicar": "[materia] [concepto]",
             "auditar": "[materia] [unidad]",
@@ -41,6 +42,7 @@ class V4ActionContractTests(unittest.TestCase):
         self.assertTrue(router.startswith("# University Study V4"))
         self.assertIn("academic.json -> units[].topics", router)
         self.assertIn("conocimiento/topics.json", router)
+        self.assertIn("`quiz`", router)
         self.assertIn("Never fuzzy-pick", (ROOT / "actions" / "ARGUMENTS.md").read_text(encoding="utf-8"))
 
     def test_staged_artifacts_are_unit_scoped_topic_aware_and_ingest_safe(self):
@@ -80,6 +82,20 @@ class V4ActionContractTests(unittest.TestCase):
         self.assertIn("exactly one stable `unit_id`", text)
         self.assertIn("does not accept a topic as a substitute", text)
         self.assertIn("observed topics", text)
+        self.assertIn("NEEDS_INGESTION", text)
+
+    def test_quiz_is_persistent_offline_unit_scoped_and_progress_safe(self):
+        text = self.pipeline("quiz")
+        self.assertIn("self-contained", text)
+        self.assertIn("quiz scope is unit-only", text)
+        self.assertIn("Default to **15**", text)
+        self.assertIn("rules/evaluation/multiple-choice.md", text)
+        self.assertIn("Práctica", text)
+        self.assertIn("Examen", text)
+        self.assertIn("quiz_artifact.py", text)
+        self.assertIn("visual_audit.py", text)
+        self.assertIn("publish_quiz.py", text)
+        self.assertIn("must not update canonical mastery automatically", text)
         self.assertIn("NEEDS_INGESTION", text)
 
     def test_simulacro_requires_assessment_and_unit(self):
