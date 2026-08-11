@@ -29,42 +29,111 @@ REQUIRED_REVIEW_CHECKS = (
 )
 
 
-def _validate_review(run: Path, errors: list[str]) -> None:
-    candidate = run / "02-quiz.json"
-    review_path = run / "03-review.json"
-    final = run / "04-final.json"
-    missing = False
-    for path in (candidate, review_path, final):
-        if not path.is_file():
-            errors.append(f"missing-{path.name}")
-            missing = True
-    if missing:
-        return
+def _load_review(path: Path, errors: list[str], label: str) -> dict[str, Any] | None:
+    if not path.is_file():
+        errors.append(f"missing-{path.name}")
+        return None
     try:
-        review = shared.load(review_path, {})
+        payload = shared.load(path, {})
     except (json.JSONDecodeError, OSError):
-        errors.append("quiz-review-invalid-json")
+        errors.append(f"{label}-invalid-json")
+        return None
+    if not isinstance(payload, dict):
+        errors.append(f"{label}-invalid")
+        return None
+    return payload
+
+
+def _validate_review_binding(
+    review: dict[str, Any],
+    candidate: Path,
+    errors: list[str],
+    *,
+    label: str,
+    require_pass: bool,
+) -> None:
+    if not candidate.is_file():
+        errors.append(f"missing-{candidate.name}")
         return
-    if not isinstance(review, dict):
-        errors.append("quiz-review-invalid")
-        return
-    candidate_hash = shared.sha(candidate)
-    if review.get("candidate_sha256") != candidate_hash:
-        errors.append("quiz-review-candidate-hash-mismatch")
-    if review.get("pass") is not True:
-        errors.append("quiz-review-failed")
+    if review.get("candidate_sha256") != shared.sha(candidate):
+        errors.append(f"{label}-candidate-hash-mismatch")
+
+    passed = review.get("pass") is True
+    if require_pass and not passed:
+        errors.append(f"{label}-failed")
+    if not require_pass and passed:
+        errors.append(f"{label}-expected-failure")
+
     issues = review.get("issues")
-    if not isinstance(issues, list) or issues:
-        errors.append("quiz-review-issues-present")
+    if not isinstance(issues, list):
+        errors.append(f"{label}-issues-invalid")
+    elif require_pass and issues:
+        errors.append(f"{label}-issues-present")
+    elif not require_pass and not issues:
+        errors.append(f"{label}-failed-without-issues")
+
     checks = review.get("checks")
     if not isinstance(checks, dict):
-        errors.append("quiz-review-checks-missing")
-    else:
-        for name in REQUIRED_REVIEW_CHECKS:
-            if checks.get(name) is not True:
-                errors.append(f"quiz-review-check-failed:{name}")
-    if shared.sha(final) != candidate_hash:
-        errors.append("quiz-final-not-reviewed-candidate")
+        errors.append(f"{label}-checks-missing")
+        return
+    for name in REQUIRED_REVIEW_CHECKS:
+        value = checks.get(name)
+        if not isinstance(value, bool):
+            errors.append(f"{label}-check-invalid:{name}")
+        elif require_pass and value is not True:
+            errors.append(f"{label}-check-failed:{name}")
+
+
+def _accepted_json(run: Path) -> Path:
+    first_review = run / "03-review.json"
+    if first_review.is_file():
+        try:
+            payload = shared.load(first_review, {})
+        except (json.JSONDecodeError, OSError):
+            payload = {}
+        if isinstance(payload, dict) and payload.get("pass") is True:
+            return run / "04-final.json"
+    return run / "06-final.json"
+
+
+def _validate_review(run: Path, errors: list[str]) -> None:
+    candidate = run / "02-quiz.json"
+    if not candidate.is_file():
+        errors.append("missing-02-quiz.json")
+        return
+    first = _load_review(run / "03-review.json", errors, "quiz-review-1")
+    if first is None:
+        return
+
+    if first.get("pass") is True:
+        _validate_review_binding(first, candidate, errors, label="quiz-review-1", require_pass=True)
+        final = run / "04-final.json"
+        if not final.is_file():
+            errors.append("missing-04-final.json")
+        elif shared.sha(final) != shared.sha(candidate):
+            errors.append("quiz-final-not-reviewed-candidate")
+        for unexpected in ("04-repair.json", "05-review.json", "06-final.json"):
+            if (run / unexpected).exists():
+                errors.append(f"quiz-unexpected-repair-after-pass:{unexpected}")
+        return
+
+    _validate_review_binding(first, candidate, errors, label="quiz-review-1", require_pass=False)
+    repair = run / "04-repair.json"
+    second = _load_review(run / "05-review.json", errors, "quiz-review-2")
+    final = run / "06-final.json"
+    if not repair.is_file():
+        errors.append("missing-04-repair.json")
+    if second is not None and repair.is_file():
+        _validate_review_binding(second, repair, errors, label="quiz-review-2", require_pass=True)
+    if not final.is_file():
+        errors.append("missing-06-final.json")
+    elif repair.is_file() and shared.sha(final) != shared.sha(repair):
+        errors.append("quiz-final-not-reviewed-repair")
+    if (run / "04-final.json").exists():
+        errors.append("quiz-first-pass-final-present-after-failed-review")
+    for forbidden in ("07-review.json", "07-repair.json", "08-final.json"):
+        if (run / forbidden).exists():
+            errors.append(f"quiz-third-review-cycle-forbidden:{forbidden}")
 
 
 def _validate_integrity(run: Path, errors: list[str]) -> None:
@@ -80,7 +149,8 @@ def _validate_integrity(run: Path, errors: list[str]) -> None:
     if not isinstance(payload, dict) or payload.get("ok") is not True:
         errors.append("quiz-integrity-failed")
         return
-    if payload.get("source_sha256") != shared.sha(run / "04-final.json"):
+    accepted = _accepted_json(run)
+    if payload.get("source_sha256") != shared.sha(accepted):
         errors.append("quiz-integrity-json-hash-mismatch")
     if payload.get("html_sha256") != shared.sha(run / "09-rendered.html"):
         errors.append("quiz-integrity-html-hash-mismatch")
@@ -101,7 +171,8 @@ def _validate_interaction(run: Path, errors: list[str]) -> None:
         return
     if payload.get("engine") != "playwright-chromium":
         errors.append("quiz-interaction-wrong-engine")
-    if payload.get("source_sha256") != shared.sha(run / "04-final.json"):
+    accepted = _accepted_json(run)
+    if payload.get("source_sha256") != shared.sha(accepted):
         errors.append("quiz-interaction-json-hash-mismatch")
     if payload.get("html_sha256") != shared.sha(run / "09-rendered.html"):
         errors.append("quiz-interaction-html-hash-mismatch")
@@ -159,7 +230,7 @@ def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]
 
     expected = {
         "json": (
-            (run / "04-final.json").resolve(),
+            _accepted_json(run).resolve(),
             (root / "preguntas" / "_source" / f"{unit_id}-quiz.json").resolve(),
         ),
         "html": (
