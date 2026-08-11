@@ -10,6 +10,7 @@ Este directorio contiene la documentación técnica del University Study System.
 - [`mcp.md`](mcp.md): adapter MCP local por stdio, herramientas expuestas y límites de seguridad.
 - [`unit-layout.md`](unit-layout.md): contrato V4 materia → unidades, invariantes de rutas y migración V3.
 - [`topics.md`](topics.md): contrato V1 de temas observados, reconciliación estable, asignación de conceptos y progreso derivado.
+- [`quiz.md`](quiz.md): contrato del multiple choice HTML offline, modos práctica/examen, JSON semántico, gates y frontera con progreso.
 
 ## Ingesta y calidad de fuentes
 
@@ -22,7 +23,9 @@ Este directorio contiene la documentación técnica del University Study System.
 
 - [`academic-eval.md`](academic-eval.md): policy versionada del quality gate académico, benchmark congelado y reglas para evolucionar el contrato.
 - [`runtime-safety.md`](runtime-safety.md): contrato de browser audit real, `11-publication.json` y bloqueo de modificaciones del motor.
+- [`quiz.md`](quiz.md): review MCQ ligado por hash, integrity JSON↔HTML, visual audit y publicación exacta del quiz.
 - `rules/evaluation/visual-rubric.md`: contrato de soporte visual y evidencia renderizada obligatoria para resumen/guía/repaso.
+- `rules/evaluation/multiple-choice.md`: contrato semántico de una única mejor respuesta, distractores y feedback de quizzes.
 
 ## Flujo canónico de evidencia
 
@@ -62,7 +65,7 @@ finish: publicación íntegra + motor sin cambios
 
 `claim_candidates` nunca son verdad por sí mismos. Sólo una revisión semántica puede aceptarlos y convertirlos en `claims`. Una transcripción cruda conserva valor como evidencia, pero no adquiere automáticamente autoridad de `teacher_explicit` ni puede declarar `supersedes`.
 
-Los artefactos HTML de resumen, guía y repaso tampoco pueden finalizar sólo porque sus rutas sean válidas: `pipeline_run.py` exige auditoría visual real, evidencia de publicación byte-for-byte y que el fingerprint del motor permanezca idéntico desde el comienzo de la corrida.
+Los artefactos HTML de resumen, guía, repaso y quiz tampoco pueden finalizar sólo porque sus rutas sean válidas: requieren auditoría visual real, evidencia de publicación y un fingerprint canónico/motor estable desde el comienzo de la corrida. `quiz` usa su contrato JSON específico mediante `quiz_run.py`, reutilizando las mismas primitivas de snapshot del run manager compartido.
 
 ## Benchmarks de CI
 
@@ -87,7 +90,7 @@ La suite completa se ejecuta con:
 python scripts/venv_exec.py tests/run_release_tests.py
 ```
 
-Incluye smoke/regression tests que renderizan documentos sintéticos, ejecutan Chromium real, fuerzan imágenes diferidas fuera del viewport, prueban publicación sin truncamiento y verifican el bloqueo de mutaciones del motor.
+Incluye smoke/regression tests que renderizan documentos y quizzes sintéticos, ejecutan Chromium real, fuerzan imágenes diferidas fuera del viewport, prueban publicación sin truncamiento y verifican el bloqueo de mutaciones del motor/canonical state.
 
 ## Regla para nuevas regresiones
 
@@ -108,6 +111,7 @@ Cuando una materia real descubre un fallo:
 | Instalación / dependencias / Chromium | `setup.md` |
 | Motor durante una corrida / publicación / lazy images | `runtime-safety.md` |
 | Política del reviewer / quality gate | `academic-eval.md` |
+| Multiple choice HTML / calidad MCQ / modos de quiz | `quiz.md` |
 | Fallo de archivo/transcripción | `stressed-materials.md` |
 | Fallo estructural de PDF | `pdf-stress.md` |
 | Nueva regla de extracción de claims | `claim-extraction.md` |
