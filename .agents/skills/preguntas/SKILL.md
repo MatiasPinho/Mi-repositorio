@@ -1,6 +1,6 @@
 ---
 name: preguntas
-description: Practica active recall sin mostrar respuestas antes del intento.
+description: Practica active recall por unidad sin mostrar respuestas antes del intento.
 ---
 # Acción portable: preguntas
 
