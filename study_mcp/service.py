@@ -24,6 +24,7 @@ import artifact_state  # noqa: E402
 import concept_graph  # noqa: E402
 import figure_assets  # noqa: E402
 import course_layout  # noqa: E402
+import topic_catalog  # noqa: E402
 from artifact_state import scoped_concepts, scoped_figures  # noqa: E402
 from unit_identity import record_unit_id, resolve_unit, stable_unit_id_from_row  # noqa: E402
 
@@ -114,6 +115,7 @@ def list_units(course_name: str) -> dict[str, Any]:
             "unit_id": unit_id,
             "name": row.get("name", unit_id),
             "topics": row.get("topics", []),
+            "declared_topics": row.get("topics", []),
             "status": row.get("status", "unknown"),
             "ready": unit_id in existing,
             "path": f"unidades/{unit_id}",
@@ -129,6 +131,16 @@ def get_course_context(course_name: str) -> dict[str, Any]:
     context_path = course / "contexto.md"
     context_text = context_path.read_text(encoding="utf-8") if context_path.exists() else ""
     _, changes = study.scan_materials(course)
+    observed_topic_count = 0
+    unassigned_concept_count = 0
+    if course_layout.has_unit_layout(course):
+        try:
+            for unit_id in course_layout.unit_ids(course):
+                catalog = topic_catalog.load_catalog(course, unit_id)
+                observed_topic_count += len(catalog.get("topics", {}))
+                unassigned_concept_count += len(catalog.get("unassigned_concept_ids", []))
+        except (topic_catalog.TopicCatalogError, course_layout.LayoutError, json.JSONDecodeError, OSError, ValueError) as exc:
+            raise StudyMCPError(str(exc)) from exc
     return {
         "course": course.name,
         "display_name": study.course_display_name(course),
@@ -138,6 +150,8 @@ def get_course_context(course_name: str) -> dict[str, Any]:
         "layout": list_units(course.name),
         "knowledge_counts": {
             "concepts": len(concepts.get("concepts", {})) if isinstance(concepts, dict) else 0,
+            "observed_topics": observed_topic_count,
+            "unassigned_concepts": unassigned_concept_count,
             "figures": len(figures.get("figures", {})) if isinstance(figures, dict) else 0,
         },
     }
@@ -155,19 +169,35 @@ def get_unit_context(course_name: str, unit: str) -> dict[str, Any]:
 
     concepts, scope_mode = scoped_concepts(course, unit)
     figures = scoped_figures(course, unit)
+    try:
+        topics = topic_catalog.load_catalog(course, unit_id)
+        derived_topic_progress = topic_catalog.topic_progress(course, unit_id)
+    except (topic_catalog.TopicCatalogError, course_layout.LayoutError, json.JSONDecodeError, OSError, ValueError) as exc:
+        raise StudyMCPError(str(exc)) from exc
     academic = _read(course / "academico" / "academic.json", {})
     return {
         "course": course.name,
         "display_name": study.course_display_name(course),
-        "unit": {"unit_id": unit_id, "label": resolved.get("label", ""), "record": row},
+        "unit": {
+            "unit_id": unit_id,
+            "label": resolved.get("label", ""),
+            "record": row,
+            "declared_topics": row.get("topics", []),
+        },
         "paths": {
             "root": f"unidades/{unit_id}",
             "official_sources": f"unidades/{unit_id}/fuentes/oficiales",
             "transcripts": f"unidades/{unit_id}/fuentes/transcripciones",
+            "topics": (
+                f"unidades/{unit_id}/conocimiento/topics.json"
+                if course_layout.has_unit_layout(course)
+                else "conocimiento/topics.json"
+            ),
             "summaries": f"unidades/{unit_id}/resumenes",
         },
         "concept_scope_mode": scope_mode,
         "concepts": concepts,
+        "topics": topics,
         "figures": figures,
         "academic_constraints": {
             "rules": academic.get("rules", []) if isinstance(academic, dict) else [],
@@ -176,13 +206,20 @@ def get_unit_context(course_name: str, unit: str) -> dict[str, Any]:
             "open_questions": academic.get("open_questions", []) if isinstance(academic, dict) else [],
         },
         "progress": _progress_rows(course, unit),
+        "topic_progress": derived_topic_progress,
     }
 
 
 def get_progress(course_name: str, unit: str = "") -> dict[str, Any]:
     course = _course(course_name)
     rows = _progress_rows(course, unit)
-    return {"course": course.name, "unit": resolve_unit(course, unit) if unit else None, "concepts": rows, "count": len(rows)}
+    result = {"course": course.name, "unit": resolve_unit(course, unit) if unit else None, "concepts": rows, "count": len(rows)}
+    if unit:
+        try:
+            result["topic_progress"] = topic_catalog.topic_progress(course, unit)
+        except (topic_catalog.TopicCatalogError, course_layout.LayoutError, json.JSONDecodeError, OSError, ValueError) as exc:
+            raise StudyMCPError(str(exc)) from exc
+    return result
 
 
 def list_figures(course_name: str, unit: str = "") -> dict[str, Any]:
@@ -285,16 +322,18 @@ def validate_course(course_name: str) -> dict[str, Any]:
             for dirname in course_layout.UNIT_DIRECTORIES:
                 if not (root / dirname).is_dir():
                     structural.append(f"falta carpeta de unidad: unidades/{unit_id}/{dirname}/")
-            required_json += [root / "unidad.json", root / "conocimiento/concepts.json", root / "conocimiento/figures.json", root / "progreso/progress.json"]
+            required_json += [root / "unidad.json", root / "conocimiento/concepts.json", root / "conocimiento/topics.json", root / "conocimiento/figures.json", root / "progreso/progress.json"]
         for orphan in sorted(existing - expected):
             structural.append(f"unidad huérfana no declarada en academic.json: unidades/{orphan}/")
-        for kind, row_key in (("concepts", "concepts"), ("figures", "figures"), ("progress", "concepts")):
+        for kind, row_key in (("concepts", "concepts"), ("topics", "topics"), ("figures", "figures"), ("progress", "concepts")):
             for path in course_layout.registry_paths(course, kind):
                 data = _read(path, {row_key: {}})
                 owner = path.parents[1].name
                 for key, item in data.get(row_key, {}).items() if isinstance(data, dict) else []:
                     if isinstance(item, dict) and record_unit_id(course, item) != owner:
                         structural.append(f"registro en unidad incorrecta: {path.relative_to(course)}#{key}")
+                if kind == "topics" and str(data.get("unit_id", "")) != owner:
+                    structural.append(f"topics.json en unidad incorrecta: {path.relative_to(course)}")
     else:
         required_json += [course / "conocimiento/concepts.json", course / "progreso/progress.json"]
     for path in required_json:
@@ -331,6 +370,14 @@ def validate_course(course_name: str) -> dict[str, Any]:
         except (json.JSONDecodeError, OSError, ValueError, SystemExit) as exc:
             structural.append(f"no se pudo validar figures.json: {exc}")
 
+    topic_issues: list[dict[str, Any]] = []
+    if canonical:
+        for unit_id in course_layout.unit_ids(course):
+            try:
+                topic_issues.extend(topic_catalog.validate_catalog(course, unit_id).get("issues", []))
+            except (topic_catalog.TopicCatalogError, course_layout.LayoutError, json.JSONDecodeError, OSError, ValueError) as exc:
+                structural.append(f"no se pudo validar topics.json de {unit_id}: {exc}")
+
     try:
         stale_artifacts = [row for row in artifact_state.all_status(course) if row.get("stale")]
     except (json.JSONDecodeError, OSError, ValueError, SystemExit) as exc:
@@ -339,11 +386,12 @@ def validate_course(course_name: str) -> dict[str, Any]:
 
     academic_errors = [row for row in academic_issues if str(row.get("severity", row.get("level", ""))).lower() == "error"]
     return {
-        "ok": not structural and not academic_errors and not stale and not figure_issues and not stale_artifacts,
+        "ok": not structural and not academic_errors and not stale and not topic_issues and not figure_issues and not stale_artifacts,
         "course": course.name,
         "structural": structural,
         "academic_issues": academic_issues,
         "stale_concepts": stale,
+        "topic_issues": topic_issues,
         "figure_issues": figure_issues,
         "stale_artifacts": stale_artifacts,
     }

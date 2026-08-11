@@ -34,6 +34,7 @@ UNIT_DIRECTORIES = (
 )
 REGISTRIES = {
     "concepts": ("conocimiento/concepts.json", "concepts", 2),
+    "topics": ("conocimiento/topics.json", "topics", 1),
     "figures": ("conocimiento/figures.json", "figures", 2),
     "progress": ("progreso/progress.json", "concepts", 2),
 }
@@ -138,7 +139,18 @@ def ensure_unit(course: Path, unit: str) -> Path:
     for kind, (relative, key, version) in REGISTRIES.items():
         path = root / relative
         if not path.exists():
-            write_json(path, {"version": version, key: {}})
+            data = _empty_registry(kind, root.name)
+            if kind == "topics":
+                graph = read_json(root / "conocimiento" / "concepts.json", {"concepts": {}})
+                concepts = graph.get("concepts", {}) if isinstance(graph, dict) else {}
+                data["unassigned_concept_ids"] = sorted(
+                    {
+                        str(item.get("id") or key).strip()
+                        for key, item in concepts.items()
+                        if isinstance(item, dict) and str(item.get("id") or key).strip()
+                    }
+                )
+            write_json(path, data)
     return root
 
 
@@ -146,7 +158,10 @@ def legacy_content_present(course: Path) -> bool:
     for kind in REGISTRIES:
         relative, key, _version = REGISTRIES[kind]
         data = read_json(course / relative, {key: {}})
-        if isinstance(data, dict) and data.get(key):
+        if isinstance(data, dict) and (
+            data.get(key)
+            or (kind == "topics" and data.get("unassigned_concept_ids"))
+        ):
             return True
     for dirname in ("notas", "resumenes", "preguntas", "simulacros", "assets"):
         root = course / dirname
@@ -192,9 +207,38 @@ def registry_path(course: Path, kind: str, unit: str = "", *, for_write: bool = 
     return course / relative
 
 
-def _empty_registry(kind: str) -> dict[str, Any]:
+def _empty_registry(kind: str, unit_id: str = "") -> dict[str, Any]:
     _, key, version = REGISTRIES[kind]
+    if kind == "topics":
+        return {
+            "version": version,
+            "unit_id": unit_id,
+            key: {},
+            "unassigned_concept_ids": [],
+        }
     return {"version": version, key: {}}
+
+
+def _registry_document(
+    kind: str,
+    data: dict[str, Any],
+    rows: dict[str, Any],
+    *,
+    unit_id: str = "",
+) -> dict[str, Any]:
+    """Build one on-disk registry without discarding kind-specific metadata."""
+    _, key, version = REGISTRIES[kind]
+    if kind == "topics":
+        unassigned = data.get("unassigned_concept_ids", [])
+        if not isinstance(unassigned, list):
+            raise LayoutError("topics debe contener una lista 'unassigned_concept_ids'")
+        return {
+            "version": data.get("version", version),
+            "unit_id": unit_id or str(data.get("unit_id", "")),
+            key: rows,
+            "unassigned_concept_ids": unassigned,
+        }
+    return {"version": data.get("version", version), key: rows}
 
 
 def registry_paths(course: Path, kind: str, unit: str = "") -> list[Path]:
@@ -213,9 +257,25 @@ def registry_paths(course: Path, kind: str, unit: str = "") -> list[Path]:
 
 def load_registry(course: Path, kind: str, unit: str = "") -> dict[str, Any]:
     _, key, version = REGISTRIES[kind]
+    paths = registry_paths(course, kind, unit)
+    if kind == "topics" and not unit and len(paths) > 1:
+        raise LayoutError("Los temas observados se leen por unidad; no existe un registro global combinado")
+    if unit and len(paths) == 1:
+        unit_id = canonical_unit_id(course, unit, required=False)
+        data = read_json(paths[0], _empty_registry(kind, unit_id))
+        rows = data.get(key, {}) if isinstance(data, dict) else {}
+        if not isinstance(rows, dict):
+            raise LayoutError(f"{paths[0]} debe contener un objeto JSON en '{key}'")
+        result = dict(data)
+        result.setdefault("version", version)
+        result.setdefault(key, {})
+        if kind == "topics":
+            result.setdefault("unit_id", unit_id)
+            result.setdefault("unassigned_concept_ids", [])
+        return result
     merged = {"version": version, key: {}}
     owners: dict[str, str] = {}
-    for path in registry_paths(course, kind, unit):
+    for path in paths:
         data = read_json(path, _empty_registry(kind))
         rows = data.get(key, {}) if isinstance(data, dict) else {}
         if not isinstance(rows, dict):
@@ -257,11 +317,18 @@ def save_registry(course: Path, kind: str, data: dict[str, Any], unit: str = "")
     if not isinstance(rows, dict):
         raise LayoutError(f"El registro {kind} debe contener un objeto '{key}'")
     if unit:
-        write_json(registry_path(course, kind, unit, for_write=True), {"version": data.get("version", version), key: rows})
+        unit_id = canonical_unit_id(course, unit)
+        write_json(
+            registry_path(course, kind, unit_id, for_write=True),
+            _registry_document(kind, data, rows, unit_id=unit_id),
+        )
         return
     if not has_unit_layout(course):
-        write_json(course / relative, {"version": data.get("version", version), key: rows})
+        write_json(course / relative, _registry_document(kind, data, rows))
         return
+
+    if kind == "topics":
+        raise LayoutError("Los temas observados V4 se guardan con una unidad explícita")
 
     concepts = load_registry(course, "concepts").get("concepts", {}) if kind == "progress" else {}
     partitions = {unit_id: {} for unit_id in unit_ids(course)}

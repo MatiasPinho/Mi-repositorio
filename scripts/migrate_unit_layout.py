@@ -32,6 +32,7 @@ if __package__:
         write_json,
     )
     from .unit_identity import record_unit_id, resolve_unit  # noqa: E402
+    from .topic_catalog import normalize as normalize_topic_text  # noqa: E402
 else:
     from course_layout import (  # noqa: E402
         LAYOUT_VERSION,
@@ -44,6 +45,7 @@ else:
         write_json,
     )
     from unit_identity import record_unit_id, resolve_unit  # noqa: E402
+    from topic_catalog import normalize as normalize_topic_text  # noqa: E402
 
 
 def sha256(path: Path) -> str:
@@ -81,9 +83,18 @@ def source_names(value: Any) -> set[str]:
     return {row.removeprefix("fuentes/") for row in rows if row}
 
 
-def source_ownership(course: Path, concepts: dict[str, Any], figures: dict[str, Any]) -> dict[str, set[str]]:
+def source_ownership(
+    course: Path,
+    concepts: dict[str, Any],
+    topics: dict[str, Any],
+    figures: dict[str, Any],
+) -> dict[str, set[str]]:
     owners: dict[str, set[str]] = {}
-    for item in list(concepts.get("concepts", {}).values()) + list(figures.get("figures", {}).values()):
+    for item in (
+        list(concepts.get("concepts", {}).values())
+        + list(topics.get("topics", {}).values())
+        + list(figures.get("figures", {}).values())
+    ):
         if not isinstance(item, dict):
             continue
         unit_id = record_unit_id(course, item)
@@ -135,6 +146,142 @@ def partition(course: Path, data: dict[str, Any], key: str, *, progress: bool = 
     if unassigned:
         raise LayoutError(f"Registros '{key}' sin unidad estable: {', '.join(unassigned[:12])}")
     return result
+
+
+def _concept_owner_map(course: Path, concepts: dict[str, Any]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for key, item in concepts.get("concepts", {}).items():
+        if not isinstance(item, dict):
+            continue
+        owner = record_unit_id(course, item)
+        for value in (key, item.get("id", "")):
+            token = str(value).strip().casefold()
+            if token and owner:
+                result[token] = owner
+    return result
+
+
+def partition_topics(
+    course: Path,
+    data: dict[str, Any],
+    concepts: dict[str, Any],
+) -> tuple[dict[str, dict[str, Any]], dict[str, list[str]]]:
+    """Partition an optional V3 topic catalog without dropping assignments."""
+    ids = unit_ids(course)
+    rows = {unit_id: {} for unit_id in ids}
+    unassigned = {unit_id: [] for unit_id in ids}
+    concept_owners = _concept_owner_map(course, concepts)
+    concept_ids: dict[str, str] = {}
+    for key, item in concepts.get("concepts", {}).items():
+        if not isinstance(item, dict):
+            continue
+        concept_id = str(item.get("id") or key).strip()
+        for value in (key, concept_id):
+            if str(value).strip():
+                concept_ids[str(value).strip().casefold()] = concept_id
+    document_owner = str(data.get("unit_id", "")).strip()
+    declared_by_unit: dict[str, dict[str, str]] = {unit_id: {} for unit_id in ids}
+    academic = read_json(course / "academico" / "academic.json", {})
+    for unit_row in academic.get("units", []) if isinstance(academic, dict) else []:
+        if not isinstance(unit_row, dict):
+            continue
+        owner = resolve_unit(course, str(unit_row.get("id") or unit_row.get("name") or "")).get("unit_id", "")
+        if owner in declared_by_unit:
+            declared_by_unit[owner] = {
+                normalize_topic_text(value): value
+                for value in unit_row.get("topics", [])
+                if isinstance(value, str) and value.strip()
+            }
+    invalid: list[str] = []
+
+    for key, item in data.get("topics", {}).items():
+        if not isinstance(item, dict):
+            invalid.append(str(key))
+            continue
+        if item.get("id") and str(item.get("id")) != str(key):
+            invalid.append(f"{key}:id")
+            continue
+        if any(not isinstance(item.get(field, []), list) for field in ("aliases", "concept_ids", "declared_matches", "evidence")):
+            invalid.append(f"{key}:shape")
+            continue
+        owner = record_unit_id(course, item)
+        if not owner and document_owner in rows:
+            owner = document_owner
+        if not owner:
+            inferred = {
+                concept_owners.get(str(value).strip().casefold(), "")
+                for value in item.get("concept_ids", [])
+            } - {""}
+            if len(inferred) == 1:
+                owner = next(iter(inferred))
+        if not owner and len(ids) == 1:
+            owner = ids[0]
+        if owner not in rows:
+            invalid.append(str(key))
+            continue
+        raw_concepts = item.get("concept_ids", [])
+        if not isinstance(raw_concepts, list):
+            invalid.append(f"{key}:concept_ids")
+            continue
+        resolved_concepts: list[str] = []
+        for value in raw_concepts:
+            token = str(value).strip().casefold()
+            concept_id = concept_ids.get(token, "")
+            if not concept_id or concept_owners.get(token) != owner:
+                invalid.append(f"{key}:{value}")
+                continue
+            if concept_id not in resolved_concepts:
+                resolved_concepts.append(concept_id)
+        resolved_declared: list[str] = []
+        for value in item.get("declared_matches", []):
+            if not isinstance(value, str) or normalize_topic_text(value) not in declared_by_unit[owner]:
+                invalid.append(f"{key}:declared:{value}")
+                continue
+            canonical = declared_by_unit[owner][normalize_topic_text(value)]
+            if canonical not in resolved_declared:
+                resolved_declared.append(canonical)
+        copied = dict(item)
+        copied.setdefault("id", str(key))
+        copied.setdefault("name", str(key))
+        copied.setdefault("aliases", [])
+        copied.setdefault("declared_matches", [])
+        copied.setdefault("evidence", [])
+        copied["unit_id"] = owner
+        copied["concept_ids"] = resolved_concepts
+        copied["declared_matches"] = resolved_declared
+        rows[owner][str(key)] = copied
+
+    for value in data.get("unassigned_concept_ids", []):
+        token = str(value).strip().casefold()
+        owner = concept_owners.get(token, "")
+        concept_id = concept_ids.get(token, "")
+        if not owner and len(ids) == 1:
+            owner = ids[0]
+        if owner not in unassigned or not concept_id:
+            invalid.append(f"unassigned:{value}")
+            continue
+        if concept_id not in unassigned[owner]:
+            unassigned[owner].append(concept_id)
+    if invalid:
+        raise LayoutError(f"Temas/conceptos sin unidad estable: {', '.join(invalid[:12])}")
+
+    assigned_by_unit: dict[str, set[str]] = {unit_id: set() for unit_id in ids}
+    for unit_id, unit_topics in rows.items():
+        for item in unit_topics.values():
+            for value in item.get("concept_ids", []) if isinstance(item, dict) else []:
+                assigned_by_unit[unit_id].add(str(value).strip().casefold())
+    for key, item in concepts.get("concepts", {}).items():
+        if not isinstance(item, dict):
+            continue
+        owner = record_unit_id(course, item)
+        concept_id = str(item.get("id") or key).strip()
+        aliases = {str(key).strip().casefold(), concept_id.casefold()}
+        if owner in unassigned and not (aliases & assigned_by_unit[owner]):
+            if concept_id not in unassigned[owner]:
+                unassigned[owner].append(concept_id)
+    for values in unassigned.values():
+        values.sort()
+    return rows, unassigned
 
 
 def artifact_owner(course: Path, relative: str, manifest: dict[str, Any]) -> str:
@@ -211,12 +358,14 @@ def build_plan(course: Path) -> dict[str, Any]:
         raise LayoutError("La materia ya posee un archivo de recuperación V3; no se repetirá la migración")
 
     concepts = registry(course, "conocimiento/concepts.json", "concepts")
+    topics = registry(course, "conocimiento/topics.json", "topics", 1)
     figures = registry(course, "conocimiento/figures.json", "figures")
     progress = registry(course, "progreso/progress.json", "concepts")
     concept_parts = partition(course, concepts, "concepts")
+    topic_parts, topic_unassigned = partition_topics(course, topics, concepts)
     figure_parts = partition(course, figures, "figures")
     progress_parts = partition(course, progress, "concepts", progress=True, concepts=concepts)
-    owners = source_ownership(course, concepts, figures)
+    owners = source_ownership(course, concepts, topics, figures)
 
     sources: list[dict[str, Any]] = []
     source_root = course / "fuentes"
@@ -281,6 +430,7 @@ def build_plan(course: Path) -> dict[str, Any]:
         "partitions": {
             unit_id: {
                 "concepts": len(concept_parts[unit_id]),
+                "topics": len(topic_parts[unit_id]),
                 "figures": len(figure_parts[unit_id]),
                 "progress": len(progress_parts[unit_id]),
             }
@@ -292,10 +442,13 @@ def build_plan(course: Path) -> dict[str, Any]:
         "runs": runs,
         "_data": {
             "concepts": concept_parts,
+            "topics": topic_parts,
+            "topic_unassigned": topic_unassigned,
             "figures": figure_parts,
             "progress": progress_parts,
             "manifest": manifest,
             "concept_version": concepts.get("version", 2),
+            "topic_version": topics.get("version", 1),
             "figure_version": figures.get("version", 2),
             "progress_version": progress.get("version", 2),
         },
@@ -345,6 +498,12 @@ def apply_plan(course: Path, plan: dict[str, Any]) -> dict[str, Any]:
         write_json(root / "conocimiento" / "concepts.json", {
             "version": data["concept_version"],
             "concepts": rewritten(data["concepts"][unit_id], source_moves),
+        })
+        write_json(root / "conocimiento" / "topics.json", {
+            "version": data["topic_version"],
+            "unit_id": unit_id,
+            "topics": rewritten(data["topics"][unit_id], source_moves),
+            "unassigned_concept_ids": data["topic_unassigned"][unit_id],
         })
         write_json(root / "conocimiento" / "figures.json", {
             "version": data["figure_version"],

@@ -1,5 +1,16 @@
 # V4.0.0
 
+- Agrega `unidades/<unit-id>/conocimiento/topics.json` como catálogo canónico
+  de temas observados, separado de `academic.json -> units[].topics` y de los
+  conceptos.
+- Incorpora reconciliación con IDs estables, asignación principal única o
+  `unassigned_concept_ids`, `declared_matches` validados y evidencia semántica.
+- `study_get_unit_context`, `/resumen`, `/preguntas`, `/simulacro` y `/estado`
+  consumen temas observados sin fijar secciones, longitud, cantidad de preguntas
+  ni duplicar mastery.
+- `artifact_contract_version = 9`: cambios en temas observados invalidan los
+  artefactos derivados de esa unidad.
+
 - Introduce `materias/<course>/unidades/<unit-id>/` como límite canónico para
   fuentes pedagógicas, conocimiento, figuras, progreso, notas, artefactos,
   assets y ejecuciones.
@@ -7,8 +18,9 @@
   de recuperación en `.study/legacy-layout-v3/`.
 - CLI, MCP y pipelines resuelven primero un `unit_id`; MCP suma
   `study_list_units` y rutas canónicas en `study_get_unit_context`.
-- `artifact_contract_version = 8`: un artefacto de unidad fuera de su directorio
-  canónico es inválido y los artefactos V3 quedan stale.
+- `artifact_contract_version = 9`: un artefacto de unidad fuera de su directorio
+  canónico es inválido, los cambios de temas lo vuelven stale y los artefactos
+  V3 quedan stale.
 - Corrige el cierre de pipelines V4 para validar la publicación dentro de
   `unidades/<unit-id>/resumenes/`, conservando compatibilidad con materias V3.
 - Migra `programacion-1` a nueve unidades sin reprocesar fuentes.

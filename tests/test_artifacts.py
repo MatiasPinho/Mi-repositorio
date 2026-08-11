@@ -67,6 +67,36 @@ class ArtifactStateTests(unittest.TestCase):
             self.assertTrue(rows[0]["stale"])
             self.assertIn("knowledge-changed", rows[0]["reasons"])
 
+    def test_observed_topic_change_marks_stale(self):
+        with tempfile.TemporaryDirectory() as td:
+            c = self.make_course(td)
+            topics_path = c / "conocimiento" / "topics.json"
+            topics = {
+                "version": 1,
+                "unit_id": "unidad-1",
+                "topics": {
+                    "variables": {
+                        "id": "variables",
+                        "unit_id": "unidad-1",
+                        "name": "Variables",
+                        "aliases": [],
+                        "concept_ids": ["variables"],
+                        "declared_matches": [],
+                        "evidence": [],
+                    }
+                },
+                "unassigned_concept_ids": [],
+            }
+            topics_path.write_text(json.dumps(topics), encoding="utf-8")
+            artifact = c / "resumenes" / "unidad-1-resumen.md"
+            artifact.write_text("ok", encoding="utf-8")
+            self.run_cli("mark", "--course", str(c), "--file", "resumenes/unidad-1-resumen.md", "--type", "summary", "--scope", "Unidad 1")
+            topics["topics"]["variables"]["name"] = "Variables y asignación"
+            topics_path.write_text(json.dumps(topics), encoding="utf-8")
+            rows = self.run_cli("status", "--course", str(c))
+            self.assertTrue(rows[0]["stale"])
+            self.assertIn("topic-knowledge-changed", rows[0]["reasons"])
+
     def test_other_unit_knowledge_change_does_not_stale_unit_scope(self):
         with tempfile.TemporaryDirectory() as td:
             c = self.make_course(td)
@@ -103,14 +133,15 @@ class ArtifactStateTests(unittest.TestCase):
             self.assertIn("untracked-artifact", rows[0]["reasons"])
 
 
-    def test_new_marks_use_contract_version_8(self):
+    def test_new_marks_use_contract_version_9(self):
         with tempfile.TemporaryDirectory() as td:
             c = self.make_course(td)
             artifact = c / "resumenes" / "unidad-1-resumen.md"
             artifact.write_text("new", encoding="utf-8")
             self.run_cli("mark", "--course", str(c), "--file", "resumenes/unidad-1-resumen.md", "--type", "summary", "--scope", "Unidad 1")
             manifest = json.loads((c / ".study" / "artifacts.json").read_text(encoding="utf-8"))
-            self.assertEqual(manifest["artifacts"]["resumenes/unidad-1-resumen.md"]["artifact_contract_version"], 8)
+            self.assertEqual(manifest["artifacts"]["resumenes/unidad-1-resumen.md"]["artifact_contract_version"], 9)
+            self.assertIn("topics_sha256", manifest["artifacts"]["resumenes/unidad-1-resumen.md"])
             self.assertIn("design_sha256", manifest["artifacts"]["resumenes/unidad-1-resumen.md"])
 
     def test_non_visual_artifact_does_not_depend_on_design_system(self):

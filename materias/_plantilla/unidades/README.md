@@ -7,7 +7,7 @@ después de agregar o modificar unidades para crear o actualizar su estructura.
 Dentro de cada unidad viven, sin mezclarse con las demás:
 
 - `fuentes/oficiales/` y `fuentes/transcripciones/`;
-- `conocimiento/concepts.json` y `conocimiento/figures.json`;
+- `conocimiento/concepts.json`, `conocimiento/topics.json` y `conocimiento/figures.json`;
 - `progreso/progress.json`;
 - `notas/`, `resumenes/`, `preguntas/` y `simulacros/`;
 - `assets/figures/` y las ejecuciones de pipeline en `.study/runs/`.

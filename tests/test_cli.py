@@ -103,6 +103,7 @@ class StudyCliTests(unittest.TestCase):
             capture_output=True,
             check=True,
         )
+        cli("topics", "reconcile", "cli-unittest", "--unit", "U1", "--write")
         due = cli("due", "cli-unittest", "--assessment", "parcial-1", "--include-not-due")
         self.assertIn("Funciones", due.stdout)
         self.assertIn("assessment-confirmed:parcial-1", due.stdout)
@@ -126,6 +127,7 @@ class StudyCliTests(unittest.TestCase):
             [sys.executable, str(ROOT / "scripts" / "concept_graph.py"), "upsert", "--course", str(COURSE), "--concept", "Arrays", "--unit", "U1"],
             cwd=ROOT, text=True, capture_output=True, check=True,
         )
+        cli("topics", "reconcile", "cli-unittest", "--unit", "U1", "--write")
         status = cli("status", "cli-unittest")
         self.assertIn("Conceptos trackeados: 1", status.stdout)
         self.assertIn("Nunca evaluados: 1", status.stdout)

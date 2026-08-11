@@ -68,6 +68,13 @@ Handoff files are working state and are not automatically student artifacts.
 ## Plan visual contract
 `02-plan.json` should include a `visuals` section for student-facing content. Each major concept receives one of `visual_required`, `visual_helpful`, `visual_not_needed`. Selected source visuals reference ids from `unidades/<unit-id>/conocimiento/figures.json`; derived diagrams must be explicitly marked derived.
 
+## Plan topic coverage contract
+For unit-scoped summaries, `02-plan.json` should record which observed topic ids
+and explicitly unassigned concepts the plan covers. This is an omission check,
+not a section template: several topics may share a section, one topic may need
+several sections, and neither topic count nor declared syllabus count imposes a
+fixed length.
+
 ## Stable unit identity
 Human labels such as `U1`, `Unidad 1` and `Unidad 1: Conceptos básicos` are display aliases. Unit-scoped canonical records use a stable `unit_id` such as `unidad-1`. Pipeline code must scope concepts/figures by `unit_id`, not by fuzzy comparison of labels.
 

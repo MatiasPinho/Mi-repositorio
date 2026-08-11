@@ -109,7 +109,7 @@ materias/programacion-i/
     └── unidad-1/
         ├── unidad.json
         ├── fuentes/{oficiales,transcripciones}/
-        ├── conocimiento/{concepts.json,figures.json}
+        ├── conocimiento/{concepts.json,topics.json,figures.json}
         ├── progreso/progress.json
         ├── notas/
         ├── resumenes/_source/
@@ -121,6 +121,11 @@ materias/programacion-i/
 La materia conserva globalmente la identidad, el programa académico, las
 evaluaciones y las reglas. Todo contenido pedagógico, seguimiento y artefacto
 pertenece a una unidad estable (`unidad-1`, `unidad-2`, etc.).
+
+Dentro de cada unidad, `topics.json` agrupa semánticamente los conceptos
+observados en el material procesado. Es una capa distinta de
+`academic.json -> units[].topics`, que sigue siendo el temario declarado y no
+se reescribe durante la ingesta. Ver [`docs/topics.md`](docs/topics.md).
 
 Procesarlas:
 
@@ -220,7 +225,7 @@ reject              accept
        academic_truth   assessment_expectation
               └───────┬────────┘
                       ↓
-academic.json + concepts.json + contexto.md
+academic.json + concepts.json + topics.json + contexto.md
                       ↓
 auditoría + tracker + hashes + estado STALE
 ```
@@ -427,7 +432,7 @@ Las figuras derivadas usan namespace `derived:`, `unit_id` estable y procedencia
 
 # Artefactos STALE
 
-V4.0.0 usa `artifact_contract_version = 8`. Material pedagógico creado con
+V4.0.0 usa `artifact_contract_version = 9`. Material pedagógico creado con
 contratos anteriores queda STALE automáticamente aunque las fuentes no hayan
 cambiado o todavía esté publicado fuera de su unidad canónica.
 

@@ -64,13 +64,13 @@ def study_get_course_context(course: str) -> dict:
 
 @mcp.tool(annotations=READ)
 def study_get_unit_context(course: str, unit: str) -> dict:
-    """Obtener en una sola llamada unidad, conceptos, figuras, restricciones y progreso."""
+    """Obtener unidad, temas observados, conceptos, figuras, restricciones y progreso."""
     return service.get_unit_context(course, unit)
 
 
 @mcp.tool(annotations=READ)
 def study_get_progress(course: str, unit: str = "") -> dict:
-    """Consultar progreso completo o filtrado por unidad estable."""
+    """Consultar progreso; por unidad incluye la agregación derivada por tema."""
     return service.get_progress(course, unit)
 
 
