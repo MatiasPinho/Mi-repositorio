@@ -34,6 +34,11 @@
     "description": "Practica active recall por unidad sin mostrar respuestas antes del intento.",
     "hint": "[materia] [unidad] [cantidad opcional]"
   },
+  "quiz": {
+    "mode": "QUIZ",
+    "description": "Genera un multiple choice interactivo y offline para resolver en el navegador.",
+    "hint": "[materia] [unidad] [cantidad opcional]"
+  },
   "simulacro": {
     "mode": "EXAM",
     "description": "Genera y administra un simulacro de una evaluación registrada dentro de una unidad.",
