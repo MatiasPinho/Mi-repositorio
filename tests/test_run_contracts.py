@@ -56,7 +56,10 @@ class RunContractTests(unittest.TestCase):
         course = ROOT / "materias" / slug
         try:
             run = course / ".study" / "runs" / "run-1"
-            source_md = run / "06-final.md"
+            # Without a 05-review.json fixture, pipeline_run correctly resolves the
+            # repair-path accepted candidate as 08-final.md. This test isolates
+            # publication semantics rather than synthesizing an academic review.
+            source_md = run / "08-final.md"
             source_html = run / "09-rendered.html"
             dest_md = course / "resumenes" / "_source" / "unidad-1-resumen.md"
             dest_html = course / "resumenes" / "unidad-1-resumen.html"
