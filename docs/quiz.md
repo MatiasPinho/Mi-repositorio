@@ -38,6 +38,7 @@ unidades/<unit-id>/
     ├── 04-final.json
     ├── 09-rendered.html
     ├── 10-integrity.json
+    ├── 10-interaction.json
     ├── 11-publication.json
     └── visual-audit/
 ```
@@ -104,8 +105,11 @@ Antes de publicar:
 2. review MCQ independiente ligado por SHA-256 al candidato;
 3. render determinístico;
 4. integrity check JSON↔HTML;
-5. Chromium visual audit + screenshots desktop/mobile;
-6. publicación atómica exacta de JSON/HTML;
-7. revalidación de academic/concepts/topics/figures y engine snapshot al cerrar el run.
+5. **interaction gate en Chromium real**: Playwright entra a Práctica y Examen, selecciona respuestas, comprueba que no haya feedback prematuro y verifica el resultado final;
+6. Chromium visual audit + screenshots desktop/mobile;
+7. publicación atómica exacta de JSON/HTML;
+8. revalidación de academic/concepts/topics/figures y engine snapshot al cerrar el run.
+
+El interaction gate y el visual gate son distintos: el primero demuestra comportamiento; el segundo demuestra legibilidad/responsividad.
 
 Reejecutar `quiz` reemplaza atómicamente el quiz actual de esa unidad; no acumula bancos aleatorios obsoletos por defecto.
