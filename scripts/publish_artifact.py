@@ -3,9 +3,9 @@
 
 The staged run lives deeper than the published artifact. Relative image URLs that
 are valid inside ``.study/runs/<run-id>/`` therefore cannot be copied verbatim to
-``resumenes/``. Publication rebases only local image references so they continue
-to resolve to the exact same physical assets from the destination directories.
-All other bytes/content remain untouched.
+``resumenes/``. Publication deterministically rebases only local image references
+for the destination while keeping the validated run sources byte-for-byte
+immutable.
 """
 from __future__ import annotations
 
@@ -145,7 +145,8 @@ def _rewrite_html_images(
 def _verify_published_resources(destination: Path, rewrites: list[dict[str, str]]) -> None:
     for row in rewrites:
         published = str(row["published"])
-        expected = (ROOT / row["target"]).resolve() if not Path(row["target"]).is_absolute() else Path(row["target"]).resolve()
+        target_value = Path(row["target"])
+        expected = (ROOT / target_value).resolve() if not target_value.is_absolute() else target_value.resolve()
         actual = (destination.parent / published).resolve()
         if actual != expected:
             raise OSError(f"publication-resource-target-changed:{published}:{actual}!={expected}")
@@ -172,56 +173,44 @@ def publish_pair(
         if not path.is_file():
             raise SystemExit(f"Missing {role} source: {path}")
 
-    original_payloads = {role: path.read_bytes() for role, path in sources.items()}
+    source_payloads = {role: path.read_bytes() for role, path in sources.items()}
     markdown_payload, markdown_rewrites = _rewrite_markdown_images(
-        original_payloads["markdown"], sources["markdown"], destinations["markdown"]
+        source_payloads["markdown"], sources["markdown"], destinations["markdown"]
     )
     html_payload, html_rewrites = _rewrite_html_images(
-        original_payloads["html"], sources["html"], destinations["html"]
+        source_payloads["html"], sources["html"], destinations["html"]
     )
-    payloads = {"markdown": markdown_payload, "html": html_payload}
+    published_payloads = {"markdown": markdown_payload, "html": html_payload}
     rewrites = {"markdown": markdown_rewrites, "html": html_rewrites}
 
-    # pipeline_run currently requires the publication source and destination to
-    # be byte-identical. Keep that strong contract by rebasing the run's final
-    # publication sources transactionally together with the destination files.
-    targets = {
-        "source_markdown": sources["markdown"],
-        "source_html": sources["html"],
-        "destination_markdown": destinations["markdown"],
-        "destination_html": destinations["html"],
-    }
-    target_payloads = {
-        "source_markdown": payloads["markdown"],
-        "source_html": payloads["html"],
-        "destination_markdown": payloads["markdown"],
-        "destination_html": payloads["html"],
-    }
-    previous: dict[str, bytes | None] = {
-        key: (path.read_bytes() if path.is_file() else None)
-        for key, path in targets.items()
+    previous = {
+        role: (path.read_bytes() if path.is_file() else None)
+        for role, path in destinations.items()
     }
     staged: dict[str, Path] = {}
 
     try:
-        for key, path in targets.items():
-            staged[key] = _stage(path, target_payloads[key])
+        for role, path in destinations.items():
+            staged[role] = _stage(path, published_payloads[role])
 
         replaced: list[str] = []
         try:
-            for key in ("source_markdown", "source_html", "destination_markdown", "destination_html"):
-                os.replace(staged[key], targets[key])
-                replaced.append(key)
-            for key, path in targets.items():
-                expected = sha256_bytes(target_payloads[key])
+            for role in ("markdown", "html"):
+                os.replace(staged[role], destinations[role])
+                replaced.append(role)
+            for role, path in destinations.items():
+                expected = sha256_bytes(published_payloads[role])
                 actual = sha256_file(path)
                 if actual != expected:
-                    raise OSError(f"published-hash-mismatch:{key}")
+                    raise OSError(f"published-hash-mismatch:{role}")
             _verify_published_resources(destinations["markdown"], rewrites["markdown"])
             _verify_published_resources(destinations["html"], rewrites["html"])
+            for role, source in sources.items():
+                if source.read_bytes() != source_payloads[role]:
+                    raise OSError(f"publication-source-mutated:{role}")
         except Exception:
-            for key in reversed(replaced):
-                _restore(targets[key], previous[key])
+            for role in reversed(replaced):
+                _restore(destinations[role], previous[role])
             raise
     finally:
         for temp_path in staged.values():
@@ -229,27 +218,40 @@ def publish_pair(
 
     files = []
     for role in ("markdown", "html"):
-        digest = sha256_bytes(payloads[role])
-        original_digest = sha256_bytes(original_payloads[role])
+        source_digest = sha256_bytes(source_payloads[role])
+        published_digest = sha256_bytes(published_payloads[role])
         files.append({
             "role": role,
             "source": display_path(sources[role]),
             "destination": display_path(destinations[role]),
-            "pre_rebase_source_sha256": original_digest,
-            "source_sha256": digest,
+            "source_sha256": source_digest,
+            "published_sha256": published_digest,
             "destination_sha256": sha256_file(destinations[role]),
-            "bytes": len(payloads[role]),
+            "source_bytes": len(source_payloads[role]),
+            "bytes": len(published_payloads[role]),
+            "transform": "rebase-local-image-refs-v1" if rewrites[role] else "identity",
             "resource_rewrites": rewrites[role],
         })
 
     report = {
-        "version": 2,
-        "ok": all(row["source_sha256"] == row["destination_sha256"] for row in files),
+        "version": 3,
+        "ok": all(
+            row["published_sha256"] == row["destination_sha256"]
+            and row["source_sha256"] == sha256_file(_resolve_source_from_row(row, sources))
+            for row in files
+        ),
         "published_at": datetime.now(timezone.utc).isoformat(),
         "files": files,
     }
     atomic_write_bytes(report_path.resolve(), (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     return report
+
+
+def _resolve_source_from_row(row: dict[str, Any], sources: dict[str, Path]) -> Path:
+    role = str(row.get("role", ""))
+    if role not in sources:
+        raise OSError(f"publication-role-invalid:{role}")
+    return sources[role]
 
 
 def main() -> int:
