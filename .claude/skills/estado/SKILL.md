@@ -1,7 +1,7 @@
 ---
 name: estado
 description: Muestra estado académico, dominio, repasos y artefactos.
-argument-hint: "[materia] [evaluacion opcional]"
+argument-hint: "[materia] [unidad opcional]"
 disable-model-invocation: true
 ---
 # Acción portable: estado
