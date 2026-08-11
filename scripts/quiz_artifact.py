@@ -178,20 +178,19 @@ def validate_quiz_document(
 
         topic_id_raw = question.get("topic_id")
         topic_id = str(topic_id_raw).strip() if topic_id_raw is not None else ""
+        known_concept_ids = [cid for cid in concept_ids if cid in concepts]
         if topic_id:
             topic = topics.get(topic_id)
             if not topic:
                 errors.append(f"{prefix}:unknown-topic:{topic_id}")
             else:
-                allowed = {str(value).strip() for value in topic.get("concept_ids", []) if str(value).strip()}
-                for cid in concept_ids:
-                    if cid and cid not in allowed:
-                        errors.append(f"{prefix}:concept-outside-topic:{cid}:{topic_id}")
+                primary_members = {str(value).strip() for value in topic.get("concept_ids", []) if str(value).strip()}
+                if known_concept_ids and not any(cid in primary_members for cid in known_concept_ids):
+                    errors.append(f"{prefix}:primary-topic-not-represented:{topic_id}")
                 topic_counts[topic_id] += 1
         else:
-            for cid in concept_ids:
-                if cid and cid not in unassigned:
-                    errors.append(f"{prefix}:topic-required-for-assigned-concept:{cid}")
+            if known_concept_ids and not any(cid in unassigned for cid in known_concept_ids):
+                errors.append(f"{prefix}:unassigned-primary-topic-not-represented")
             topic_counts["__unassigned__"] += 1
 
         options = question.get("options", [])
