@@ -16,7 +16,7 @@ Generate a persistent, self-contained multiple-choice quiz for one processed uni
 ## RUN
 1. Resolve course + scope to exactly one stable `unit_id`; quiz scope is unit-only. Load `study_get_unit_context(course, unit)` when MCP is available, otherwise the unit-scoped canonical concepts/topics directly. If canonical concepts are empty, stop with **NEEDS_INGESTION**. `procesar` may be orchestrated only as a separate prerequisite action, after which `quiz` restarts from step 1.
 2. Resolve question count from the optional argument. Default to **15**. Honor explicit counts from 1 to 50; reject values outside that range instead of silently clamping.
-3. Start a run with `python scripts/venv_exec.py scripts/pipeline_run.py start --course <course-folder> --pipeline quiz --scope "<unit-id>"`. Do not modify engine or canonical knowledge during the run.
+3. Start a run with `python scripts/venv_exec.py scripts/quiz_run.py start --course <course-folder> --unit <unit-id>`. The quiz run reuses the shared engine/canonical snapshot machinery. Do not modify engine or canonical knowledge during the run.
 4. **AUTHOR QUIZ JSON** → write `<run-dir>/02-quiz.json` with contract version 1:
    - root: `version`, `unit_id`, `title`, optional `subtitle`, `questions`;
    - every question: stable `id`, `topic_id` (or `null` only for explicitly unassigned concepts), one or more same-unit `concept_ids`, `difficulty` (`basic|intermediate|advanced`), `prompt`, optional `code`, four options and one `correct_option_id`;
@@ -55,7 +55,7 @@ Generate a persistent, self-contained multiple-choice quiz for one processed uni
     `python scripts/venv_exec.py scripts/publish_quiz.py --json <run-dir>/04-final.json --html <run-dir>/09-rendered.html --dest-json <unit-root>/preguntas/_source/<unit-id>-quiz.json --dest-html <unit-root>/preguntas/<unit-id>-quiz.html --report <run-dir>/11-publication.json`.
     The run sources remain immutable. Re-running `quiz` replaces the unit's current quiz atomically rather than accumulating stale random banks.
 12. Mark only the published HTML as artifact type `quiz`, scope `<unit-id>`, using MCP `study_mark_artifact` or `artifact_state.py mark`.
-13. Finish with `python scripts/venv_exec.py scripts/pipeline_run.py finish --run <run-dir>`. Finish must reject a changed canonical snapshot, failed review/integrity/visual gate, publication mismatch or engine mutation.
+13. Finish with `python scripts/venv_exec.py scripts/quiz_run.py finish --run <run-dir>`. Finish rejects a changed canonical snapshot, failed review/integrity/visual gate, publication mismatch or engine mutation.
 14. Return the final HTML path prominently. The JSON is the semantic source and may be linked secondarily.
 
 ## BROWSER/PROGRESS BOUNDARY
