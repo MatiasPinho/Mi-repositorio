@@ -115,15 +115,43 @@ def scoped_topics(course: Path, scope: str) -> dict[str, Any]:
     )
 
 
+def artifact_topic_view(catalog: Any) -> dict[str, Any]:
+    """Keep only observed-topic fields that can change generated coverage."""
+    if not isinstance(catalog, dict):
+        catalog = {}
+    raw_topics = catalog.get("topics", {})
+    topics: dict[str, dict[str, Any]] = {}
+    if isinstance(raw_topics, dict):
+        for key, item in raw_topics.items():
+            if not isinstance(item, dict):
+                continue
+            topic_id = str(item.get("id") or key)
+            concept_ids = item.get("concept_ids", [])
+            topics[topic_id] = {
+                "name": str(item.get("name") or topic_id),
+                "concept_ids": sorted(str(value) for value in concept_ids) if isinstance(concept_ids, list) else [],
+            }
+    unassigned = catalog.get("unassigned_concept_ids", [])
+    return {
+        "topics": dict(sorted(topics.items())),
+        "unassigned_concept_ids": sorted(str(value) for value in unassigned) if isinstance(unassigned, list) else [],
+    }
+
+
 def topic_fingerprint(course: Path, scope: str) -> tuple[str, int, int]:
     data = scoped_topics(course, scope)
     if has_unit_layout(course) and not scope:
-        count = sum(len(row.get("topics", {})) for row in data.values() if isinstance(row, dict))
-        unassigned = sum(len(row.get("unassigned_concept_ids", [])) for row in data.values() if isinstance(row, dict))
+        fingerprint_data = {
+            unit_id: artifact_topic_view(row)
+            for unit_id, row in data.items()
+        }
+        count = sum(len(row["topics"]) for row in fingerprint_data.values())
+        unassigned = sum(len(row["unassigned_concept_ids"]) for row in fingerprint_data.values())
     else:
-        count = len(data.get("topics", {})) if isinstance(data, dict) else 0
-        unassigned = len(data.get("unassigned_concept_ids", [])) if isinstance(data, dict) else 0
-    return stable_json_hash(data), count, unassigned
+        fingerprint_data = artifact_topic_view(data)
+        count = len(fingerprint_data["topics"])
+        unassigned = len(fingerprint_data["unassigned_concept_ids"])
+    return stable_json_hash(fingerprint_data), count, unassigned
 
 
 def scoped_concepts(course: Path, scope: str) -> tuple[dict[str, Any], str]:

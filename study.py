@@ -801,15 +801,32 @@ def cmd_status(args: argparse.Namespace) -> None:
                 print(f"  {report['unit_id']}:")
             indent = "    " if not selected_unit else "  "
             for row in report["topics"].values():
+                mastery = fmt_pct(row["average_mastery"])
+                if not row["mastery_complete"]:
+                    known = row["tracked_mastery_average"]
+                    mastery = f"incompleto ({row['tracked_concept_count']}/{row['concept_count']} registrados"
+                    if known is not None:
+                        mastery += f"; media conocida {fmt_pct(known)}"
+                    mastery += ")"
                 print(
                     f"{indent}- {row['name']}: evaluados {row['tested_concept_count']}/{row['concept_count']} "
-                    f"| dominio {fmt_pct(row['average_mastery'])}"
+                    f"| dominio {mastery}"
                 )
             unassigned = report["unassigned"]
             if unassigned["concept_count"]:
+                mastery = fmt_pct(unassigned["average_mastery"])
+                if not unassigned["mastery_complete"]:
+                    known = unassigned["tracked_mastery_average"]
+                    mastery = (
+                        f"incompleto ({unassigned['tracked_concept_count']}/"
+                        f"{unassigned['concept_count']} registrados"
+                    )
+                    if known is not None:
+                        mastery += f"; media conocida {fmt_pct(known)}"
+                    mastery += ")"
                 print(
                     f"{indent}- Sin tema: evaluados {unassigned['tested_concept_count']}/{unassigned['concept_count']} "
-                    f"| dominio {fmt_pct(unassigned['average_mastery'])}"
+                    f"| dominio {mastery}"
                 )
         for topic_unit, message in topic_errors:
             print(f"  - {topic_unit}: catálogo de temas inválido ({message})")

@@ -13,6 +13,7 @@ from scripts.topic_catalog import (
     TopicCatalogError,
     load_catalog,
     reconcile_topics,
+    topic_progress,
     validate_catalog,
 )
 from study_mcp import service
@@ -201,10 +202,40 @@ class TopicCatalogTests(unittest.TestCase):
             self.assertEqual(data["paths"]["topics"], "unidades/unidad-1/conocimiento/topics.json")
             self.assertEqual(data["topic_progress"]["topics"]["operadores"]["concept_count"], 1)
             self.assertEqual(data["topic_progress"]["topics"]["operadores"]["tested_coverage"], 1.0)
+            self.assertTrue(data["topic_progress"]["topics"]["operadores"]["mastery_complete"])
+            self.assertEqual(data["topic_progress"]["topics"]["operadores"]["mastery_coverage"], 1.0)
+            self.assertEqual(data["topic_progress"]["topics"]["operadores"]["tracked_mastery_average"], 0.6)
             self.assertEqual(data["topic_progress"]["topics"]["operadores"]["average_mastery"], 0.6)
             self.assertNotIn("mastery", data["topics"]["topics"]["operadores"])
         finally:
             shutil.rmtree(course, ignore_errors=True)
+
+    def test_partial_topic_mastery_is_explicit_not_an_overall_average(self):
+        with tempfile.TemporaryDirectory() as td:
+            course = self.make_course(Path(td))
+            self.set_concepts(course, "unidad-1", {
+                "suma": concept("suma", "unidad-1", "U1"),
+                "resta": concept("resta", "unidad-1", "U1"),
+            })
+            reconcile_topics(course, "U1", {
+                "topics": [{
+                    "id": "operadores",
+                    "name": "Operadores",
+                    "concept_ids": ["suma", "resta"],
+                }],
+            }, write=True)
+            write(course / "unidades/unidad-1/progreso/progress.json", {
+                "version": 2,
+                "concepts": {"suma": {"id": "suma", "name": "Suma", "mastery": 0.8, "attempts": 1}},
+            })
+
+            metric = topic_progress(course, "U1")["topics"]["operadores"]
+            self.assertEqual(metric["tracked_concept_count"], 1)
+            self.assertEqual(metric["untracked_concept_count"], 1)
+            self.assertEqual(metric["mastery_coverage"], 0.5)
+            self.assertFalse(metric["mastery_complete"])
+            self.assertEqual(metric["tracked_mastery_average"], 0.8)
+            self.assertIsNone(metric["average_mastery"])
 
     def test_v3_migration_preserves_existing_topics_and_assignments(self):
         with tempfile.TemporaryDirectory() as td:

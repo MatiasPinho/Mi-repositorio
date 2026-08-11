@@ -10,6 +10,12 @@
   ni duplicar mastery.
 - `artifact_contract_version = 9`: cambios en temas observados invalidan los
   artefactos derivados de esa unidad.
+- Acota el fingerprint temático a IDs, nombres y asignaciones que afectan la
+  cobertura generada; aliases, evidencia y `declared_matches` ya no provocan
+  staleness por sí solos.
+- Hace explícita la cobertura del dominio derivado: una media parcial se expone
+  como `tracked_mastery_average`, y `average_mastery` sólo tiene valor cuando
+  todos los conceptos del tema tienen progreso.
 
 - Introduce `materias/<course>/unidades/<unit-id>/` como límite canónico para
   fuentes pedagógicas, conocimiento, figuras, progreso, notas, artefactos,
