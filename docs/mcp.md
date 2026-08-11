@@ -45,8 +45,10 @@ Escritura segura:
 
 Cuando el MCP está disponible, los agentes deben preferirlo para leer contexto canónico y para las
 operaciones expuestas arriba. `study_get_unit_context` devuelve también las
-rutas canónicas de la unidad, y las lecturas agregadas nunca cambian su
-propiedad. El filesystem sigue disponible para escribir handoffs, drafts, SVGs y
+rutas canónicas de la unidad, mantiene separados `unit.declared_topics`
+(temario oficial) y `topics` (catálogo observado), e incluye `topic_progress`
+derivado desde el progreso de conceptos. Las lecturas agregadas nunca cambian
+su propiedad. El filesystem sigue disponible para escribir handoffs, drafts, SVGs y
 otros archivos que todavía no tienen una operación MCP. Si el MCP no está conectado, los pipelines
 siguen funcionando mediante `study.py` y `scripts/` sin degradación funcional.
 

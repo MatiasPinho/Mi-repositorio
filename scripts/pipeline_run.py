@@ -191,6 +191,7 @@ def cmd_start(args: argparse.Namespace) -> None:
     save(candidate / "manifest.json", manifest)
     unit_id = resolve_unit(course, scope).get("unit_id", "")
     concepts_path = registry_path(course, "concepts", unit_id) if unit_id and has_unit_layout(course) else registry_path(course, "concepts")
+    topics_path = registry_path(course, "topics", unit_id) if unit_id and has_unit_layout(course) else registry_path(course, "topics")
     figures_path = registry_path(course, "figures", unit_id) if unit_id and has_unit_layout(course) else registry_path(course, "figures")
     inp = {
         "pipeline": pipeline,
@@ -199,9 +200,11 @@ def cmd_start(args: argparse.Namespace) -> None:
         "unit_id": unit_id,
         "academic_file": (course / "academico" / "academic.json").relative_to(ROOT).as_posix(),
         "concepts_file": concepts_path.relative_to(ROOT).as_posix(),
+        "topics_file": topics_path.relative_to(ROOT).as_posix(),
         "figures_file": figures_path.relative_to(ROOT).as_posix(),
         "academic_sha256": sha(course / "academico" / "academic.json"),
         "concepts_sha256": sha(concepts_path),
+        "topics_sha256": sha(topics_path),
         "figures_sha256": sha(figures_path),
         "created_at": now(),
     }

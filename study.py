@@ -35,6 +35,7 @@ from scripts.course_layout import (
     unit_root,
 )
 from scripts.unit_identity import record_unit_id, resolve_unit as resolve_unit_identity, stable_unit_id_from_row
+from scripts.topic_catalog import TopicCatalogError, reconcile_topics, topic_progress, validate_catalog
 
 ROOT = Path(__file__).resolve().parent
 COURSES_DIR = ROOT / "materias"
@@ -284,6 +285,36 @@ def cmd_units_migrate(args: argparse.Namespace) -> None:
         cmd.append("--apply")
     out, _ = run_script(*cmd)
     print(out)
+
+
+def cmd_topics_reconcile(args: argparse.Namespace) -> None:
+    course = resolve_course(args.course)
+    try:
+        proposal = read_json(Path(args.input), {}) if args.input else None
+        result = reconcile_topics(course, args.unit, proposal, write=args.write)
+    except (TopicCatalogError, LayoutError, OSError, json.JSONDecodeError, ValueError) as exc:
+        raise CliError(str(exc)) from exc
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def cmd_topics_validate(args: argparse.Namespace) -> None:
+    course = resolve_course(args.course)
+    try:
+        result = validate_catalog(course, args.unit)
+    except (TopicCatalogError, LayoutError, OSError, json.JSONDecodeError, ValueError) as exc:
+        raise CliError(str(exc)) from exc
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["ok"]:
+        raise SystemExit(1)
+
+
+def cmd_topics_progress(args: argparse.Namespace) -> None:
+    course = resolve_course(args.course)
+    try:
+        result = topic_progress(course, args.unit)
+    except (TopicCatalogError, LayoutError, OSError, json.JSONDecodeError, ValueError) as exc:
+        raise CliError(str(exc)) from exc
+    print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 def _count_files(path: Path) -> int:
@@ -749,6 +780,39 @@ def cmd_status(args: argparse.Namespace) -> None:
         print("  Mas debiles:")
         for item in p["weak"]:
             print(f"    - {item.get('name', '?')}: {fmt_pct(item.get('mastery', 0))}")
+    topic_units = []
+    if selected_unit:
+        resolved_topic_unit = resolve_unit_identity(course, selected_unit).get("unit_id", "")
+        if resolved_topic_unit:
+            topic_units.append(resolved_topic_unit)
+    else:
+        topic_units.extend(unit_ids(course))
+    topic_reports: list[dict[str, Any]] = []
+    topic_errors: list[tuple[str, str]] = []
+    for topic_unit in topic_units:
+        try:
+            topic_reports.append(topic_progress(course, topic_unit))
+        except (TopicCatalogError, LayoutError) as exc:
+            topic_errors.append((topic_unit, str(exc)))
+    if topic_reports or topic_errors:
+        print("\nProgreso por tema observado")
+        for report in topic_reports:
+            if not selected_unit:
+                print(f"  {report['unit_id']}:")
+            indent = "    " if not selected_unit else "  "
+            for row in report["topics"].values():
+                print(
+                    f"{indent}- {row['name']}: evaluados {row['tested_concept_count']}/{row['concept_count']} "
+                    f"| dominio {fmt_pct(row['average_mastery'])}"
+                )
+            unassigned = report["unassigned"]
+            if unassigned["concept_count"]:
+                print(
+                    f"{indent}- Sin tema: evaluados {unassigned['tested_concept_count']}/{unassigned['concept_count']} "
+                    f"| dominio {fmt_pct(unassigned['average_mastery'])}"
+                )
+        for topic_unit, message in topic_errors:
+            print(f"  - {topic_unit}: catálogo de temas inválido ({message})")
     artifacts = artifact_rows(course, selected_unit)
     if artifacts:
         stale_count = sum(1 for row in artifacts if row.get("stale"))
@@ -829,17 +893,19 @@ def cmd_validate(args: argparse.Namespace) -> None:
             for dirname in UNIT_DIRECTORIES:
                 if not (root / dirname).is_dir():
                     structural.append(f"falta carpeta de unidad: unidades/{unit_id}/{dirname}/")
-            for relative in ("unidad.json", "conocimiento/concepts.json", "conocimiento/figures.json", "progreso/progress.json"):
+            for relative in ("unidad.json", "conocimiento/concepts.json", "conocimiento/topics.json", "conocimiento/figures.json", "progreso/progress.json"):
                 required_json.append(root / relative)
         for orphan in sorted(existing - expected):
             structural.append(f"unidad huérfana no declarada en academic.json: unidades/{orphan}/")
-        for kind, row_key in (("concepts", "concepts"), ("figures", "figures"), ("progress", "concepts")):
+        for kind, row_key in (("concepts", "concepts"), ("topics", "topics"), ("figures", "figures"), ("progress", "concepts")):
             for path in registry_paths(course, kind):
                 data = read_json(path, {row_key: {}})
                 owner = path.parents[1].name
                 for key, item in data.get(row_key, {}).items() if isinstance(data, dict) else []:
                     if isinstance(item, dict) and record_unit_id(course, item) != owner:
                         structural.append(f"registro en unidad incorrecta: {path.relative_to(course)}#{key}")
+                if kind == "topics" and str(data.get("unit_id", "")) != owner:
+                    structural.append(f"topics.json en unidad incorrecta: {path.relative_to(course)}")
     else:
         required_json += [course / "conocimiento" / "concepts.json", course / "progreso" / "progress.json"]
     for path in required_json:
@@ -881,9 +947,18 @@ def cmd_validate(args: argparse.Namespace) -> None:
             # Verification itself does not need PyMuPDF unless source hashes are checked; report as structural if it cannot run.
             structural.append(f"no se pudo validar figures.json: {exc}")
 
+    topic_issues: list[dict[str, Any]] = []
+    if has_unit_layout(course):
+        for unit_id in unit_ids(course):
+            try:
+                result = validate_catalog(course, unit_id)
+                topic_issues.extend(result.get("issues", []))
+            except (TopicCatalogError, LayoutError, json.JSONDecodeError, OSError, ValueError) as exc:
+                structural.append(f"no se pudo validar topics.json de {unit_id}: {exc}")
+
     derived = [row for row in artifact_rows(course) if row.get("stale")]
 
-    if not structural and not issues and not stale and not figure_issues and not derived:
+    if not structural and not issues and not stale and not topic_issues and not figure_issues and not derived:
         print(f"OK: {course_display_name(course)} no tiene inconsistencias conocidas.")
         return
     if structural:
@@ -904,6 +979,10 @@ def cmd_validate(args: argparse.Namespace) -> None:
         print("Problemas con figuras/visuales:")
         for item in figure_issues:
             print(f"  - {item.get('figure', '?')}: {item.get('reason', 'issue')}")
+    if topic_issues:
+        print("Problemas con temas observados:")
+        for item in topic_issues:
+            print(f"  - {item.get('code', 'issue')}: {item.get('message', item)}")
     if derived:
         print("Artefactos derivados desactualizados/no registrados:")
         for item in derived:
@@ -1077,6 +1156,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("course")
     p.add_argument("--apply", action="store_true", help="Aplicar; sin esta opción solo muestra el plan")
     p.set_defaults(func=cmd_units_migrate)
+
+    topics = sub.add_parser("topics", help="Reconciliar y validar temas observados por unidad")
+    tpsub = topics.add_subparsers(dest="topics_cmd", required=True)
+    p = tpsub.add_parser("reconcile", help="Reutilizar ids y aplicar asignaciones semánticas de conceptos")
+    p.add_argument("course")
+    p.add_argument("--unit", required=True)
+    p.add_argument("--input", help="Archivo JSON con propuestas de temas y conceptos sin asignar")
+    p.add_argument("--write", action="store_true", help="Persistir; sin esta opción devuelve un dry-run")
+    p.set_defaults(func=cmd_topics_reconcile)
+    p = tpsub.add_parser("validate", help="Validar referencias, asignación única y relación con el temario declarado")
+    p.add_argument("course")
+    p.add_argument("--unit", required=True)
+    p.set_defaults(func=cmd_topics_validate)
+    p = tpsub.add_parser("progress", help="Derivar cobertura y dominio desde progress.json")
+    p.add_argument("course")
+    p.add_argument("--unit", required=True)
+    p.set_defaults(func=cmd_topics_progress)
 
     materials = sub.add_parser("materials", help="Administrar materiales")
     msub = materials.add_subparsers(dest="materials_cmd", required=True)

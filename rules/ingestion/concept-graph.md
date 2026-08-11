@@ -7,6 +7,11 @@ registry in a V4 matter; merged reads are an in-memory query view only.
 
 A concept may contain: name, unit, concise meaning, precise definition, prerequisites, relations, examples, traps, recurring errors, source references, assessment relevance by assessment, teaching signals and source fingerprints.
 
+Its single primary observed-topic assignment lives in the same unit's
+`topics.json` (`topics[*].concept_ids` or explicit
+`unassigned_concept_ids`), not in a global registry and not in the official
+syllabus topic list.
+
 Prefer concepts that are useful for learning and assessment. Do not fragment every sentence into a concept.
 
 After ingestion, sync graph concepts to the tracker. Relations/prerequisites must be evidence-backed or clearly marked as model organization rather than course fact.

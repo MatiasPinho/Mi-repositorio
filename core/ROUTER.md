@@ -64,7 +64,7 @@ boundary; never place a unit run in another unit or infer scope from a filename.
 ## Canonical unit boundary
 
 Resolve every pedagogical request to a stable `unit_id` before reading or
-writing content. Sources, concepts, figures, progress, notes, summaries,
+writing content. Sources, observed topics, concepts, figures, progress, notes, summaries,
 questions, simulations, assets and run state live below
 `materias/<course>/unidades/<unit-id>/`. Only identity, academic unit catalog,
 assessments, rules and genuinely cross-unit sources stay at course level.

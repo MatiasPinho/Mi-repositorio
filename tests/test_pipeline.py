@@ -61,6 +61,9 @@ class PipelineRunTests(unittest.TestCase):
         (self.course / "conocimiento").mkdir()
         (self.course / "academico" / "academic.json").write_text(json.dumps({"identity": {"subject": "Pipeline Test"}}), encoding="utf-8")
         (self.course / "conocimiento" / "concepts.json").write_text(json.dumps({"concepts": {}}), encoding="utf-8")
+        (self.course / "conocimiento" / "topics.json").write_text(json.dumps({
+            "version": 1, "unit_id": "unidad-1", "topics": {}, "unassigned_concept_ids": []
+        }), encoding="utf-8")
         (self.course / "conocimiento" / "figures.json").write_text(json.dumps({"figures": {}}), encoding="utf-8")
 
     def tearDown(self):
@@ -151,6 +154,7 @@ class PipelineRunTests(unittest.TestCase):
         self.assertEqual(inp["unit_id"], "unidad-1")
         self.assertTrue(inp["academic_sha256"])
         self.assertTrue(inp["concepts_sha256"])
+        self.assertTrue(inp["topics_sha256"])
         self.assertTrue(inp["figures_sha256"])
 
     def test_first_review_pass_path_finishes(self):
