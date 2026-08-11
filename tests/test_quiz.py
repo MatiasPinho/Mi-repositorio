@@ -129,16 +129,20 @@ class BrowserQuizTests(unittest.TestCase):
             course = make_course(root)
             source = root / "quiz.json"
             html = root / "quiz.html"
+            out_dir = root / "interaction-audit"
             source.write_text(json.dumps(valid_quiz(), ensure_ascii=False, indent=2), encoding="utf-8")
             rendered = render_command(course, "unidad-1", source, html)
             self.assertTrue(rendered["ok"], rendered)
 
-            result = run_browser_check(source, html)
+            result = run_browser_check(source, html, out_dir)
 
             self.assertTrue(result["ok"], result)
             self.assertTrue(result["modes"]["practice"]["feedback_visible_after_check"])
             self.assertEqual(result["modes"]["exam"]["score"], "100%")
             self.assertEqual(result["modes"]["exam"]["answered"], 2)
+            self.assertEqual(set(result["screenshots"]), {"practice_feedback", "exam_question_mobile", "exam_result_mobile"})
+            for path in result["screenshots"].values():
+                self.assertGreater(Path(path).stat().st_size, 0)
 
     def test_validator_allows_integrative_questions_when_primary_topic_is_represented(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as td:
@@ -279,6 +283,16 @@ class BrowserQuizTests(unittest.TestCase):
             render_command(course, "unidad-1", final, rendered)
             integrity = check_command(course, "unidad-1", final, rendered)
             (run / "10-integrity.json").write_text(json.dumps(integrity), encoding="utf-8")
+
+            interaction_root = run / "interaction-audit"
+            interaction_root.mkdir()
+            screenshots = {
+                "practice_feedback": interaction_root / "practice-feedback.png",
+                "exam_question_mobile": interaction_root / "exam-question-mobile.png",
+                "exam_result_mobile": interaction_root / "exam-result-mobile.png",
+            }
+            for path in screenshots.values():
+                path.write_bytes(b"png")
             (run / "10-interaction.json").write_text(
                 json.dumps({
                     "ok": True,
@@ -286,6 +300,7 @@ class BrowserQuizTests(unittest.TestCase):
                     "source_sha256": sha(final),
                     "html_sha256": sha(rendered),
                     "modes": {"practice": {"ok": True}, "exam": {"ok": True}},
+                    "screenshots": {key: path.resolve().as_posix() for key, path in screenshots.items()},
                 }),
                 encoding="utf-8",
             )
