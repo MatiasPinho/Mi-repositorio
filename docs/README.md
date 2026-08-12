@@ -6,6 +6,7 @@ Este directorio contiene la documentación técnica del University Study System.
 
 - [`../README.md`](../README.md): visión general, inicio rápido, arquitectura vigente y flujo de estudio.
 - [`public-actions.md`](public-actions.md): contrato de las nueve acciones públicas, consolidaciones de `guia`/`explicar` y frontera de `auditar` interno.
+- [`engine-qa.md`](engine-qa.md): laboratorio adversarial autónomo del motor, materias sintéticas, invariantes, journal, findings y handoff por reportes reproducibles.
 - [`setup.md`](setup.md): instalación completa, `INSTALAR-STUDY.bat`, `.venv`, preflight de Chromium y paridad con CI.
 - [`runtime-safety.md`](runtime-safety.md): inmutabilidad del motor durante una corrida, carga verificada de lazy images y publicación atómica con SHA-256.
 - [`mcp.md`](mcp.md): adapter MCP local por stdio, herramientas expuestas y límites de seguridad.
@@ -91,18 +92,20 @@ La suite completa se ejecuta con:
 python scripts/venv_exec.py tests/run_release_tests.py
 ```
 
-Incluye smoke/regression tests que renderizan documentos y quizzes sintéticos, ejecutan Chromium real, fuerzan imágenes diferidas fuera del viewport, prueban publicación sin truncamiento, verifican el bloqueo de mutaciones del motor/canonical state y fijan la superficie pública de acciones para evitar adapters fantasma.
+Incluye smoke/regression tests que renderizan documentos y quizzes sintéticos, ejecutan Chromium real, fuerzan imágenes diferidas fuera del viewport, prueban publicación sin truncamiento, verifican el bloqueo de mutaciones del motor/canonical state, fijan la superficie pública de acciones y validan el aislamiento/journal/invariantes del Engine QA Lab.
+
+Engine QA es complementario a CI: Claude/Codex exploran secuencias y transformaciones que todavía no conocemos; cuando descubren un bug confirmado, su reproducción mínima debe convertirse en un test determinístico de esta suite.
 
 ## Regla para nuevas regresiones
 
-Cuando una materia real descubre un fallo:
+Cuando una materia real o Engine QA descubre un fallo:
 
 1. reducir el problema al fixture sintético más pequeño posible;
 2. no copiar material privado al repositorio;
 3. agregar el caso al benchmark/test correspondiente;
 4. comprobar que el caso reproduce el fallo;
 5. corregir el motor o documentar explícitamente la limitación;
-6. no corregir el motor dentro de la propia corrida de estudio;
+6. no corregir el motor dentro de la propia corrida de estudio/QA que lo detectó;
 7. exigir CI verde en Windows y Ubuntu.
 
 ## Qué documento modificar
@@ -110,6 +113,7 @@ Cuando una materia real descubre un fallo:
 | Cambio | Documento principal |
 |---|---|
 | Superficie de acciones / consolidación de comandos | `public-actions.md` |
+| Engine QA / invariantes / reportes autónomos | `engine-qa.md` |
 | Instalación / dependencias / Chromium | `setup.md` |
 | Motor durante una corrida / publicación / lazy images | `runtime-safety.md` |
 | Política del reviewer / quality gate | `academic-eval.md` |
