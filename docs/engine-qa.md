@@ -11,42 +11,75 @@ Claude / Codex
     ↓
 explora, formula hipótesis, decide secuencias
     ↓
-scripts/engine_qa.py
+scripts/engine_qa_safe.py
     ↓
-confina cambios + registra + compara + valida invariantes
+crea sandbox congelado + confina rutas + registra + compara
     ↓
-motor V4 real
+scripts/engine_qa.py dentro del sandbox
+    ↓
+motor V4 congelado para ese run
 ```
 
 El agente sirve para descubrir espacios de fallo que todavía no conocemos. El harness sirve para que la evidencia no dependa de la memoria o narrativa del modelo.
 
 Engine QA no reemplaza la release suite. Un bug descubierto una vez debe terminar convertido en un test determinístico permanente.
 
-## Seguridad
+## Entrada canónica
 
-Cada run crea una materia `materias/qa-engine-<run-id>` y estado efímero bajo `.study/engine-qa/`.
+La única entrada normal para Claude/Codex es:
 
-El harness captura al comienzo un fingerprint SHA-256 de:
+```text
+python scripts/venv_exec.py scripts/engine_qa_safe.py ...
+```
+
+`engine_qa.py` es el harness interno y no debe invocarse directamente en una corrida normal. El wrapper seguro agrega aislamiento de proceso/rutas alrededor del harness.
+
+## Seguridad en dos capas
+
+### 1. Sandbox congelado del motor
+
+Cada `start` crea una copia privada del motor bajo:
+
+```text
+.study/engine-qa/sandboxes/engine-<id>/
+```
+
+La materia `qa-engine-*` vive dentro de `sandbox/materias/`, no en el árbol real de materias del usuario. Los scripts allowlisted se ejecutan desde esa copia y su `ROOT` apunta al sandbox.
+
+Por lo tanto, una escritura accidental relativa, un renderer, una publicación o una herramienta que use rutas derivadas del repo opera sobre la copia congelada y no sobre el checkout real.
+
+El sandbox contiene la misma versión de `study.py`, `core/`, `rules/`, `pipelines/`, `contracts/`, `vendor/`, `scripts/`, `study_mcp/`, `config/`, `actions/`, `assets/` y `design/` que existía al comenzar el run. Esa copia conserva su propio fingerprint SHA-256 y el harness bloquea cualquier drift interno.
+
+### 2. Guard del checkout real
+
+Además, `engine_qa_safe.py` registra un fingerprint independiente del checkout real incluyendo motor, skills, tests, docs y CI. Antes de continuar un run verifica que el checkout no haya cambiado desde `start`.
+
+Si cambió, el run queda bloqueado como `live-checkout-mutated-during-qa` en vez de mezclar una versión de prueba con otra.
+
+El guard cubre entre otros:
 - `study.py`;
-- `core/`;
-- `rules/`;
-- `pipelines/`;
-- `contracts/`;
-- `vendor/`;
-- `scripts/`;
-- `study_mcp/`;
-- `config/`;
-- `actions/`;
-- `assets/`;
-- `design/`.
+- `core/`, `rules/`, `pipelines/`, `contracts/`;
+- `vendor/`, `scripts/`, `study_mcp/`;
+- `config/`, `actions/`, `assets/`, `design/`;
+- `skills-src/`, `.claude/skills/`, `.agents/skills/`;
+- `tests/`, `docs/`, `.github/`;
+- requirements e instalador.
 
-Antes y después de cada ejecución/mutación comprueba que esas rutas no hayan cambiado. Cualquier drift bloquea el run como `engine-mutated-during-qa`.
+### Rutas de `exec`
 
-Las mutaciones del harness resuelven las rutas contra la materia sintética y rechazan path traversal. `exec` sólo admite scripts explícitamente allowlisted y comprueba que `--course` apunte al curso QA del run.
+`exec` sólo admite scripts explícitamente allowlisted. Antes de lanzar un proceso, el wrapper:
+- expande `@course`, `@run`, `@root`, `@slug`;
+- permite también `@course/...`, `@run/...`, `@root/...`;
+- rechaza cualquier segmento `..`;
+- rechaza `--course`/`--course=` que no apunte exactamente a la materia QA;
+- rechaza rutas absolutas fuera del sandbox, el directorio del run o el outbox de reportes;
+- valida también valores de opción embebidos como `--out=<ruta>`.
+
+Esto evita depender solamente de detectar una escritura peligrosa después de que haya ocurrido.
 
 ## Materia sintética
 
-`start` genera automáticamente:
+`start` genera automáticamente dentro del sandbox:
 - `academic.json` con tres unidades y una evaluación;
 - layout V4 completo mediante `course_layout.sync_units`;
 - fuentes TXT unit-scoped;
@@ -76,7 +109,7 @@ Todas las operaciones relevantes se guardan en `journal.jsonl` con número de pa
 - stdout/stderr acotados;
 - fingerprint del workspace antes/después;
 - archivos agregados, eliminados y modificados;
-- confirmación de que el engine quedó inmutable.
+- confirmación de que el engine congelado quedó inmutable.
 
 `mutate` registra el mismo diff para cambios adversariales sobre inputs.
 
@@ -85,7 +118,7 @@ Todas las operaciones relevantes se guardan en `journal.jsonl` con número de pa
 ## Invariantes V1
 
 `check` comprueba mecánicamente, entre otros:
-- engine inmutable;
+- engine congelado inmutable;
 - `academic.json` válido;
 - layout físico igual al set de unidades declarado;
 - todo JSON del curso parseable;
@@ -131,9 +164,11 @@ Una anomalía no es un finding hasta ser confirmada. El agente debe intentar rep
 
 Incluye expected, actual, severidad, invariante, seed y los pasos recientes relevantes.
 
+Antes de cerrar, un `check` final no debe dejar issues inesperados sin clasificar: o se restauran porque eran una mutación deliberada, o se confirman como finding.
+
 ## Reporte y handoff
 
-`finish --export` crea un paquete compacto:
+`finish --export` crea un paquete compacto en el checkout real:
 
 ```text
 qa/reports/<run-id>/
@@ -143,14 +178,18 @@ qa/reports/<run-id>/
 └── findings/
 ```
 
-No copia el workspace sintético completo. `replay.json` conserva contexto operativo suficiente para orientar la reproducción; antes de corregir, cada bug debe reducirse a pasos determinísticos y convertirse en regresión.
+Ésta es la única escritura intencional desde el sandbox hacia el repo real. No copia el workspace sintético completo ni ninguna materia del usuario.
 
-Cuando existan findings, la skill `engine-qa` intenta publicar sólo este directorio en un draft PR `Engine QA findings <run-id>`. De este modo otra sesión de ChatGPT puede localizar el último reporte directamente en GitHub sin que el usuario copie logs o conversaciones.
+`replay.json` conserva contexto operativo suficiente para orientar la reproducción; antes de corregir, cada bug debe reducirse a pasos determinísticos y convertirse en regresión.
+
+Cuando existan findings, la skill `engine-qa` publica sólo este directorio en un draft PR `Engine QA findings <run-id>`. Para no cambiar la rama del checkout principal ni arrastrar cambios locales, la publicación se hace desde un worktree temporal bajo `.study/engine-qa/publish/`.
+
+De este modo otra sesión de ChatGPT puede localizar el último reporte directamente en GitHub sin que el usuario copie logs o conversaciones.
 
 ## Flujo de reparación
 
 ```text
-Engine QA run (engine read-only)
+Engine QA run (motor congelado + checkout real protegido)
         ↓
 finding confirmado
         ↓
