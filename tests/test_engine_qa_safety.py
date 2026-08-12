@@ -19,7 +19,7 @@ def sha256(path: Path) -> str:
 
 
 def run_safe(env: dict[str, str], *args: str) -> subprocess.CompletedProcess[str]:
-    """Invoke the exact command shape documented for Claude/Codex."""
+    """Invoke the low-level compatibility/safety entrypoint directly."""
     return subprocess.run(
         [sys.executable, str(VENV_EXEC), SAFE_ARG, *args],
         cwd=ROOT,
@@ -124,12 +124,18 @@ class EngineQaSafetyTests(unittest.TestCase):
             self.assertIn("Path traversal", traversal.stdout)
             self.assertEqual(sha256(live_study), before)
 
-    def test_internal_skill_uses_safe_entrypoint_for_commands(self):
+    def test_internal_skill_uses_structured_rpc_transport(self):
         source = (ROOT / "skills-src" / "engine-qa" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("scripts/engine_qa_safe.py start", source)
-        self.assertIn("scripts/engine_qa_safe.py finish --export", source)
+        self.assertIn("scripts/engine_qa_rpc.py", source)
+        self.assertIn(".study/engine-qa/requests", source)
+        self.assertIn(".study/engine-qa/responses", source)
+        self.assertIn("experiment-result", source)
+        self.assertIn("INVALID", source)
+        self.assertIn("qa_run", source)
         self.assertIn("Nunca invoques `scripts/engine_qa.py` directamente", source)
         self.assertIn("worktree temporal", source)
+        self.assertNotIn("scripts/engine_qa_safe.py start", source)
+        self.assertNotIn("scripts/engine_qa_safe.py finish --export", source)
 
 
 if __name__ == "__main__":
