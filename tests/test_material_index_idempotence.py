@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -10,14 +11,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SYNC_MATERIALS = ROOT / "scripts" / "sync_materials.py"
+STUDY = ROOT / "study.py"
+CLI_COURSE = ROOT / "materias" / "material-index-unittest"
 
 sys.path.insert(0, str(ROOT))
 from scripts.course_layout import sync_units  # noqa: E402
 
 
 class MaterialIndexIdempotenceTests(unittest.TestCase):
-    def make_course(self, root: Path) -> tuple[Path, Path]:
-        course = root / "qa-material-index"
+    def tearDown(self) -> None:
+        shutil.rmtree(CLI_COURSE, ignore_errors=True)
+
+    def make_course_at(self, course: Path) -> tuple[Path, Path]:
+        shutil.rmtree(course, ignore_errors=True)
         (course / "academico").mkdir(parents=True)
         academic = {
             "version": 1,
@@ -40,6 +46,9 @@ class MaterialIndexIdempotenceTests(unittest.TestCase):
         source.write_text("contenido estable\n", encoding="utf-8")
         return course, source
 
+    def make_course(self, root: Path) -> tuple[Path, Path]:
+        return self.make_course_at(root / "qa-material-index")
+
     def run_sync(self, course: Path) -> dict:
         cp = subprocess.run(
             [
@@ -59,6 +68,21 @@ class MaterialIndexIdempotenceTests(unittest.TestCase):
             check=True,
             timeout=20,
         )
+        self.assertEqual(cp.stderr, "")
+        return json.loads(cp.stdout)
+
+    def run_cli(self, *args: str) -> dict:
+        cp = subprocess.run(
+            [sys.executable, str(STUDY), *args],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            encoding="utf-8",
+            errors="strict",
+            check=True,
+            timeout=20,
+        )
+        self.assertEqual(cp.stderr, "")
         return json.loads(cp.stdout)
 
     def test_repeated_unchanged_write_preserves_index_bytes(self):
@@ -83,6 +107,65 @@ class MaterialIndexIdempotenceTests(unittest.TestCase):
             self.assertEqual(third["changed"], [])
             self.assertEqual(third["removed"], [])
             self.assertEqual(index.read_bytes(), before)
+
+    def test_cli_and_direct_script_share_index_bytes_and_semantics(self):
+        course, source = self.make_course_at(CLI_COURSE)
+        first = self.run_sync(course)
+        self.assertEqual(first["added"], ["unidades/unidad-1/fuentes/oficiales/material.txt"])
+
+        index = course / "unidades" / "unidad-1" / ".study" / "materials-index.json"
+        payload = json.loads(index.read_text(encoding="utf-8"))
+        row = payload["files"]["unidades/unidad-1/fuentes/oficiales/material.txt"]
+        self.assertEqual(row["kind"], "official")
+        self.assertEqual(row["unit_id"], "unidad-1")
+        before = index.read_bytes()
+
+        cli_noop = self.run_cli(
+            "materials",
+            "scan",
+            course.name,
+            "--unit",
+            "unidad-1",
+            "--commit",
+            "--json",
+        )
+        self.assertEqual(cli_noop["added"], [])
+        self.assertEqual(cli_noop["changed"], [])
+        self.assertEqual(cli_noop["removed"], [])
+        self.assertEqual(index.read_bytes(), before)
+
+        source.write_text("contenido cambiado\n", encoding="utf-8")
+        cli_changed = self.run_cli(
+            "materials",
+            "scan",
+            course.name,
+            "--unit",
+            "unidad-1",
+            "--commit",
+            "--json",
+        )
+        self.assertEqual(cli_changed["changed"], ["unidades/unidad-1/fuentes/oficiales/material.txt"])
+        changed_bytes = index.read_bytes()
+        self.assertNotEqual(changed_bytes, before)
+
+        direct_noop = self.run_sync(course)
+        self.assertEqual(direct_noop["changed"], [])
+        self.assertEqual(index.read_bytes(), changed_bytes)
+
+    def test_study_entrypoint_patches_all_material_callers_to_canonical_functions(self):
+        import study
+        from scripts import _study_cli_impl
+
+        self.assertEqual(study.ROOT, ROOT)
+        self.assertEqual(study.COURSES_DIR, ROOT / "materias")
+        self.assertEqual(study.SCRIPTS_DIR, ROOT / "scripts")
+        self.assertEqual(_study_cli_impl.ROOT, ROOT)
+        self.assertEqual(_study_cli_impl.COURSES_DIR, ROOT / "materias")
+        self.assertEqual(_study_cli_impl.SCRIPTS_DIR, ROOT / "scripts")
+        self.assertIs(_study_cli_impl.scan_materials, study.scan_materials)
+        self.assertIs(_study_cli_impl.materials_index_path, study.materials_index_path)
+        self.assertIs(_study_cli_impl.material_kind, study.material_kind)
+        self.assertIs(_study_cli_impl.cmd_materials_scan, study.cmd_materials_scan)
 
 
 if __name__ == "__main__":
