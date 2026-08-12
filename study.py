@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """Stable CLI entrypoint for University Study System.
 
-The command implementation lives in :mod:`scripts.study_cli`. Material indexing
-is injected from the canonical ``scripts.sync_materials`` module so the CLI,
-status/reset paths, Engine QA, and the direct deterministic script all share one
-implementation and one idempotence contract.
+The command implementation lives in :mod:`scripts._study_cli_impl`. Material
+indexing is injected from the canonical ``scripts.sync_materials`` module so the
+CLI, status/reset paths, Engine QA, and the direct deterministic script all share
+one implementation and one idempotence contract.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from scripts import study_cli as _impl
-from scripts.study_cli import *  # noqa: F401,F403
+from scripts import _study_cli_impl as _impl
+from scripts._study_cli_impl import *  # noqa: F401,F403
 from scripts import sync_materials as _materials
 
-# ``scripts.study_cli`` was extracted from the historical root entrypoint. Keep
-# its root-sensitive constants anchored at the repository root before any
+# ``scripts._study_cli_impl`` was extracted from the historical root entrypoint.
+# Keep its root-sensitive constants anchored at the repository root before any
 # command executes.
 ROOT = Path(__file__).resolve().parent
 _impl.ROOT = ROOT
