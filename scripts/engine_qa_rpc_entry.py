@@ -12,11 +12,15 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 from typing import Any
 
-from scripts import engine_qa
-from scripts import engine_qa_rpc as rpc
-from scripts import engine_qa_safe as safe
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts import engine_qa  # noqa: E402
+from scripts import engine_qa_rpc as rpc  # noqa: E402
+from scripts import engine_qa_safe as safe  # noqa: E402
 
 
 def transport_failure(response_target: str | None, exc: BaseException) -> int:
