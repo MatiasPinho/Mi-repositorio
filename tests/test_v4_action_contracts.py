@@ -20,33 +20,38 @@ class V4ActionContractTests(unittest.TestCase):
             self.assertIn(f"description: {spec['description']}", codex, name)
             self.assertIn(f'argument-hint: "{spec["hint"]}"', claude, name)
 
-    def test_public_hints_follow_v4_scope_contracts(self):
+    def test_public_surface_is_exactly_nine_actions(self):
         expected = {
             "procesar": "[materia] [unidad opcional]",
-            "aprender": "[materia] [tema]",
+            "aprender": "[materia] [tema o concepto]",
             "estudiar": "[materia] [minutos opcionales]",
-            "resumen": "[materia] [unidad]",
-            "guia": "[materia] [unidad]",
+            "resumen": "[materia] [unidad] [detallado opcional]",
             "repaso": "[materia] [unidad]",
             "preguntas": "[materia] [unidad] [cantidad opcional]",
             "quiz": "[materia] [unidad] [cantidad opcional]",
             "simulacro": "[materia] [evaluacion] [unidad]",
-            "explicar": "[materia] [concepto]",
-            "auditar": "[materia] [unidad]",
             "estado": "[materia] [unidad opcional]",
         }
         self.assertEqual({name: spec["hint"] for name, spec in ACTIONS.items()}, expected)
+        self.assertEqual(len(ACTIONS), 9)
+        self.assertTrue({"guia", "explicar", "auditar"}.isdisjoint(ACTIONS))
+
+    def test_removed_actions_have_no_public_adapters(self):
+        for platform in (".claude", ".agents"):
+            for name in ("guia", "explicar", "auditar"):
+                self.assertFalse((ROOT / platform / "skills" / name / "SKILL.md").exists(), f"ghost public action {platform}/{name}")
 
     def test_router_is_v4_and_separates_declared_from_observed_topics(self):
         router = (ROOT / "core" / "ROUTER.md").read_text(encoding="utf-8")
         self.assertTrue(router.startswith("# University Study V4"))
         self.assertIn("academic.json -> units[].topics", router)
         self.assertIn("conocimiento/topics.json", router)
-        self.assertIn("`quiz`", router)
+        self.assertIn("Exactly nine student-facing actions", router)
+        self.assertIn("maintenance-only", router)
         self.assertIn("Never fuzzy-pick", (ROOT / "actions" / "ARGUMENTS.md").read_text(encoding="utf-8"))
 
-    def test_staged_artifacts_are_unit_scoped_topic_aware_and_ingest_safe(self):
-        for name in ("resumen", "guia", "repaso"):
+    def test_staged_public_artifacts_are_unit_scoped_topic_aware_and_ingest_safe(self):
+        for name in ("resumen", "repaso"):
             text = self.pipeline(name)
             lower = text.lower()
             self.assertIn("unit-only", lower, name)
@@ -57,18 +62,26 @@ class V4ActionContractTests(unittest.TestCase):
             self.assertIn("canonical", lower, name)
             self.assertIn("fingerprint", lower, name)
 
-    def test_aprender_resolves_exact_observed_topic_and_never_fuzzy_picks(self):
-        text = self.pipeline("aprender")
-        self.assertIn("exactly one observed topic", text)
-        self.assertIn("Never fuzzy-resolve", text)
-        self.assertIn("concept_ids", text)
-        self.assertIn("NEEDS_INGESTION", text)
+    def test_resumen_absorbs_detailed_guide_mode(self):
+        text = self.pipeline("resumen")
+        self.assertIn("single public long-form study-document action", text)
+        self.assertIn('depth: "standard"|"detailed"', text)
+        self.assertIn("former “guía”", text)
+        self.assertIn("published artifact remains", text)
+        legacy = self.pipeline("guia")
+        self.assertIn("no longer a public action", legacy)
+        self.assertIn("pipelines/resumen.md", legacy)
 
-    def test_explicar_resolves_exact_concept_and_never_fuzzy_picks(self):
-        text = self.pipeline("explicar")
-        self.assertIn("exactly one canonical concept", text)
+    def test_aprender_resolves_exact_topic_or_concept_and_replaces_explicar(self):
+        text = self.pipeline("aprender")
+        self.assertIn("observed topic or concept", text)
+        self.assertIn("tema:<target>", text)
+        self.assertIn("concepto:<target>", text)
         self.assertIn("Never fuzzy-resolve", text)
-        self.assertIn("NEEDS_INGESTION", text)
+        self.assertIn("canonical replacement for the former public `explicar` action", text)
+        legacy = self.pipeline("explicar")
+        self.assertIn("no longer a public action", legacy)
+        self.assertIn("pipelines/aprender.md", legacy)
 
     def test_estudiar_uses_topics_as_coverage_guard_not_quota(self):
         text = self.pipeline("estudiar")
@@ -105,12 +118,11 @@ class V4ActionContractTests(unittest.TestCase):
         self.assertIn("Both are required inputs", text)
         self.assertIn("observed topics", text)
 
-    def test_auditar_checks_topics_as_canonical_structure(self):
+    def test_auditar_remains_internal_maintenance_pipeline(self):
         text = self.pipeline("auditar")
+        self.assertIn("not a public study action", text)
+        self.assertIn("maintenance/debugging only", text)
         self.assertIn("conocimiento/topics.json", text)
-        self.assertIn("declared_matches", text)
-        self.assertIn("unassigned", text)
-        self.assertIn("NEEDS_INGESTION", text)
 
     def test_procesar_remains_ingest_only_and_estado_remains_topic_aware(self):
         procesar = self.pipeline("procesar")
