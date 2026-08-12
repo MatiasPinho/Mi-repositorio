@@ -17,6 +17,7 @@ ASSESSMENT_TYPES = {
     "parcial", "recuperatorio", "final", "tp", "integrador", "coloquio",
     "quiz", "diagnostico", "otro"
 }
+SCOPE_KINDS = {"unit", "topic"}
 SCOPE_STATUSES = {"confirmed", "likely", "unknown", "excluded"}
 RULE_KINDS = {
     "promotion", "regularity", "recovery", "final_access", "final",
@@ -162,15 +163,19 @@ def validate_data(data: dict[str, Any]) -> dict[str, Any]:
         if a.get("type") == "recuperatorio" and not parent:
             issues.append({"severity": "warning", "item": aid, "message": "recuperatorio has no parent; recovery relationship is unknown"})
         for row in a.get("scope", []):
+            kind = row.get("kind")
+            if kind not in SCOPE_KINDS:
+                shown = kind if kind not in {None, ""} else "<missing>"
+                issues.append({"severity": "error", "item": aid, "message": f"invalid scope kind: {shown}"})
             status = row.get("status", "unknown")
             if status not in SCOPE_STATUSES:
                 issues.append({"severity": "error", "item": aid, "message": f"invalid scope status: {status}"})
-            if row.get("kind") == "unit" and row.get("ref") not in units:
+            if kind == "unit" and row.get("ref") not in units:
                 issues.append({"severity": "warning", "item": aid, "message": f"scope references unknown unit: {row.get('ref')}"})
-            if row.get("kind") == "topic" and topics and normalize(row.get("ref", "")) not in topics:
+            if kind == "topic" and topics and normalize(row.get("ref", "")) not in topics:
                 issues.append({"severity": "warning", "item": aid, "message": f"scope references unknown topic: {row.get('ref')}"})
             if status == "confirmed" and not row.get("evidence"):
-                issues.append({"severity": "warning", "item": aid, "message": f"confirmed scope lacks evidence: {row.get('kind')} {row.get('ref')}"})
+                issues.append({"severity": "warning", "item": aid, "message": f"confirmed scope lacks evidence: {kind} {row.get('ref')}"})
         if not a.get("scope"):
             issues.append({"severity": "info", "item": aid, "message": "assessment scope is unknown/not recorded"})
         if a.get("type") == "final" and not a.get("source"):
@@ -226,8 +231,7 @@ def parser() -> argparse.ArgumentParser:
     p.set_defaults(func=add_assessment)
 
     p = sub.add_parser("set-rule")
-    p.add_argument("--course", required=True)
-    p.add_argument("--kind", required=True, choices=sorted(RULE_KINDS))
+    p.add_argument("--course", required=True, choices=sorted(RULE_KINDS))
     p.add_argument("--text", required=True)
     p.add_argument("--source")
     p.add_argument("--status", choices=["confirmed", "likely", "unknown"], default="unknown")
