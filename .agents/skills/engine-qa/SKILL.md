@@ -21,7 +21,7 @@ Leé primero:
 
 Durante un Engine QA run **no edites el checkout real**. Esto incluye `study.py`, `core/`, `rules/`, `pipelines/`, `contracts/`, `vendor/`, `scripts/`, `study_mcp/`, `config/`, `actions/`, `assets/`, `design/`, `skills-src/`, `.claude/skills/`, `.agents/skills/`, `tests/`, `docs/` y `.github/`.
 
-La entrada canónica para Claude/Codex es `scripts/engine_qa_rpc.py`. Esta capa usa `engine_qa_safe.py` internamente para crear el sandbox congelado, confinar rutas y vigilar el checkout real. Nunca invoques `scripts/engine_qa.py` directamente ni uses el CLI posicional de `engine_qa_safe.py` durante una corrida normal.
+La entrada canónica para Claude/Codex es `scripts/engine_qa_rpc_entry.py`. Esta entrada usa `engine_qa_rpc.py` para el despacho estructurado y `engine_qa_safe.py` para crear el sandbox congelado, confinar rutas y vigilar el checkout real. Nunca invoques `scripts/engine_qa.py` directamente ni uses el CLI posicional de `engine_qa_safe.py` durante una corrida normal.
 
 Un hallazgo se arregla después, en un PR distinto.
 
@@ -42,7 +42,7 @@ function Invoke-EngineQA([hashtable]$Body) {
   $Body['version'] = 2
   $Body['request_id'] = $id
   $Body | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $req -Encoding utf8
-  & python 'scripts/venv_exec.py' 'scripts/engine_qa_rpc.py' '--request-file' $req '--response-file' $res
+  & python 'scripts/venv_exec.py' 'scripts/engine_qa_rpc_entry.py' '--request-file' $req '--response-file' $res
   $code = $LASTEXITCODE
   if (-not (Test-Path -LiteralPath $res)) { throw "Engine QA RPC no produjo respuesta (exit=$code)" }
   $out = Get-Content -LiteralPath $res -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -54,7 +54,7 @@ function Invoke-EngineQA([hashtable]$Body) {
 
 En otros shells hacé lo equivalente con un serializador JSON real y archivos UTF-8. **No construyas JSON a mano ni reconstruyas arrays como strings.**
 
-El exit code del RPC informa salud del transporte: `0` significa que la petición fue procesada; el resultado del motor está en `response.ok`. `2` significa fallo del protocolo/transporte.
+El exit code del entrypoint informa salud del transporte: `0` significa que la petición fue parseada y produjo una respuesta estructurada, incluso cuando `response.ok=false`; `2` significa fallo real del protocolo/transporte.
 
 ## Inicio
 
@@ -199,7 +199,7 @@ Consultá primero:
 Invoke-EngineQA @{ command='info'; qa_run='latest' }
 ```
 
-`finish` rechaza una campaña no bloqueada mientras `valid_experiments < budget` o exista una hipótesis pendiente. Cuando el presupuesto válido esté completo:
+`finish` rechaza una campaña no bloqueada mientras `valid_experiments < budget` o exista una hipótesis pendiente. Ese rechazo es una respuesta normal (`transport_ok=true`, `ok=false`), no un fallo del transporte. Cuando el presupuesto válido esté completo:
 
 ```powershell
 Invoke-EngineQA @{ command='finish'; qa_run='latest'; export=$true }
