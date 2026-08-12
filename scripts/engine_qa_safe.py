@@ -14,10 +14,42 @@ import uuid
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
+
+def _configure_utf8_stdio() -> None:
+    """Keep every machine-readable QA response UTF-8, even on cp1252 consoles."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="strict")
+            except (AttributeError, ValueError, OSError):
+                pass
+
+
+_configure_utf8_stdio()
+
 REAL_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REAL_ROOT))
 
 from scripts import engine_qa  # noqa: E402
+
+# The supported Engine QA entrypoint owns the synthetic fixture contract. Older
+# internal builds used ``type`` inside assessment scope rows; canonical academic
+# data uses ``kind``. Normalize the fresh in-memory template before start_run
+# persists it so tracker/academic-context tests exercise the real schema.
+_LEGACY_ACADEMIC_TEMPLATE = engine_qa.academic_template
+
+
+def _canonical_academic_template() -> dict[str, Any]:
+    data = _LEGACY_ACADEMIC_TEMPLATE()
+    for assessment in data.get("assessments", []):
+        for row in assessment.get("scope", []):
+            if "kind" not in row and row.get("type") in {"unit", "topic"}:
+                row["kind"] = row.pop("type")
+    return data
+
+
+engine_qa.academic_template = _canonical_academic_template
 
 REAL_REPORTS_ROOT = REAL_ROOT / "qa" / "reports"
 DEFAULT_REAL_QA_ROOT = REAL_ROOT / ".study" / "engine-qa"

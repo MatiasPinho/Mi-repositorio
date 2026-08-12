@@ -148,6 +148,10 @@ def registry_issues(course: Path, data: dict[str, Any] | None = None) -> list[di
             target = content_path(course, unit_value, asset) if unit_value and has_unit_layout(course) else (course / asset).resolve()
             if not target.is_file():
                 issues.append({"figure": key, "reason": "asset-missing", "asset": asset})
+            else:
+                expected_asset = str(item.get("asset_sha256") or "").strip()
+                if expected_asset and sha256(target) != expected_asset:
+                    issues.append({"figure": key, "reason": "asset-changed", "asset": asset})
             asset_identity = f"{unit_value}:{asset}" if has_unit_layout(course) else asset
             prior = seen_assets.get(asset_identity)
             if prior and prior[0] != key:
