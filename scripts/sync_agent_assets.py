@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ACTIONS_PATH = ROOT / "config" / "actions.json"
 PLATFORMS = (".claude", ".agents")
+ACTION_MARKER = "# Acción portable:"
 
 
 def sha256(path: Path) -> str:
@@ -59,7 +60,7 @@ def write_core(platform: str) -> None:
     d.mkdir(parents=True, exist_ok=True)
     front = """---
 name: university-study
-description: Portable university study workflow. Uses the shared project core to ingest course sources, learn, summarize, review, quiz, simulate assessments, audit and track progress without duplicating provider-specific methodology.
+description: Portable university study workflow. Uses the shared project core to ingest sources, learn topics or concepts, summarize, review, quiz, simulate assessments and track progress. Maintenance audits stay internal.
 ---
 """
     (d / "SKILL.md").write_text(front + core_body(), encoding="utf-8")
@@ -78,11 +79,30 @@ def sync_portable_skills(platform: str) -> None:
         sync_tree(ROOT / "skills-src" / name, ROOT / platform / "skills" / name)
 
 
+def managed_action_dirs(platform: str) -> list[Path]:
+    skills = ROOT / platform / "skills"
+    if not skills.is_dir():
+        return []
+    result: list[Path] = []
+    for d in skills.iterdir():
+        p = d / "SKILL.md"
+        if d.is_dir() and p.is_file() and ACTION_MARKER in p.read_text(encoding="utf-8"):
+            result.append(d)
+    return result
+
+
+def prune_stale_action_skills(platform: str, actions: dict) -> None:
+    for d in managed_action_dirs(platform):
+        if d.name not in actions:
+            shutil.rmtree(d)
+
+
 def generate() -> None:
     actions = json.loads(ACTIONS_PATH.read_text(encoding="utf-8"))
     for platform in PLATFORMS:
         skills = ROOT / platform / "skills"
         skills.mkdir(parents=True, exist_ok=True)
+        prune_stale_action_skills(platform, actions)
         write_core(platform)
         for name, spec in actions.items():
             write_skill(platform, name, spec)
@@ -93,6 +113,9 @@ def verify() -> list[str]:
     errors: list[str] = []
     actions = json.loads(ACTIONS_PATH.read_text(encoding="utf-8"))
     for platform in PLATFORMS:
+        for d in managed_action_dirs(platform):
+            if d.name not in actions:
+                errors.append(f"stale public action adapter: {d.relative_to(ROOT)}")
         for name, spec in actions.items():
             p = ROOT / platform / "skills" / name / "SKILL.md"
             if not p.exists():
@@ -107,7 +130,6 @@ def verify() -> list[str]:
             dst = ROOT / platform / "skills" / name / "SKILL.md"
             if not dst.exists() or sha256(dst) != sha256(src):
                 errors.append(f"{name} drift in {platform}")
-    # Shared generated action bodies should be semantically identical after frontmatter.
     for name in actions:
         c = (ROOT / ".claude" / "skills" / name / "SKILL.md").read_text(encoding="utf-8").split("---", 2)[-1].strip()
         a = (ROOT / ".agents" / "skills" / name / "SKILL.md").read_text(encoding="utf-8").split("---", 2)[-1].strip()
