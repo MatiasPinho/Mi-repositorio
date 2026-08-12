@@ -4,7 +4,8 @@ Este directorio contiene la documentación técnica del University Study System.
 
 ## Arquitectura y operación
 
-- [`../README.md`](../README.md): visión general, inicio rápido, arquitectura vigente, acciones y flujo de estudio.
+- [`../README.md`](../README.md): visión general, inicio rápido, arquitectura vigente y flujo de estudio.
+- [`public-actions.md`](public-actions.md): contrato de las nueve acciones públicas, consolidaciones de `guia`/`explicar` y frontera de `auditar` interno.
 - [`setup.md`](setup.md): instalación completa, `INSTALAR-STUDY.bat`, `.venv`, preflight de Chromium y paridad con CI.
 - [`runtime-safety.md`](runtime-safety.md): inmutabilidad del motor durante una corrida, carga verificada de lazy images y publicación atómica con SHA-256.
 - [`mcp.md`](mcp.md): adapter MCP local por stdio, herramientas expuestas y límites de seguridad.
@@ -24,7 +25,7 @@ Este directorio contiene la documentación técnica del University Study System.
 - [`academic-eval.md`](academic-eval.md): policy versionada del quality gate académico, benchmark congelado y reglas para evolucionar el contrato.
 - [`runtime-safety.md`](runtime-safety.md): contrato de browser audit real, `11-publication.json` y bloqueo de modificaciones del motor.
 - [`quiz.md`](quiz.md): review MCQ ligado por hash, integrity JSON↔HTML, visual audit y publicación exacta del quiz.
-- `rules/evaluation/visual-rubric.md`: contrato de soporte visual y evidencia renderizada obligatoria para resumen/guía/repaso.
+- `rules/evaluation/visual-rubric.md`: contrato de soporte visual y evidencia renderizada obligatoria para resumen/repaso.
 - `rules/evaluation/multiple-choice.md`: contrato semántico de una única mejor respuesta, distractores y feedback de quizzes.
 
 ## Flujo canónico de evidencia
@@ -65,7 +66,7 @@ finish: publicación íntegra + motor sin cambios
 
 `claim_candidates` nunca son verdad por sí mismos. Sólo una revisión semántica puede aceptarlos y convertirlos en `claims`. Una transcripción cruda conserva valor como evidencia, pero no adquiere automáticamente autoridad de `teacher_explicit` ni puede declarar `supersedes`.
 
-Los artefactos HTML de resumen, guía, repaso y quiz tampoco pueden finalizar sólo porque sus rutas sean válidas: requieren auditoría visual real, evidencia de publicación y un fingerprint canónico/motor estable desde el comienzo de la corrida. `quiz` usa su contrato JSON específico mediante `quiz_run.py`, reutilizando las mismas primitivas de snapshot del run manager compartido.
+Los artefactos HTML de resumen, repaso y quiz tampoco pueden finalizar sólo porque sus rutas sean válidas: requieren auditoría visual real, evidencia de publicación y un fingerprint canónico/motor estable desde el comienzo de la corrida. El modo detallado de `resumen` usa el mismo pipeline/gates; no existe un artefacto público `guia` paralelo. `quiz` usa su contrato JSON específico mediante `quiz_run.py`, reutilizando las mismas primitivas de snapshot del run manager compartido.
 
 ## Benchmarks de CI
 
@@ -90,7 +91,7 @@ La suite completa se ejecuta con:
 python scripts/venv_exec.py tests/run_release_tests.py
 ```
 
-Incluye smoke/regression tests que renderizan documentos y quizzes sintéticos, ejecutan Chromium real, fuerzan imágenes diferidas fuera del viewport, prueban publicación sin truncamiento y verifican el bloqueo de mutaciones del motor/canonical state.
+Incluye smoke/regression tests que renderizan documentos y quizzes sintéticos, ejecutan Chromium real, fuerzan imágenes diferidas fuera del viewport, prueban publicación sin truncamiento, verifican el bloqueo de mutaciones del motor/canonical state y fijan la superficie pública de acciones para evitar adapters fantasma.
 
 ## Regla para nuevas regresiones
 
@@ -108,6 +109,7 @@ Cuando una materia real descubre un fallo:
 
 | Cambio | Documento principal |
 |---|---|
+| Superficie de acciones / consolidación de comandos | `public-actions.md` |
 | Instalación / dependencias / Chromium | `setup.md` |
 | Motor durante una corrida / publicación / lazy images | `runtime-safety.md` |
 | Política del reviewer / quality gate | `academic-eval.md` |
