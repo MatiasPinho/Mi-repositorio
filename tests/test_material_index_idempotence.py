@@ -154,7 +154,7 @@ class MaterialIndexIdempotenceTests(unittest.TestCase):
 
     def test_study_entrypoint_patches_all_material_callers_to_canonical_functions(self):
         import study
-        import study_cli
+        from scripts import study_cli
 
         self.assertIs(study_cli.scan_materials, study.scan_materials)
         self.assertIs(study_cli.materials_index_path, study.materials_index_path)
