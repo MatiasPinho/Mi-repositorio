@@ -1,6 +1,6 @@
 ---
 name: engine-qa
-description: Internal autonomous adversarial QA loop for the University Study engine. Creates only synthetic courses, executes a frozen engine copy through a guarded harness, records experiments/findings, and exports reproducible reports. Never edits engine code during the QA run.
+description: Internal autonomous adversarial QA loop for the University Study engine. Creates only synthetic courses, executes a frozen engine copy through a guarded structured transport, records valid/invalid experiments and findings, and exports reproducible reports. Never edits engine code during the QA run.
 argument-hint: "[experimentos opcionales]"
 disable-model-invocation: true
 ---
@@ -11,7 +11,7 @@ Esta skill es **interna de desarrollo**. No forma parte de las nueve acciones p�
 
 ## Objetivo
 
-Probar el motor de forma iterativa sin que el usuario tenga que cargar PDFs, ejecutar acciones manualmente ni copiar conversaciones. El agente crea una materia sintética, formula hipótesis, ejecuta una copia congelada del motor real, muta únicamente ese workspace QA, compara estados, comprueba invariantes, confirma fallos y deja un reporte reproducible.
+Probar el motor de forma iterativa sin que el usuario cargue PDFs, ejecute acciones manualmente ni copie conversaciones. El agente crea una materia sintética, formula hipótesis, ejecuta una copia congelada del motor real, muta únicamente ese workspace QA, compara estados, comprueba invariantes, confirma fallos y deja un reporte reproducible.
 
 Leé primero:
 - `../../../docs/engine-qa.md`
@@ -21,58 +21,131 @@ Leé primero:
 
 Durante un Engine QA run **no edites el checkout real**. Esto incluye `study.py`, `core/`, `rules/`, `pipelines/`, `contracts/`, `vendor/`, `scripts/`, `study_mcp/`, `config/`, `actions/`, `assets/`, `design/`, `skills-src/`, `.claude/skills/`, `.agents/skills/`, `tests/`, `docs/` y `.github/`.
 
-La entrada canónica es siempre `scripts/engine_qa_safe.py`. El wrapper crea una copia congelada del motor bajo `.study/engine-qa/sandboxes/`, hace que la materia sintética viva dentro de ese sandbox y mantiene un fingerprint independiente del checkout real. Nunca invoques `scripts/engine_qa.py` directamente durante una corrida normal de QA.
+La entrada canónica para Claude/Codex es `scripts/engine_qa_rpc.py`. Esta capa usa `engine_qa_safe.py` internamente para crear el sandbox congelado, confinar rutas y vigilar el checkout real. Nunca invoques `scripts/engine_qa.py` directamente ni uses el CLI posicional de `engine_qa_safe.py` durante una corrida normal.
 
 Un hallazgo se arregla después, en un PR distinto.
 
-## Inicio
+## Transporte estructurado obligatorio
 
-Usá siempre el Python del proyecto:
+Los argumentos complejos **no viajan por argv de PowerShell/Bash**. Cada petición es JSON UTF-8 bajo `.study/engine-qa/requests/` y cada respuesta es JSON UTF-8 bajo `.study/engine-qa/responses/`. Así espacios, Unicode, JSON embebido y `--run` internos conservan exactamente sus tokens.
 
-```text
-python scripts/venv_exec.py scripts/engine_qa_safe.py history
-python scripts/venv_exec.py scripts/engine_qa_safe.py start --budget <N> --seed <seed> --provider <codex|claude>
+En PowerShell definí una vez este helper:
+
+```powershell
+$QaReqDir = '.study/engine-qa/requests'
+$QaResDir = '.study/engine-qa/responses'
+New-Item -ItemType Directory -Force $QaReqDir,$QaResDir | Out-Null
+function Invoke-EngineQA([hashtable]$Body) {
+  $id = [guid]::NewGuid().ToString('N')
+  $req = Join-Path $QaReqDir "$id.json"
+  $res = Join-Path $QaResDir "$id.json"
+  $Body['version'] = 2
+  $Body['request_id'] = $id
+  $Body | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $req -Encoding utf8
+  & python 'scripts/venv_exec.py' 'scripts/engine_qa_rpc.py' '--request-file' $req '--response-file' $res
+  $code = $LASTEXITCODE
+  if (-not (Test-Path -LiteralPath $res)) { throw "Engine QA RPC no produjo respuesta (exit=$code)" }
+  $out = Get-Content -LiteralPath $res -Raw -Encoding UTF8 | ConvertFrom-Json
+  Remove-Item -LiteralPath $req,$res -Force -ErrorAction SilentlyContinue
+  if ($code -eq 2 -or -not $out.transport_ok) { throw "Engine QA RPC transport failure: $($out.error)" }
+  return $out
+}
 ```
 
-Si el usuario no indicó cantidad, usá **25 experimentos**. Variá el seed entre corridas. Revisá `history` antes de elegir hipótesis para priorizar categorías menos exploradas y evitar repetir mecánicamente el último run.
+En otros shells hacé lo equivalente con un serializador JSON real y archivos UTF-8. **No construyas JSON a mano ni reconstruyas arrays como strings.**
+
+El exit code del RPC informa salud del transporte: `0` significa que la petición fue procesada; el resultado del motor está en `response.ok`. `2` significa fallo del protocolo/transporte.
+
+## Inicio
+
+```powershell
+Invoke-EngineQA @{ command='history' }
+Invoke-EngineQA @{ command='start'; budget=<N>; seed=<seed>; provider='<codex|claude>' }
+```
+
+Si el usuario no indicó cantidad, usá **25 experimentos válidos**. Variá el seed entre corridas. Revisá `history` antes de elegir hipótesis para priorizar categorías menos exploradas.
+
+`qa_run` identifica el Engine QA run y por defecto es `latest`. Es un campo JSON separado; nunca comparte nombre/posición con un `--run` que pertenezca a una herramienta interna.
 
 ## Ciclo obligatorio por experimento
 
-1. Declarar una hipótesis antes de tocar estado:
+### 1. Abrir hipótesis
 
-```text
-python scripts/venv_exec.py scripts/engine_qa_safe.py hypothesis --invariant <id> --category <categoria> --text "<hipotesis>"
+```powershell
+Invoke-EngineQA @{
+  command='hypothesis'; qa_run='latest'; invariant='<id>';
+  category='<categoria>'; text='<hipotesis>'
+}
 ```
 
-2. Ejecutar herramientas determinísticas del motor únicamente mediante `engine_qa_safe.py exec`. Usá `@course`, `@slug`, `@run`, `@root` y sus formas `@course/...`, `@run/...`, `@root/...` para que el wrapper resuelva rutas dentro del sandbox.
+Sólo puede existir una hipótesis pendiente.
 
-Ejemplo:
+### 2. Ejecutar el motor con tokens estructurados
 
-```text
-python scripts/venv_exec.py scripts/engine_qa_safe.py exec --script topic_catalog.py -- reconcile --course @course --unit unidad-1 --write
+```powershell
+Invoke-EngineQA @{
+  command='exec'; qa_run='latest'; script='study_tracker.py';
+  args=@('due','--course','@course','--assessment','Parcial 1','--include-not-due')
+}
 ```
 
-El wrapper rechaza `..`, cursos ajenos y rutas absolutas fuera del sandbox/run/outbox antes de lanzar el proceso.
+`args` es siempre un array JSON de strings. Un argumento con JSON sigue siendo **un solo string**, por ejemplo:
 
-3. Toda alteración adversarial de inputs debe pasar por `mutate` y permanecer dentro de la materia `qa-engine-*` del sandbox.
-
-```text
-python scripts/venv_exec.py scripts/engine_qa_safe.py mutate --op append --path unidades/unidad-1/fuentes/oficiales/fundamentos.txt --text "\nNuevo dato sintético.\n"
+```powershell
+args=@('show','--course','@course','--probe','{"name":"Parcial 1","unicode":"漢"}')
 ```
 
-4. Después de una secuencia relevante, ejecutar:
+Un `--run` interno también queda dentro de `args` y no puede seleccionar el QA run:
 
-```text
-python scripts/venv_exec.py scripts/engine_qa_safe.py check
+```powershell
+args=@('status','--run','pipeline-run-id')
 ```
 
-5. Si el propio trabajo semántico del agente creó o modificó archivos dentro de la materia QA siguiendo `procesar`, `resumen`, `quiz`, etc., registrar inmediatamente el cambio con:
+Se conservan `@course`, `@slug`, `@run`, `@root` y sus formas `@course/...`, `@run/...`, `@root/...`. El guard rechaza `..`, cursos ajenos y rutas absolutas fuera del sandbox/run/outbox antes de lanzar el proceso.
 
-```text
-python scripts/venv_exec.py scripts/engine_qa_safe.py checkpoint --label "descripcion-del-estado"
+La respuesta de `exec` incluye `engine_invoked`. Si `engine_invoked=false` por un problema inesperado del arnés/transporte, ese intento **no debe contarse como experimento válido** salvo que la propia hipótesis esté probando el guard.
+
+### 3. Mutaciones adversariales
+
+Toda alteración de inputs debe pasar por `mutate` y permanecer dentro de la materia `qa-engine-*`:
+
+```powershell
+Invoke-EngineQA @{
+  command='mutate'; qa_run='latest'; op='append';
+  path='unidades/unidad-1/fuentes/oficiales/fundamentos.txt';
+  text="`nNuevo dato sintético con JSON {`"k`":`"v`"}.`n"
+}
+```
+
+Como el texto se serializa a JSON por el helper, no depende del quoting del comando Python.
+
+### 4. Checks/checkpoints
+
+```powershell
+Invoke-EngineQA @{ command='check'; qa_run='latest' }
+Invoke-EngineQA @{ command='checkpoint'; qa_run='latest'; label='descripcion-del-estado' }
 ```
 
 Nunca uses materias reales como fixture QA.
+
+### 5. Cerrar el experimento como VALID o INVALID
+
+Si la hipótesis realmente llegó al motor o probó deliberadamente un guard y produjo evidencia útil:
+
+```powershell
+Invoke-EngineQA @{ command='experiment-result'; qa_run='latest'; status='valid'; notes='...' }
+```
+
+Si el arnés/transport impidió ejecutar la prueba pretendida:
+
+```powershell
+Invoke-EngineQA @{
+  command='experiment-result'; qa_run='latest'; status='invalid';
+  reason='la prueba no llegó al motor por ...'
+}
+```
+
+Un `INVALID` incrementa intentos/ruido pero **no consume el presupuesto**. Reemplazalo con otra hipótesis hasta alcanzar N experimentos válidos. Un retorno no-cero esperado del motor puede seguir siendo `VALID`; lo decisivo es si se probó la hipótesis correcta.
 
 ## Qué atacar
 
@@ -93,61 +166,74 @@ Rotá entre estas familias, priorizando huecos vistos en `history`:
 
 No gastes el presupuesto principalmente en visuales. Los gates visuales existentes son secundarios dentro de Engine QA.
 
-## Uso de los pipelines IA
+## Uso de pipelines IA
 
-El agente puede probar comportamiento de `procesar`, `resumen`, `repaso`, `quiz`, `preguntas`, `simulacro`, `estado`, `aprender` y `estudiar` contra la materia sintética. Para hacerlo, seguí sus pipelines canónicos exactamente igual que en uso normal, pero manteniendo todo el estado dentro de la materia QA y registrando checkpoints.
+Podés probar `procesar`, `resumen`, `repaso`, `quiz`, `preguntas`, `simulacro`, `estado`, `aprender` y `estudiar` contra la materia sintética siguiendo sus pipelines canónicos. Todo estado debe permanecer en la materia QA y registrarse con checkpoints.
 
-No arregles el engine aunque un pipeline falle. Investigá el fallo, reducí el caso y seguí probando.
+No arregles el engine aunque falle. Investigá, reducí el caso y seguí probando la misma versión congelada.
 
 ## Hallazgos
 
 No registres una sospecha al primer fallo. Antes:
 1. repetí o reconstruí el caso;
-2. distinguí fallo del motor de comportamiento esperado;
-3. reducí la reproducción a la menor secuencia determinista posible;
+2. distinguí fallo del motor de comportamiento esperado o ruido de harness;
+3. reducí la reproducción;
 4. anotá expected vs actual.
 
 Después:
 
-```text
-python scripts/venv_exec.py scripts/engine_qa_safe.py finding --confirmed --severity high --invariant <id> --title "..." --expected "..." --actual "..." --notes "..."
+```powershell
+Invoke-EngineQA @{
+  command='finding'; qa_run='latest'; confirmed=$true; severity='high';
+  invariant='<id>'; title='...'; expected='...'; actual='...'; notes='...'
+}
 ```
 
-Un finding debe apuntar al motor/contrato, no a una preferencia estética.
-
-Antes del cierre, cualquier issue inesperado que siga apareciendo en `check` debe quedar confirmado como finding o explicado/restaurado como una mutación adversarial deliberada. No cierres dejando un FAIL inexplicado que después no llegue al reporte de GitHub.
+Un finding debe apuntar al motor/contrato, no a una preferencia estética. Antes del cierre, todo issue inesperado de `check` debe quedar confirmado como finding o restaurado/explicado como mutación deliberada.
 
 ## Cierre
 
-Siempre terminá con:
+Consultá primero:
 
-```text
-python scripts/venv_exec.py scripts/engine_qa_safe.py finish --export
+```powershell
+Invoke-EngineQA @{ command='info'; qa_run='latest' }
 ```
 
-Esto actualiza el historial local y crea un paquete compacto en `qa/reports/<run-id>/` con `report.md`, `report.json`, findings y contexto de replay. No exporta la materia sintética completa ni material privado.
+`finish` rechaza una campaña no bloqueada mientras `valid_experiments < budget` o exista una hipótesis pendiente. Cuando el presupuesto válido esté completo:
 
-### Publicación del reporte
+```powershell
+Invoke-EngineQA @{ command='finish'; qa_run='latest'; export=$true }
+```
+
+El reporte distingue:
+- `valid_experiments`;
+- `attempted_experiments`;
+- `invalid_experiments`;
+- findings e invariantes finales.
+
+Así `100/100` significa cien pruebas válidas, aunque hayan sido necesarios intentos adicionales por ruido del arnés.
+
+## Publicación del reporte
 
 Si existen findings confirmados y Git está disponible, **no cambies la rama del checkout principal**. Publicá desde un worktree temporal:
-
 1. confirmar `git status --short` y no tocar cambios ajenos;
-2. crear la rama `qa/engine-<run-id>` desde `dev` sin checkout;
-3. crear un worktree bajo `.study/engine-qa/publish/<run-id>/` para esa rama;
-4. copiar allí **solamente** `qa/reports/<run-id>/`;
+2. crear `qa/engine-<run-id>` desde `dev` sin checkout;
+3. worktree bajo `.study/engine-qa/publish/<run-id>/`;
+4. copiar sólo `qa/reports/<run-id>/`;
 5. commit `Engine QA findings <run-id>`;
-6. push y abrir un **draft PR** contra `dev` titulado `Engine QA findings <run-id>`;
-7. remover el worktree temporal.
+6. push y draft PR contra `dev`;
+7. remover el worktree.
 
-Nunca incluyas `materias/`, `.study/` ni cambios del engine. Si no hay findings, no abras un PR de reporte. El usuario no debe tener que copiar la conversación: un futuro agente puede localizar el último PR `Engine QA findings ...` y leer el paquete directamente.
+Nunca incluyas `materias/`, `.study/` ni cambios del engine. Si no hay findings, no abras PR salvo pedido explícito del usuario.
 
 ## Resultado al usuario
 
 Informá sólo:
-- experimentos ejecutados;
+- experimentos **válidos / presupuesto**;
+- intentos inválidos si existieron;
 - categorías cubiertas;
 - cantidad/severidad de findings;
-- si se publicó un draft PR de reporte;
-- cualquier bloqueo del harness.
+- draft PR si se publicó;
+- cualquier bloqueo real del harness.
 
 No vuelques el journal completo en el chat.
