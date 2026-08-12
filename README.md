@@ -138,8 +138,9 @@ Después generás sólo lo que necesitás:
 
 ```text
 /resumen Programacion-I "Unidad 1"
-/guia Programacion-I "Unidad 1"
+/resumen Programacion-I "Unidad 1" detallado
 /repaso Programacion-I "Unidad 1"
+/quiz Programacion-I "Unidad 1" 15
 ```
 
 En Codex reemplazá `/` por `$`.
@@ -199,7 +200,7 @@ El MCP expone herramientas acotadas sobre el mismo core. No ofrece borrado libre
 
 # `/procesar`: ingesta, no generación
 
-`/procesar` no genera resumen, guía, repaso, preguntas ni simulacro. Convierte fuentes nuevas o modificadas en conocimiento canónico trazable.
+`/procesar` no genera resumen, repaso, preguntas, quiz ni simulacro. Convierte fuentes nuevas o modificadas en conocimiento canónico trazable.
 
 ```text
 FUENTES NUEVAS / MODIFICADAS
@@ -256,7 +257,9 @@ Si la evidencia no permite resolver con suficiente autoridad, queda `unresolved`
 
 ---
 
-# Pipeline de `/resumen`, `/guia` y `/repaso`
+# Pipelines de `/resumen` y `/repaso`
+
+`/resumen` es el único documento largo público. Por defecto usa profundidad estándar; si pedís `detallado`, conserva el mismo alcance y los mismos gates pero desarrolla más los conceptos que lo necesitan. `/repaso` mantiene su objetivo separado de recuperación high-yield en 5–10 minutos.
 
 ```text
 CONOCIMIENTO CANÓNICO + FIGURAS
@@ -357,6 +360,7 @@ Documentación:
 - [`docs/semantic-contradictions.md`](docs/semantic-contradictions.md)
 - [`docs/claim-extraction.md`](docs/claim-extraction.md)
 - [`docs/academic-eval.md`](docs/academic-eval.md)
+- [`docs/public-actions.md`](docs/public-actions.md)
 
 ---
 
@@ -412,20 +416,20 @@ Las figuras derivadas usan namespace `derived:`, `unit_id` estable y procedencia
 
 ---
 
-# Acciones
+# Acciones públicas
+
+La superficie pública está fijada en **nueve acciones**. Las variaciones de profundidad o mantenimiento no crean comandos nuevos; ver [`docs/public-actions.md`](docs/public-actions.md).
 
 | Acción | Claude | Codex | Función |
 |---|---|---|---|
 | Procesar | `/procesar` | `$procesar` | ingesta, evidencia y conocimiento canónico |
-| Aprender | `/aprender` | `$aprender` | primera comprensión |
+| Aprender | `/aprender` | `$aprender` | aprender un tema observado o un concepto canónico |
 | Estudiar | `/estudiar` | `$estudiar` | sesión adaptativa |
-| Resumen | `/resumen` | `$resumen` | apuntes normales y claros |
-| Guía | `/guia` | `$guia` | dossier exhaustivo pero pedagógico |
+| Resumen | `/resumen` | `$resumen` | documento principal, estándar o detallado |
 | Repaso | `/repaso` | `$repaso` | high-yield 5–10 min |
-| Preguntas | `/preguntas` | `$preguntas` | active recall |
-| Simulacro | `/simulacro` | `$simulacro` | examen realista |
-| Explicar | `/explicar` | `$explicar` | explicación profunda |
-| Auditar | `/auditar` | `$auditar` | verificación contra fuentes |
+| Preguntas | `/preguntas` | `$preguntas` | active recall conversacional |
+| Quiz | `/quiz` | `$quiz` | multiple choice HTML offline e interactivo |
+| Simulacro | `/simulacro` | `$simulacro` | examen realista ligado a una evaluación registrada |
 | Estado | `/estado` | `$estado` | progreso, evaluaciones y stale |
 
 ---

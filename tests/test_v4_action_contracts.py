@@ -36,6 +36,18 @@ class V4ActionContractTests(unittest.TestCase):
         self.assertEqual(len(ACTIONS), 9)
         self.assertTrue({"guia", "explicar", "auditar"}.isdisjoint(ACTIONS))
 
+    def test_root_readme_matches_public_surface(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("**nueve acciones**", readme)
+        self.assertIn("docs/public-actions.md", readme)
+        self.assertIn('/resumen Programacion-I "Unidad 1" detallado', readme)
+        for name in ACTIONS:
+            self.assertIn(f"`/{name}`", readme, name)
+            self.assertIn(f"`${name}`", readme, name)
+        for retired in ("guia", "explicar", "auditar"):
+            self.assertNotIn(f"/{retired}", readme, retired)
+            self.assertNotIn(f"${retired}", readme, retired)
+
     def test_removed_actions_have_no_public_adapters(self):
         for platform in (".claude", ".agents"):
             for name in ("guia", "explicar", "auditar"):
