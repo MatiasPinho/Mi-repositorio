@@ -59,7 +59,10 @@ def main() -> None:
     result = {"added": added, "changed": changed, "removed": removed, "total": len(current)}
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
-    if args.write:
+    should_write = args.write and (
+        not index_path.exists() or bool(added) or bool(changed) or bool(removed)
+    )
+    if should_write:
         study_dir.mkdir(parents=True, exist_ok=True)
         payload = {"updated_at": datetime.now(timezone.utc).isoformat(), "files": current}
         index_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
