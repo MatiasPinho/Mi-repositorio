@@ -1,0 +1,1228 @@
+{
+  "version": 1,
+  "run_id": "20260812T173616Z-s26081250",
+  "seed": 26081250,
+  "course_slug": "qa-engine-20260812t173616z-s26081250",
+  "journal": [
+    {
+      "step": 225,
+      "time": "2026-08-12T18:24:30.665859+00:00",
+      "kind": "exec",
+      "script": "publish_artifact.py",
+      "args": [
+        "--markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.md",
+        "--html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.html",
+        "--dest-markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.md",
+        "--dest-html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.html",
+        "--report",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42-report.json"
+      ],
+      "expanded_args": [
+        "--markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.md",
+        "--html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.html",
+        "--dest-markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.md",
+        "--dest-html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.html",
+        "--report",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42-report.json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 3,\n  \"ok\": true,\n  \"published_at\": \"2026-08-12T18:24:30.358191+00:00\",\n  \"files\": [\n    {\n      \"role\": \"markdown\",\n      \"source\": \"materias/qa-engine-20260812t173616z-s26081250/.study/pub42.md\",\n      \"destination\": \"materias/qa-engine-20260812t173616z-s26081250/unidades/unidad-1/resumenes/pub42.md\",\n      \"source_sha256\": \"56afdd19de0494bc6299ac07f291d87b0ce492d2a13a4b634803c914ed734f97\",\n      \"published_sha256\": \"56afdd19de0494bc6299ac07f291d87b0ce492d2a13a4b634803c914ed734f97\",\n      \"destination_sha256\": \"56afdd19de0494bc6299ac07f291d87b0ce492d2a13a4b634803c914ed734f97\",\n      \"source_bytes\": 4,\n      \"bytes\": 4,\n      \"transform\": \"identity\",\n      \"resource_rewrites\": []\n    },\n    {\n      \"role\": \"html\",\n      \"source\": \"materias/qa-engine-20260812t173616z-s26081250/.study/pub42.html\",\n      \"destination\": \"materias/qa-engine-20260812t173616z-s26081250/unidades/unidad-1/resumenes/pub42.html\",\n      \"source_sha256\": \"3e4125fadf2f24459ff74bd873af1ee5cd53448e0e4634198eec5a62bf3756b4\",\n      \"published_sha256\": \"3e4125fadf2f24459ff74bd873af1ee5cd53448e0e4634198eec5a62bf3756b4\",\n      \"destination_sha256\": \"3e4125fadf2f24459ff74bd873af1ee5cd53448e0e4634198eec5a62bf3756b4\",\n      \"source_bytes\": 6,\n      \"bytes\": 6,\n      \"transform\": \"identity\",\n      \"resource_rewrites\": []\n    }\n  ]\n}\n",
+      "stderr": "",
+      "workspace_before": "01abb34829f5bf8d474909be824465ee41f0cd97f27a84c6474c127ecb868623",
+      "workspace_after": "3b7747ee59aa14b7627963b4a8502aed4a11b40f274b1e1c378cb502a5a0f7c8",
+      "workspace_diff": {
+        "added": [
+          ".study/pub42-report.json",
+          "unidades/unidad-1/resumenes/pub42.html",
+          "unidades/unidad-1/resumenes/pub42.md"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 226,
+      "time": "2026-08-12T18:24:32.850353+00:00",
+      "kind": "mutation",
+      "op": "delete",
+      "path": ".study/pub42.html",
+      "dest": null,
+      "workspace_before": "3b7747ee59aa14b7627963b4a8502aed4a11b40f274b1e1c378cb502a5a0f7c8",
+      "workspace_after": "b532ac213f40e6c1f459aff08417bec29c3820438112690dc18716dcf659f191",
+      "workspace_diff": {
+        "added": [],
+        "removed": [
+          ".study/pub42.html"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 227,
+      "time": "2026-08-12T18:24:35.590864+00:00",
+      "kind": "exec",
+      "script": "publish_artifact.py",
+      "args": [
+        "--markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.md",
+        "--html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.html",
+        "--dest-markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.md",
+        "--dest-html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.html",
+        "--report",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42-report.json"
+      ],
+      "expanded_args": [
+        "--markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.md",
+        "--html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.html",
+        "--dest-markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.md",
+        "--dest-html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.html",
+        "--report",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42-report.json"
+      ],
+      "returncode": 1,
+      "expected_returncode": 1,
+      "stdout": "",
+      "stderr": "Missing html source: C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub42.html\n",
+      "workspace_before": "b532ac213f40e6c1f459aff08417bec29c3820438112690dc18716dcf659f191",
+      "workspace_after": "b532ac213f40e6c1f459aff08417bec29c3820438112690dc18716dcf659f191",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 228,
+      "time": "2026-08-12T18:24:37.486510+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 229,
+      "time": "2026-08-12T18:24:39.265576+00:00",
+      "kind": "hypothesis",
+      "experiment": 44,
+      "invariant": "publication-source-alias",
+      "category": "publication-guards",
+      "text": "source_equal_destination_is_rejected_without_mutation"
+    },
+    {
+      "step": 230,
+      "time": "2026-08-12T18:24:41.951184+00:00",
+      "kind": "exec",
+      "script": "publish_artifact.py",
+      "args": [
+        "--markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.md",
+        "--html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.html",
+        "--dest-markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.md",
+        "--dest-html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.html",
+        "--report",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub43-report.json"
+      ],
+      "expanded_args": [
+        "--markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.md",
+        "--html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.html",
+        "--dest-markdown",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.md",
+        "--dest-html",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\unidades\\unidad-1\\resumenes\\pub42.html",
+        "--report",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250\\.study\\pub43-report.json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 1,
+      "stdout": "{\n  \"version\": 3,\n  \"ok\": true,\n  \"published_at\": \"2026-08-12T18:24:41.683116+00:00\",\n  \"files\": [\n    {\n      \"role\": \"markdown\",\n      \"source\": \"materias/qa-engine-20260812t173616z-s26081250/unidades/unidad-1/resumenes/pub42.md\",\n      \"destination\": \"materias/qa-engine-20260812t173616z-s26081250/unidades/unidad-1/resumenes/pub42.md\",\n      \"source_sha256\": \"56afdd19de0494bc6299ac07f291d87b0ce492d2a13a4b634803c914ed734f97\",\n      \"published_sha256\": \"56afdd19de0494bc6299ac07f291d87b0ce492d2a13a4b634803c914ed734f97\",\n      \"destination_sha256\": \"56afdd19de0494bc6299ac07f291d87b0ce492d2a13a4b634803c914ed734f97\",\n      \"source_bytes\": 4,\n      \"bytes\": 4,\n      \"transform\": \"identity\",\n      \"resource_rewrites\": []\n    },\n    {\n      \"role\": \"html\",\n      \"source\": \"materias/qa-engine-20260812t173616z-s26081250/unidades/unidad-1/resumenes/pub42.html\",\n      \"destination\": \"materias/qa-engine-20260812t173616z-s26081250/unidades/unidad-1/resumenes/pub42.html\",\n      \"source_sha256\": \"3e4125fadf2f24459ff74bd873af1ee5cd53448e0e4634198eec5a62bf3756b4\",\n      \"published_sha256\": \"3e4125fadf2f24459ff74bd873af1ee5cd53448e0e4634198eec5a62bf3756b4\",\n      \"destination_sha256\": \"3e4125fadf2f24459ff74bd873af1ee5cd53448e0e4634198eec5a62bf3756b4\",\n      \"source_bytes\": 6,\n      \"bytes\": 6,\n      \"transform\": \"identity\",\n      \"resource_rewrites\": []\n    }\n  ]\n}\n",
+      "stderr": "",
+      "workspace_before": "b532ac213f40e6c1f459aff08417bec29c3820438112690dc18716dcf659f191",
+      "workspace_after": "380e45c8e6ac9136d8d4370c404ac8cbcd86cc19c6829ccb5e274d5d9b831f70",
+      "workspace_diff": {
+        "added": [
+          ".study/pub43-report.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 231,
+      "time": "2026-08-12T18:24:43.912919+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 232,
+      "time": "2026-08-12T18:24:45.702611+00:00",
+      "kind": "hypothesis",
+      "experiment": 45,
+      "invariant": "missing-registry-detected",
+      "category": "registry-recovery",
+      "text": "deleted_topics_registry_is_detected_and_unit_sync_restores_structure"
+    },
+    {
+      "step": 233,
+      "time": "2026-08-12T18:24:47.806748+00:00",
+      "kind": "mutation",
+      "op": "move",
+      "path": "unidades/unidad-2/conocimiento/topics.json",
+      "dest": ".study/u2-topics-temp",
+      "workspace_before": "380e45c8e6ac9136d8d4370c404ac8cbcd86cc19c6829ccb5e274d5d9b831f70",
+      "workspace_after": "5047b5806279011b2348fa28e5fe2bf1c83b23833bd91ec14fe0ee454df20417",
+      "workspace_diff": {
+        "added": [
+          ".study/u2-topics-temp"
+        ],
+        "removed": [
+          "unidades/unidad-2/conocimiento/topics.json"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 234,
+      "time": "2026-08-12T18:24:49.712044+00:00",
+      "kind": "check",
+      "ok": false,
+      "issues": [
+        {
+          "invariant": "registry-present",
+          "severity": "critical",
+          "message": "Falta registro topics",
+          "path": "unidades/unidad-2/conocimiento/topics.json"
+        },
+        {
+          "invariant": "topic-coverage-explicit",
+          "severity": "high",
+          "message": "Conceptos sin topic ni unassigned: ['condicion', 'iteracion']",
+          "path": "unidades/unidad-2/conocimiento/topics.json"
+        }
+      ],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 235,
+      "time": "2026-08-12T18:24:52.291408+00:00",
+      "kind": "exec",
+      "script": "study.py",
+      "args": [
+        "units",
+        "sync",
+        "qa-engine-20260812t173616z-s26081250",
+        "--json"
+      ],
+      "expanded_args": [
+        "units",
+        "sync",
+        "qa-engine-20260812t173616z-s26081250",
+        "--json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 4,\n  \"created\": [],\n  \"updated\": [\n    \"unidad-1\",\n    \"unidad-2\",\n    \"unidad-3\"\n  ],\n  \"orphaned\": [],\n  \"units\": [\n    \"unidad-1\",\n    \"unidad-2\",\n    \"unidad-3\"\n  ]\n}\n",
+      "stderr": "",
+      "workspace_before": "5047b5806279011b2348fa28e5fe2bf1c83b23833bd91ec14fe0ee454df20417",
+      "workspace_after": "983d7a25e4c44f1f5d60937bded1acd08214cbdf2122e71978492703dfdf101c",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-2/conocimiento/topics.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 236,
+      "time": "2026-08-12T18:24:54.272402+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 237,
+      "time": "2026-08-12T18:24:56.432258+00:00",
+      "kind": "mutation",
+      "op": "delete",
+      "path": "unidades/unidad-2/conocimiento/topics.json",
+      "dest": null,
+      "workspace_before": "983d7a25e4c44f1f5d60937bded1acd08214cbdf2122e71978492703dfdf101c",
+      "workspace_after": "5047b5806279011b2348fa28e5fe2bf1c83b23833bd91ec14fe0ee454df20417",
+      "workspace_diff": {
+        "added": [],
+        "removed": [
+          "unidades/unidad-2/conocimiento/topics.json"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 238,
+      "time": "2026-08-12T18:24:58.740287+00:00",
+      "kind": "mutation",
+      "op": "move",
+      "path": ".study/u2-topics-temp",
+      "dest": "unidades/unidad-2/conocimiento/topics.json",
+      "workspace_before": "5047b5806279011b2348fa28e5fe2bf1c83b23833bd91ec14fe0ee454df20417",
+      "workspace_after": "380e45c8e6ac9136d8d4370c404ac8cbcd86cc19c6829ccb5e274d5d9b831f70",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-2/conocimiento/topics.json"
+        ],
+        "removed": [
+          ".study/u2-topics-temp"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 239,
+      "time": "2026-08-12T18:25:01.191233+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 240,
+      "time": "2026-08-12T18:25:03.271592+00:00",
+      "kind": "hypothesis",
+      "experiment": 46,
+      "invariant": "layout-orphan-detected",
+      "category": "layout-faults",
+      "text": "undeclared_unit_directory_is_reported_and_removable"
+    },
+    {
+      "step": 241,
+      "time": "2026-08-12T18:25:05.497019+00:00",
+      "kind": "mutation",
+      "op": "copy",
+      "path": "unidades/unidad-3",
+      "dest": "unidades/unidad-fantasma",
+      "workspace_before": "380e45c8e6ac9136d8d4370c404ac8cbcd86cc19c6829ccb5e274d5d9b831f70",
+      "workspace_after": "fe8a389c2c4adb6e581690bb79c175fb5373747e9c62d1c77724709102fa5d3b",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-fantasma/conocimiento/concepts.json",
+          "unidades/unidad-fantasma/conocimiento/figures.json",
+          "unidades/unidad-fantasma/conocimiento/topics.json",
+          "unidades/unidad-fantasma/fuentes/oficiales/funciones.txt",
+          "unidades/unidad-fantasma/progreso/progress.json",
+          "unidades/unidad-fantasma/unidad.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 242,
+      "time": "2026-08-12T18:25:07.900070+00:00",
+      "kind": "check",
+      "ok": false,
+      "issues": [
+        {
+          "invariant": "layout-matches-academic",
+          "severity": "high",
+          "message": "Unidades físicas ['unidad-1', 'unidad-2', 'unidad-3', 'unidad-fantasma'] != academic ['unidad-1', 'unidad-2', 'unidad-3']",
+          "path": "unidades"
+        }
+      ],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 243,
+      "time": "2026-08-12T18:25:11.981296+00:00",
+      "kind": "mutation",
+      "op": "delete",
+      "path": "unidades/unidad-fantasma",
+      "dest": null,
+      "workspace_before": "fe8a389c2c4adb6e581690bb79c175fb5373747e9c62d1c77724709102fa5d3b",
+      "workspace_after": "380e45c8e6ac9136d8d4370c404ac8cbcd86cc19c6829ccb5e274d5d9b831f70",
+      "workspace_diff": {
+        "added": [],
+        "removed": [
+          "unidades/unidad-fantasma/conocimiento/concepts.json",
+          "unidades/unidad-fantasma/conocimiento/figures.json",
+          "unidades/unidad-fantasma/conocimiento/topics.json",
+          "unidades/unidad-fantasma/fuentes/oficiales/funciones.txt",
+          "unidades/unidad-fantasma/progreso/progress.json",
+          "unidades/unidad-fantasma/unidad.json"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 244,
+      "time": "2026-08-12T18:25:15.621935+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 245,
+      "time": "2026-08-12T18:26:12.814326+00:00",
+      "kind": "hypothesis",
+      "experiment": 47,
+      "invariant": "figure-collision-safe",
+      "category": "figure-collisions",
+      "text": "duplicate_derived_id_is_rejected_without_overwrite"
+    },
+    {
+      "step": 246,
+      "time": "2026-08-12T18:26:14.934613+00:00",
+      "kind": "mutation",
+      "op": "write",
+      "path": "unidades/unidad-1/assets/figures/f47.svg",
+      "dest": null,
+      "workspace_before": "380e45c8e6ac9136d8d4370c404ac8cbcd86cc19c6829ccb5e274d5d9b831f70",
+      "workspace_after": "14f63e023a3a19fe551138526961cd2cf8dfc89fa6ea4ae6e36c2e45ddde57cc",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-1/assets/figures/f47.svg"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 247,
+      "time": "2026-08-12T18:26:17.929981+00:00",
+      "kind": "exec",
+      "script": "study.py",
+      "args": [
+        "figures",
+        "register-derived",
+        "qa-engine-20260812t173616z-s26081250",
+        "--id",
+        "f47",
+        "--unit",
+        "unidad-1",
+        "--asset",
+        "unidades/unidad-1/assets/figures/f47.svg",
+        "--description",
+        "f47",
+        "--based-on",
+        "unidades/unidad-1/fuentes/oficiales/fundamentos.txt"
+      ],
+      "expanded_args": [
+        "figures",
+        "register-derived",
+        "qa-engine-20260812t173616z-s26081250",
+        "--id",
+        "f47",
+        "--unit",
+        "unidad-1",
+        "--asset",
+        "unidades/unidad-1/assets/figures/f47.svg",
+        "--description",
+        "f47",
+        "--based-on",
+        "unidades/unidad-1/fuentes/oficiales/fundamentos.txt"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"key\": \"derived:f47\",\n  \"record\": {\n    \"id\": \"derived:f47\",\n    \"unit_id\": \"unidad-1\",\n    \"unit\": \"Algoritmos y datos\",\n    \"concepts\": [],\n    \"kind\": \"diagram\",\n    \"role\": \"supporting\",\n    \"description\": \"f47\",\n    \"learner_focus\": [],\n    \"asset\": \"assets/figures/f47.svg\",\n    \"asset_sha256\": \"b12e0d83ce2357d80b89c57694814d0a3abdaf8c40724f2049af8b7f01b7812b\",\n    \"origin\": \"derived\",\n    \"based_on\": [\n      \"unidades/unidad-1/fuentes/oficiales/fundamentos.txt\"\n    ]\n  }\n}\n",
+      "stderr": "",
+      "workspace_before": "14f63e023a3a19fe551138526961cd2cf8dfc89fa6ea4ae6e36c2e45ddde57cc",
+      "workspace_after": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-1/conocimiento/figures.json"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 248,
+      "time": "2026-08-12T18:26:20.930509+00:00",
+      "kind": "exec",
+      "script": "study.py",
+      "args": [
+        "figures",
+        "register-derived",
+        "qa-engine-20260812t173616z-s26081250",
+        "--id",
+        "f47",
+        "--unit",
+        "unidad-1",
+        "--asset",
+        "unidades/unidad-1/assets/figures/f47.svg",
+        "--description",
+        "f47again",
+        "--based-on",
+        "unidades/unidad-1/fuentes/oficiales/fundamentos.txt"
+      ],
+      "expanded_args": [
+        "figures",
+        "register-derived",
+        "qa-engine-20260812t173616z-s26081250",
+        "--id",
+        "f47",
+        "--unit",
+        "unidad-1",
+        "--asset",
+        "unidades/unidad-1/assets/figures/f47.svg",
+        "--description",
+        "f47again",
+        "--based-on",
+        "unidades/unidad-1/fuentes/oficiales/fundamentos.txt"
+      ],
+      "returncode": 2,
+      "expected_returncode": 1,
+      "stdout": "",
+      "stderr": "ERROR: Figure id already exists; refusing overwrite: derived:f47\n",
+      "workspace_before": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_after": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 249,
+      "time": "2026-08-12T18:26:22.930371+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 250,
+      "time": "2026-08-12T18:26:24.790842+00:00",
+      "kind": "hypothesis",
+      "experiment": 48,
+      "invariant": "figure-asset-hash-verify",
+      "category": "figure-integrity",
+      "text": "modified_derived_asset_is_detected_by_verify"
+    },
+    {
+      "step": 251,
+      "time": "2026-08-12T18:26:26.892002+00:00",
+      "kind": "mutation",
+      "op": "append",
+      "path": "unidades/unidad-1/assets/figures/f47.svg",
+      "dest": null,
+      "workspace_before": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_after": "66012499f803c2075368cb6d737d82ec4152aa772be91dad2dc9388e0a456688",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-1/assets/figures/f47.svg"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 252,
+      "time": "2026-08-12T18:26:29.832644+00:00",
+      "kind": "exec",
+      "script": "study.py",
+      "args": [
+        "figures",
+        "verify",
+        "qa-engine-20260812t173616z-s26081250"
+      ],
+      "expanded_args": [
+        "figures",
+        "verify",
+        "qa-engine-20260812t173616z-s26081250"
+      ],
+      "returncode": 0,
+      "expected_returncode": null,
+      "stdout": "{\n  \"ok\": true,\n  \"issues\": [],\n  \"figures\": 1\n}\n",
+      "stderr": "",
+      "workspace_before": "66012499f803c2075368cb6d737d82ec4152aa772be91dad2dc9388e0a456688",
+      "workspace_after": "66012499f803c2075368cb6d737d82ec4152aa772be91dad2dc9388e0a456688",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 253,
+      "time": "2026-08-12T18:26:31.952158+00:00",
+      "kind": "mutation",
+      "op": "replace",
+      "path": "unidades/unidad-1/assets/figures/f47.svg",
+      "dest": null,
+      "workspace_before": "66012499f803c2075368cb6d737d82ec4152aa772be91dad2dc9388e0a456688",
+      "workspace_after": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-1/assets/figures/f47.svg"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 254,
+      "time": "2026-08-12T18:26:33.866183+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 255,
+      "time": "2026-08-12T18:26:35.602715+00:00",
+      "kind": "hypothesis",
+      "experiment": 49,
+      "invariant": "json-corruption-recovery",
+      "category": "json-fault-recovery",
+      "text": "corrupt_progress_is_detected_then_exact_restore_cleans_checks"
+    },
+    {
+      "step": 256,
+      "time": "2026-08-12T18:26:37.735639+00:00",
+      "kind": "mutation",
+      "op": "copy",
+      "path": "unidades/unidad-3/progreso/progress.json",
+      "dest": ".study/u3-progress-backup",
+      "workspace_before": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_after": "c9b20556f83e3d41dc09f6320b60a5d452a74e859b3fa341cace6cfb1bf2cf8d",
+      "workspace_diff": {
+        "added": [
+          ".study/u3-progress-backup"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 257,
+      "time": "2026-08-12T18:26:39.898166+00:00",
+      "kind": "mutation",
+      "op": "write",
+      "path": "unidades/unidad-3/progreso/progress.json",
+      "dest": null,
+      "workspace_before": "c9b20556f83e3d41dc09f6320b60a5d452a74e859b3fa341cace6cfb1bf2cf8d",
+      "workspace_after": "fd33bbbce774acb025a628071e874eb0ff32f211111fc280101990c48029b549",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-3/progreso/progress.json"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 258,
+      "time": "2026-08-12T18:26:42.151769+00:00",
+      "kind": "check",
+      "ok": false,
+      "issues": [
+        {
+          "invariant": "course-json-valid",
+          "severity": "critical",
+          "message": "JSON inválido: JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+          "path": "unidades/unidad-3/progreso/progress.json"
+        }
+      ],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 259,
+      "time": "2026-08-12T18:26:44.254336+00:00",
+      "kind": "mutation",
+      "op": "delete",
+      "path": "unidades/unidad-3/progreso/progress.json",
+      "dest": null,
+      "workspace_before": "fd33bbbce774acb025a628071e874eb0ff32f211111fc280101990c48029b549",
+      "workspace_after": "ef19c1059e434a2a17cb62df2ab2126a8c4ffb445556b7719e25752408b76160",
+      "workspace_diff": {
+        "added": [],
+        "removed": [
+          "unidades/unidad-3/progreso/progress.json"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 260,
+      "time": "2026-08-12T18:26:46.433953+00:00",
+      "kind": "mutation",
+      "op": "move",
+      "path": ".study/u3-progress-backup",
+      "dest": "unidades/unidad-3/progreso/progress.json",
+      "workspace_before": "ef19c1059e434a2a17cb62df2ab2126a8c4ffb445556b7719e25752408b76160",
+      "workspace_after": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-3/progreso/progress.json"
+        ],
+        "removed": [
+          ".study/u3-progress-backup"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 261,
+      "time": "2026-08-12T18:26:48.609895+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 262,
+      "time": "2026-08-12T18:26:50.365264+00:00",
+      "kind": "hypothesis",
+      "experiment": 50,
+      "invariant": "long-sequence-convergence-2",
+      "category": "sequence-convergence-2",
+      "text": "mixed_sync_reconcile_tracker_claim_status_sequence_converges_cleanly"
+    },
+    {
+      "step": 263,
+      "time": "2026-08-12T18:26:52.926859+00:00",
+      "kind": "exec",
+      "script": "study.py",
+      "args": [
+        "units",
+        "sync",
+        "qa-engine-20260812t173616z-s26081250",
+        "--json"
+      ],
+      "expanded_args": [
+        "units",
+        "sync",
+        "qa-engine-20260812t173616z-s26081250",
+        "--json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 4,\n  \"created\": [],\n  \"updated\": [\n    \"unidad-1\",\n    \"unidad-2\",\n    \"unidad-3\"\n  ],\n  \"orphaned\": [],\n  \"units\": [\n    \"unidad-1\",\n    \"unidad-2\",\n    \"unidad-3\"\n  ]\n}\n",
+      "stderr": "",
+      "workspace_before": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_after": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 264,
+      "time": "2026-08-12T18:26:55.525963+00:00",
+      "kind": "exec",
+      "script": "topic_catalog.py",
+      "args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "expanded_args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"written\": true,\n  \"unit_id\": \"unidad-1\",\n  \"created_topic_ids\": [],\n  \"reused_topic_ids\": [],\n  \"newly_unassigned_concept_ids\": [],\n  \"removed_missing_concept_ids\": [],\n  \"catalog\": {\n    \"version\": 1,\n    \"unit_id\": \"unidad-1\",\n    \"topics\": {\n      \"datos\": {\n        \"id\": \"datos\",\n        \"unit_id\": \"unidad-1\",\n        \"name\": \"Datos\",\n        \"aliases\": [],\n        \"concept_ids\": [],\n        \"declared_matches\": [\n          \"Variables\"\n        ],\n        \"evidence\": []\n      },\n      \"fundamentos\": {\n        \"id\": \"fundamentos\",\n        \"unit_id\": \"unidad-1\",\n        \"name\": \"Bases\",\n        \"aliases\": [\n          \"Fundamentos\"\n        ],\n        \"concept_ids\": [\n          \"algoritmo\"\n        ],\n        \"declared_matches\": [\n          \"Algoritmos\"\n        ],\n        \"evidence\": []\n      }\n    },\n    \"unassigned_concept_ids\": [\n      \"variable\"\n    ]\n  },\n  \"validation\": {\n    \"ok\": true,\n    \"unit_id\": \"unidad-1\",\n    \"topic_count\": 2,\n    \"concept_count\": 2,\n    \"unassigned_concept_ids\": [\n      \"variable\"\n    ],\n    \"missing_assignment_concept_ids\": [],\n    \"issues\": []\n  }\n}\n",
+      "stderr": "",
+      "workspace_before": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_after": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-1/conocimiento/topics.json"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 265,
+      "time": "2026-08-12T18:26:58.284866+00:00",
+      "kind": "exec",
+      "script": "topic_catalog.py",
+      "args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-2",
+        "--write"
+      ],
+      "expanded_args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-2",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"written\": true,\n  \"unit_id\": \"unidad-2\",\n  \"created_topic_ids\": [],\n  \"reused_topic_ids\": [],\n  \"newly_unassigned_concept_ids\": [],\n  \"removed_missing_concept_ids\": [],\n  \"catalog\": {\n    \"version\": 1,\n    \"unit_id\": \"unidad-2\",\n    \"topics\": {},\n    \"unassigned_concept_ids\": [\n      \"condicion\",\n      \"iteracion\"\n    ]\n  },\n  \"validation\": {\n    \"ok\": true,\n    \"unit_id\": \"unidad-2\",\n    \"topic_count\": 0,\n    \"concept_count\": 2,\n    \"unassigned_concept_ids\": [\n      \"condicion\",\n      \"iteracion\"\n    ],\n    \"missing_assignment_concept_ids\": [],\n    \"issues\": []\n  }\n}\n",
+      "stderr": "",
+      "workspace_before": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_after": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 266,
+      "time": "2026-08-12T18:27:00.981527+00:00",
+      "kind": "exec",
+      "script": "topic_catalog.py",
+      "args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-3",
+        "--write"
+      ],
+      "expanded_args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-3",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"written\": true,\n  \"unit_id\": \"unidad-3\",\n  \"created_topic_ids\": [],\n  \"reused_topic_ids\": [],\n  \"newly_unassigned_concept_ids\": [],\n  \"removed_missing_concept_ids\": [],\n  \"catalog\": {\n    \"version\": 1,\n    \"unit_id\": \"unidad-3\",\n    \"topics\": {},\n    \"unassigned_concept_ids\": [\n      \"funcion\",\n      \"parametro\"\n    ]\n  },\n  \"validation\": {\n    \"ok\": true,\n    \"unit_id\": \"unidad-3\",\n    \"topic_count\": 0,\n    \"concept_count\": 2,\n    \"unassigned_concept_ids\": [\n      \"funcion\",\n      \"parametro\"\n    ],\n    \"missing_assignment_concept_ids\": [],\n    \"issues\": []\n  }\n}\n",
+      "stderr": "",
+      "workspace_before": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_after": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 267,
+      "time": "2026-08-12T18:27:03.620652+00:00",
+      "kind": "exec",
+      "script": "study_tracker.py",
+      "args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250"
+      ],
+      "expanded_args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"added\": [],\n  \"updated_units\": [],\n  \"tracked\": 6\n}\n",
+      "stderr": "",
+      "workspace_before": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_after": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 268,
+      "time": "2026-08-12T18:27:06.509697+00:00",
+      "kind": "exec",
+      "script": "claim_candidates.py",
+      "args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "expanded_args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\n{\n  \"version\": 1,\n  \"origin\": \"automatic-claim-extraction-v1\",\n  \"course\": \"qa-engine-20260812t173616z-s26081250\",\n  \"full_scan\": true,\n  \"sources\": [\n    {\n      \"source\": \"unidades/unidad-1/fuentes/oficiales/apunte.pdf\",\n      \"candidates\": 0,\n      \"error\": null\n    },\n    {\n      \"source\": \"unidades/unidad-1/fuentes/oficiales/fundamentos.txt\",\n      \"candidates\": 0,\n      \"error\": null\n    },\n    {\n      \"source\": \"unidades/unidad-1/fuentes/transcripciones/clase-1.srt\",\n      \"candidates\": 0,\n      \"error\": null\n    }\n  ],\n  \"candidates\": [],\n  \"total\": 0,\n  \"semantic_ready\": 0,\n  \"needs_semantic_review\": 0,\n  \"errors\": [],\n  \"written\": 0,\n  \"retained\": 0\n}\n",
+      "stderr": "",
+      "workspace_before": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_after": "62e4a30710d27e938faa0f22729183385de94347b7ca7987593b6694f7e57e84",
+      "workspace_diff": {
+        "added": [
+          ".study/claim-candidates.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 269,
+      "time": "2026-08-12T18:27:09.394535+00:00",
+      "kind": "exec",
+      "script": "semantic_claims.py",
+      "args": [
+        "course",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--write"
+      ],
+      "expanded_args": [
+        "course",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"policy_version\": 1,\n  \"claims\": 0,\n  \"active_claims\": 0,\n  \"superseded_claim_ids\": [],\n  \"contradictions\": 0,\n  \"split_view\": 0,\n  \"unresolved\": 0,\n  \"groups\": []\n}\n",
+      "stderr": "",
+      "workspace_before": "62e4a30710d27e938faa0f22729183385de94347b7ca7987593b6694f7e57e84",
+      "workspace_after": "1c9a3cdaaca1146bfe8d9adfbd42f353741d83ea6aedf380c193f50975e80782",
+      "workspace_diff": {
+        "added": [
+          ".study/semantic-claims.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 270,
+      "time": "2026-08-12T18:27:12.049495+00:00",
+      "kind": "exec",
+      "script": "artifact_state.py",
+      "args": [
+        "status",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250"
+      ],
+      "expanded_args": [
+        "status",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "[\n  {\n    \"file\": \"unidades/unidad-1/resumenes/pub42.html\",\n    \"type\": \"untracked\",\n    \"scope\": \"\",\n    \"generated_at\": null,\n    \"stale\": true,\n    \"reasons\": [\n      \"untracked-artifact\"\n    ],\n    \"concept_scope_mode\": \"unknown\",\n    \"concept_count\": null\n  },\n  {\n    \"file\": \"unidades/unidad-1/resumenes/pub42.md\",\n    \"type\": \"untracked\",\n    \"scope\": \"\",\n    \"generated_at\": null,\n    \"stale\": true,\n    \"reasons\": [\n      \"untracked-artifact\"\n    ],\n    \"concept_scope_mode\": \"unknown\",\n    \"concept_count\": null\n  },\n  {\n    \"file\": \"unidades/unidad-2/resumenes/wrong.md\",\n    \"type\": \"untracked\",\n    \"scope\": \"\",\n    \"generated_at\": null,\n    \"stale\": true,\n    \"reasons\": [\n      \"untracked-artifact\"\n    ],\n    \"concept_scope_mode\": \"unknown\",\n    \"concept_count\": null\n  }\n]\n",
+      "stderr": "",
+      "workspace_before": "1c9a3cdaaca1146bfe8d9adfbd42f353741d83ea6aedf380c193f50975e80782",
+      "workspace_after": "1c9a3cdaaca1146bfe8d9adfbd42f353741d83ea6aedf380c193f50975e80782",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 271,
+      "time": "2026-08-12T18:27:13.961739+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 272,
+      "time": "2026-08-12T18:29:25.544178+00:00",
+      "kind": "finding",
+      "id": "QA-003",
+      "severity": "medium",
+      "invariant": "figure-asset-hash-verify",
+      "title": "derived_asset_hash_drift_passes_verify"
+    },
+    {
+      "step": 273,
+      "time": "2026-08-12T18:29:33.344102+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 274,
+      "time": "2026-08-12T18:29:40.951228+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    }
+  ],
+  "note": "Compact replay context; minimize each bug to deterministic engine operations before fixing."
+}

@@ -1,0 +1,316 @@
+{
+  "version": 1,
+  "id": "QA-001",
+  "run_id": "20260812T173616Z-s26081250",
+  "created_at": "2026-08-12T17:39:44.035032+00:00",
+  "title": "non_cp1252_path_breaks_safe_wrapper_json",
+  "severity": "medium",
+  "invariant": "harness-unicode-output",
+  "expected": "wrapper_emits_valid_json_for_all_unicode_fixture_paths",
+  "actual": "operations_complete_and_journal_but_cli_returns_UnicodeEncodeError",
+  "notes": "reproduced_with_beta_and_han_character_on_mutate_exec_and_restore",
+  "confirmed": true,
+  "seed": 26081250,
+  "course_slug": "qa-engine-20260812t173616z-s26081250",
+  "evidence_steps": [
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "evidence": [
+    {
+      "step": 38,
+      "time": "2026-08-12T17:38:46.023772+00:00",
+      "kind": "mutation",
+      "op": "move",
+      "path": ".study/backup-srt",
+      "dest": "unidades/unidad-1/fuentes/transcripciones/clase-1.srt",
+      "workspace_before": "63ff6a939069e21abdc698403a8503761c1579561b836a0fa98eababb5e72ea5",
+      "workspace_after": "e67099d428ffb9b76882012c237f8f45ca228860d77c11ad82609d8bd1551413",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-1/fuentes/transcripciones/clase-1.srt"
+        ],
+        "removed": [
+          ".study/backup-srt"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 39,
+      "time": "2026-08-12T17:38:47.940887+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 40,
+      "time": "2026-08-12T17:38:49.742456+00:00",
+      "kind": "hypothesis",
+      "experiment": 10,
+      "invariant": "corrupt-pdf-contained",
+      "category": "pdf-faults",
+      "text": "corrupted_pdf_is_reported_unreadable_without_state_mutation"
+    },
+    {
+      "step": 41,
+      "time": "2026-08-12T17:38:51.732752+00:00",
+      "kind": "mutation",
+      "op": "copy",
+      "path": "unidades/unidad-1/fuentes/oficiales/apunte.pdf",
+      "dest": ".study/backup-pdf",
+      "workspace_before": "e67099d428ffb9b76882012c237f8f45ca228860d77c11ad82609d8bd1551413",
+      "workspace_after": "02e8a91eeb369cce3a5e9f4fce5d8d0b7faef0aa09489c1db63fe160b00d7457",
+      "workspace_diff": {
+        "added": [
+          ".study/backup-pdf"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 42,
+      "time": "2026-08-12T17:38:53.766385+00:00",
+      "kind": "mutation",
+      "op": "write",
+      "path": "unidades/unidad-1/fuentes/oficiales/apunte.pdf",
+      "dest": null,
+      "workspace_before": "02e8a91eeb369cce3a5e9f4fce5d8d0b7faef0aa09489c1db63fe160b00d7457",
+      "workspace_after": "5ae59c348ab7978bebb308ea790b41067e79072430bae02da3342037266f17bf",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-1/fuentes/oficiales/apunte.pdf"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 43,
+      "time": "2026-08-12T17:38:56.462821+00:00",
+      "kind": "exec",
+      "script": "pdf_probe.py",
+      "args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1"
+      ],
+      "expanded_args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"files\": [\n    {\n      \"file\": \"unidades/unidad-1/fuentes/oficiales/apunte.pdf\",\n      \"sha256\": \"5bf7299e4e32e92387939224bb1c7a5e84f5cdea6a77453c5bbc4c7235ac82c6\",\n      \"ok\": false,\n      \"error\": {\n        \"type\": \"unreadable\",\n        \"message\": \"Failed to open file 'C:\\\\\\\\Users\\\\\\\\mnpinho\\\\\\\\Desktop\\\\\\\\university\\\\\\\\university-resume\\\\\\\\.study\\\\\\\\engine-qa\\\\\\\\sandboxes\\\\\\\\engine-3908c7c3f651\\\\\\\\materias\\\\\\\\qa-engine-20260812t173616z-s26081250\\\\\\\\unidades\\\\\\\\unidad-1\\\\\\\\fuentes\\\\\\\\oficiales\\\\\\\\apunte.pdf' as type pdf.\"\n      },\n      \"pages\": 0,\n      \"page_metrics\": []\n    }\n  ],\n  \"total\": 1,\n  \"healthy\": 0,\n  \"unreadable\": 1,\n  \"needs_attention\": [\n    \"unidades/unidad-1/fuentes/oficiales/apunte.pdf\"\n  ],\n  \"note\": \"likely_scanned means image-only without an extractable text layer; no OCR is performed.\"\n}\n",
+      "stderr": "",
+      "workspace_before": "5ae59c348ab7978bebb308ea790b41067e79072430bae02da3342037266f17bf",
+      "workspace_after": "5ae59c348ab7978bebb308ea790b41067e79072430bae02da3342037266f17bf",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 44,
+      "time": "2026-08-12T17:38:58.596161+00:00",
+      "kind": "mutation",
+      "op": "delete",
+      "path": "unidades/unidad-1/fuentes/oficiales/apunte.pdf",
+      "dest": null,
+      "workspace_before": "5ae59c348ab7978bebb308ea790b41067e79072430bae02da3342037266f17bf",
+      "workspace_after": "9d6b5c868d5fd75294bf554ee4b429b95e716e8a46e6513412654927bf1257d8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [
+          "unidades/unidad-1/fuentes/oficiales/apunte.pdf"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 45,
+      "time": "2026-08-12T17:39:00.652163+00:00",
+      "kind": "mutation",
+      "op": "move",
+      "path": ".study/backup-pdf",
+      "dest": "unidades/unidad-1/fuentes/oficiales/apunte.pdf",
+      "workspace_before": "9d6b5c868d5fd75294bf554ee4b429b95e716e8a46e6513412654927bf1257d8",
+      "workspace_after": "e67099d428ffb9b76882012c237f8f45ca228860d77c11ad82609d8bd1551413",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-1/fuentes/oficiales/apunte.pdf"
+        ],
+        "removed": [
+          ".study/backup-pdf"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 46,
+      "time": "2026-08-12T17:39:02.545706+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 47,
+      "time": "2026-08-12T17:39:28.706591+00:00",
+      "kind": "hypothesis",
+      "experiment": 11,
+      "invariant": "harness-unicode-output",
+      "category": "harness-portability",
+      "text": "non_cp1252_paths_must_not_break_machine_readable_json"
+    },
+    {
+      "step": 48,
+      "time": "2026-08-12T17:39:30.663106+00:00",
+      "kind": "mutation",
+      "op": "move",
+      "path": "unidades/unidad-3/fuentes/oficiales/funciones.txt",
+      "dest": "unidades/unidad-3/fuentes/oficiales/funciones-漢.txt",
+      "workspace_before": "e67099d428ffb9b76882012c237f8f45ca228860d77c11ad82609d8bd1551413",
+      "workspace_after": "d0530c7992ad374c14ca5855a5928e2c24f4cc769c529731b257d0f104c891d4",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-3/fuentes/oficiales/funciones-漢.txt"
+        ],
+        "removed": [
+          "unidades/unidad-3/fuentes/oficiales/funciones.txt"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 49,
+      "time": "2026-08-12T17:39:33.045760+00:00",
+      "kind": "exec",
+      "script": "sync_materials.py",
+      "args": [
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-3"
+      ],
+      "expanded_args": [
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-3"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"added\": [\n    \"unidades/unidad-3/fuentes/oficiales/funciones-漢.txt\"\n  ],\n  \"changed\": [],\n  \"removed\": [],\n  \"total\": 1\n}\n",
+      "stderr": "",
+      "workspace_before": "d0530c7992ad374c14ca5855a5928e2c24f4cc769c529731b257d0f104c891d4",
+      "workspace_after": "d0530c7992ad374c14ca5855a5928e2c24f4cc769c529731b257d0f104c891d4",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 50,
+      "time": "2026-08-12T17:39:35.053696+00:00",
+      "kind": "mutation",
+      "op": "move",
+      "path": "unidades/unidad-3/fuentes/oficiales/funciones-漢.txt",
+      "dest": "unidades/unidad-3/fuentes/oficiales/funciones.txt",
+      "workspace_before": "d0530c7992ad374c14ca5855a5928e2c24f4cc769c529731b257d0f104c891d4",
+      "workspace_after": "e67099d428ffb9b76882012c237f8f45ca228860d77c11ad82609d8bd1551413",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-3/fuentes/oficiales/funciones.txt"
+        ],
+        "removed": [
+          "unidades/unidad-3/fuentes/oficiales/funciones-漢.txt"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 51,
+      "time": "2026-08-12T17:39:37.068457+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    }
+  ]
+}

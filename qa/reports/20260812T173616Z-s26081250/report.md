@@ -1,0 +1,67 @@
+# Engine QA Report
+
+- Run: `20260812T173616Z-s26081250`
+- Provider: `codex`
+- Seed: `26081250`
+- Experimentos: **50/50**
+- Pasos registrados: **274**
+- Hallazgos confirmados: **3**
+- Invariantes finales: **PASS**
+- Bloqueado: **no**
+
+## Cobertura
+- baseline-2
+- layout-metamorphic
+- cli-semantics
+- ingestion-scope
+- source-fingerprints
+- per-unit-indexing
+- unicode-paths-2
+- transcript-metadata
+- transcript-faults
+- pdf-faults
+- harness-portability
+- concept-partitions
+- concept-idempotence
+- evidence-fingerprints
+- evidence-faults
+- concept-relations
+- registry-collisions
+- semantic-topics
+- topic-identity
+- topic-reassignment
+- topic-unassigned
+- topic-duplicate-proposals
+- topic-invalid-input
+- topic-syllabus-links
+- topic-ordering
+- claim-resolution
+- claim-contradictions
+- claim-supersession
+- claim-validation
+- claim-ordering
+- assessment-inference
+- assessment-canonical
+- assessment-aliases-2
+- assessment-errors
+- assessment-ambiguity
+- tracker-validation
+- mastery-transitions
+- artifact-staleness
+- artifact-topics
+- artifact-boundaries
+- artifact-manifest
+- run-integrity
+- publication-atomicity-2
+- publication-guards
+- registry-recovery
+- layout-faults
+- figure-collisions
+- figure-integrity
+- json-fault-recovery
+- sequence-convergence-2
+
+## Hallazgos
+- **QA-001 · MEDIUM** — non_cp1252_path_breaks_safe_wrapper_json (`harness-unicode-output`)
+- **QA-002 · HIGH** — fixture_scope_type_ignored_by_tracker (`assessment-unit-scope`)
+- **QA-003 · MEDIUM** — derived_asset_hash_drift_passes_verify (`figure-asset-hash-verify`)

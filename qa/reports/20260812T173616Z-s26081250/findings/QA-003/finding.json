@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "id": "QA-003",
+  "run_id": "20260812T173616Z-s26081250",
+  "created_at": "2026-08-12T18:29:25.531183+00:00",
+  "title": "derived_asset_hash_drift_passes_verify",
+  "severity": "medium",
+  "invariant": "figure-asset-hash-verify",
+  "expected": "figures_verify_rejects_asset_when_bytes_no_longer_match_registered_asset_sha256",
+  "actual": "figures_verify_returns_ok_true_after_registered_derived_asset_bytes_are_modified",
+  "notes": "reproduced_in_experiment_48_and_confirmed_by_registry_issues_omitting_asset_sha256_validation",
+  "confirmed": true,
+  "seed": 26081250,
+  "course_slug": "qa-engine-20260812t173616z-s26081250",
+  "evidence_steps": [
+    258,
+    259,
+    260,
+    261,
+    262,
+    263,
+    264,
+    265,
+    266,
+    267,
+    268,
+    269,
+    270,
+    271
+  ],
+  "evidence": [
+    {
+      "step": 258,
+      "time": "2026-08-12T18:26:42.151769+00:00",
+      "kind": "check",
+      "ok": false,
+      "issues": [
+        {
+          "invariant": "course-json-valid",
+          "severity": "critical",
+          "message": "JSON inválido: JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+          "path": "unidades/unidad-3/progreso/progress.json"
+        }
+      ],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 259,
+      "time": "2026-08-12T18:26:44.254336+00:00",
+      "kind": "mutation",
+      "op": "delete",
+      "path": "unidades/unidad-3/progreso/progress.json",
+      "dest": null,
+      "workspace_before": "fd33bbbce774acb025a628071e874eb0ff32f211111fc280101990c48029b549",
+      "workspace_after": "ef19c1059e434a2a17cb62df2ab2126a8c4ffb445556b7719e25752408b76160",
+      "workspace_diff": {
+        "added": [],
+        "removed": [
+          "unidades/unidad-3/progreso/progress.json"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 260,
+      "time": "2026-08-12T18:26:46.433953+00:00",
+      "kind": "mutation",
+      "op": "move",
+      "path": ".study/u3-progress-backup",
+      "dest": "unidades/unidad-3/progreso/progress.json",
+      "workspace_before": "ef19c1059e434a2a17cb62df2ab2126a8c4ffb445556b7719e25752408b76160",
+      "workspace_after": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-3/progreso/progress.json"
+        ],
+        "removed": [
+          ".study/u3-progress-backup"
+        ],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 261,
+      "time": "2026-08-12T18:26:48.609895+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 262,
+      "time": "2026-08-12T18:26:50.365264+00:00",
+      "kind": "hypothesis",
+      "experiment": 50,
+      "invariant": "long-sequence-convergence-2",
+      "category": "sequence-convergence-2",
+      "text": "mixed_sync_reconcile_tracker_claim_status_sequence_converges_cleanly"
+    },
+    {
+      "step": 263,
+      "time": "2026-08-12T18:26:52.926859+00:00",
+      "kind": "exec",
+      "script": "study.py",
+      "args": [
+        "units",
+        "sync",
+        "qa-engine-20260812t173616z-s26081250",
+        "--json"
+      ],
+      "expanded_args": [
+        "units",
+        "sync",
+        "qa-engine-20260812t173616z-s26081250",
+        "--json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 4,\n  \"created\": [],\n  \"updated\": [\n    \"unidad-1\",\n    \"unidad-2\",\n    \"unidad-3\"\n  ],\n  \"orphaned\": [],\n  \"units\": [\n    \"unidad-1\",\n    \"unidad-2\",\n    \"unidad-3\"\n  ]\n}\n",
+      "stderr": "",
+      "workspace_before": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_after": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 264,
+      "time": "2026-08-12T18:26:55.525963+00:00",
+      "kind": "exec",
+      "script": "topic_catalog.py",
+      "args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "expanded_args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"written\": true,\n  \"unit_id\": \"unidad-1\",\n  \"created_topic_ids\": [],\n  \"reused_topic_ids\": [],\n  \"newly_unassigned_concept_ids\": [],\n  \"removed_missing_concept_ids\": [],\n  \"catalog\": {\n    \"version\": 1,\n    \"unit_id\": \"unidad-1\",\n    \"topics\": {\n      \"datos\": {\n        \"id\": \"datos\",\n        \"unit_id\": \"unidad-1\",\n        \"name\": \"Datos\",\n        \"aliases\": [],\n        \"concept_ids\": [],\n        \"declared_matches\": [\n          \"Variables\"\n        ],\n        \"evidence\": []\n      },\n      \"fundamentos\": {\n        \"id\": \"fundamentos\",\n        \"unit_id\": \"unidad-1\",\n        \"name\": \"Bases\",\n        \"aliases\": [\n          \"Fundamentos\"\n        ],\n        \"concept_ids\": [\n          \"algoritmo\"\n        ],\n        \"declared_matches\": [\n          \"Algoritmos\"\n        ],\n        \"evidence\": []\n      }\n    },\n    \"unassigned_concept_ids\": [\n      \"variable\"\n    ]\n  },\n  \"validation\": {\n    \"ok\": true,\n    \"unit_id\": \"unidad-1\",\n    \"topic_count\": 2,\n    \"concept_count\": 2,\n    \"unassigned_concept_ids\": [\n      \"variable\"\n    ],\n    \"missing_assignment_concept_ids\": [],\n    \"issues\": []\n  }\n}\n",
+      "stderr": "",
+      "workspace_before": "34aef37c2055a3713646691390ddf80facb1081ff19a3bee31388ac6f128bc4d",
+      "workspace_after": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-1/conocimiento/topics.json"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 265,
+      "time": "2026-08-12T18:26:58.284866+00:00",
+      "kind": "exec",
+      "script": "topic_catalog.py",
+      "args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-2",
+        "--write"
+      ],
+      "expanded_args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-2",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"written\": true,\n  \"unit_id\": \"unidad-2\",\n  \"created_topic_ids\": [],\n  \"reused_topic_ids\": [],\n  \"newly_unassigned_concept_ids\": [],\n  \"removed_missing_concept_ids\": [],\n  \"catalog\": {\n    \"version\": 1,\n    \"unit_id\": \"unidad-2\",\n    \"topics\": {},\n    \"unassigned_concept_ids\": [\n      \"condicion\",\n      \"iteracion\"\n    ]\n  },\n  \"validation\": {\n    \"ok\": true,\n    \"unit_id\": \"unidad-2\",\n    \"topic_count\": 0,\n    \"concept_count\": 2,\n    \"unassigned_concept_ids\": [\n      \"condicion\",\n      \"iteracion\"\n    ],\n    \"missing_assignment_concept_ids\": [],\n    \"issues\": []\n  }\n}\n",
+      "stderr": "",
+      "workspace_before": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_after": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 266,
+      "time": "2026-08-12T18:27:00.981527+00:00",
+      "kind": "exec",
+      "script": "topic_catalog.py",
+      "args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-3",
+        "--write"
+      ],
+      "expanded_args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-3",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"written\": true,\n  \"unit_id\": \"unidad-3\",\n  \"created_topic_ids\": [],\n  \"reused_topic_ids\": [],\n  \"newly_unassigned_concept_ids\": [],\n  \"removed_missing_concept_ids\": [],\n  \"catalog\": {\n    \"version\": 1,\n    \"unit_id\": \"unidad-3\",\n    \"topics\": {},\n    \"unassigned_concept_ids\": [\n      \"funcion\",\n      \"parametro\"\n    ]\n  },\n  \"validation\": {\n    \"ok\": true,\n    \"unit_id\": \"unidad-3\",\n    \"topic_count\": 0,\n    \"concept_count\": 2,\n    \"unassigned_concept_ids\": [\n      \"funcion\",\n      \"parametro\"\n    ],\n    \"missing_assignment_concept_ids\": [],\n    \"issues\": []\n  }\n}\n",
+      "stderr": "",
+      "workspace_before": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_after": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 267,
+      "time": "2026-08-12T18:27:03.620652+00:00",
+      "kind": "exec",
+      "script": "study_tracker.py",
+      "args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250"
+      ],
+      "expanded_args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"added\": [],\n  \"updated_units\": [],\n  \"tracked\": 6\n}\n",
+      "stderr": "",
+      "workspace_before": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_after": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 268,
+      "time": "2026-08-12T18:27:06.509697+00:00",
+      "kind": "exec",
+      "script": "claim_candidates.py",
+      "args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "expanded_args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\n{\n  \"version\": 1,\n  \"origin\": \"automatic-claim-extraction-v1\",\n  \"course\": \"qa-engine-20260812t173616z-s26081250\",\n  \"full_scan\": true,\n  \"sources\": [\n    {\n      \"source\": \"unidades/unidad-1/fuentes/oficiales/apunte.pdf\",\n      \"candidates\": 0,\n      \"error\": null\n    },\n    {\n      \"source\": \"unidades/unidad-1/fuentes/oficiales/fundamentos.txt\",\n      \"candidates\": 0,\n      \"error\": null\n    },\n    {\n      \"source\": \"unidades/unidad-1/fuentes/transcripciones/clase-1.srt\",\n      \"candidates\": 0,\n      \"error\": null\n    }\n  ],\n  \"candidates\": [],\n  \"total\": 0,\n  \"semantic_ready\": 0,\n  \"needs_semantic_review\": 0,\n  \"errors\": [],\n  \"written\": 0,\n  \"retained\": 0\n}\n",
+      "stderr": "",
+      "workspace_before": "115713ec97cbe9afff8f7cec9b88f2c99e40584737d1db51d2176982c8d52373",
+      "workspace_after": "62e4a30710d27e938faa0f22729183385de94347b7ca7987593b6694f7e57e84",
+      "workspace_diff": {
+        "added": [
+          ".study/claim-candidates.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 269,
+      "time": "2026-08-12T18:27:09.394535+00:00",
+      "kind": "exec",
+      "script": "semantic_claims.py",
+      "args": [
+        "course",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--write"
+      ],
+      "expanded_args": [
+        "course",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"policy_version\": 1,\n  \"claims\": 0,\n  \"active_claims\": 0,\n  \"superseded_claim_ids\": [],\n  \"contradictions\": 0,\n  \"split_view\": 0,\n  \"unresolved\": 0,\n  \"groups\": []\n}\n",
+      "stderr": "",
+      "workspace_before": "62e4a30710d27e938faa0f22729183385de94347b7ca7987593b6694f7e57e84",
+      "workspace_after": "1c9a3cdaaca1146bfe8d9adfbd42f353741d83ea6aedf380c193f50975e80782",
+      "workspace_diff": {
+        "added": [
+          ".study/semantic-claims.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 270,
+      "time": "2026-08-12T18:27:12.049495+00:00",
+      "kind": "exec",
+      "script": "artifact_state.py",
+      "args": [
+        "status",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250"
+      ],
+      "expanded_args": [
+        "status",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-3908c7c3f651\\materias\\qa-engine-20260812t173616z-s26081250"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "[\n  {\n    \"file\": \"unidades/unidad-1/resumenes/pub42.html\",\n    \"type\": \"untracked\",\n    \"scope\": \"\",\n    \"generated_at\": null,\n    \"stale\": true,\n    \"reasons\": [\n      \"untracked-artifact\"\n    ],\n    \"concept_scope_mode\": \"unknown\",\n    \"concept_count\": null\n  },\n  {\n    \"file\": \"unidades/unidad-1/resumenes/pub42.md\",\n    \"type\": \"untracked\",\n    \"scope\": \"\",\n    \"generated_at\": null,\n    \"stale\": true,\n    \"reasons\": [\n      \"untracked-artifact\"\n    ],\n    \"concept_scope_mode\": \"unknown\",\n    \"concept_count\": null\n  },\n  {\n    \"file\": \"unidades/unidad-2/resumenes/wrong.md\",\n    \"type\": \"untracked\",\n    \"scope\": \"\",\n    \"generated_at\": null,\n    \"stale\": true,\n    \"reasons\": [\n      \"untracked-artifact\"\n    ],\n    \"concept_scope_mode\": \"unknown\",\n    \"concept_count\": null\n  }\n]\n",
+      "stderr": "",
+      "workspace_before": "1c9a3cdaaca1146bfe8d9adfbd42f353741d83ea6aedf380c193f50975e80782",
+      "workspace_after": "1c9a3cdaaca1146bfe8d9adfbd42f353741d83ea6aedf380c193f50975e80782",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 271,
+      "time": "2026-08-12T18:27:13.961739+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    }
+  ]
+}
