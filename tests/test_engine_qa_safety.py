@@ -10,7 +10,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SAFE = ROOT / "scripts" / "engine_qa_safe.py"
+VENV_EXEC = ROOT / "scripts" / "venv_exec.py"
+SAFE_ARG = "scripts/engine_qa_safe.py"
 
 
 def sha256(path: Path) -> str:
@@ -18,8 +19,9 @@ def sha256(path: Path) -> str:
 
 
 def run_safe(env: dict[str, str], *args: str) -> subprocess.CompletedProcess[str]:
+    """Invoke the exact command shape documented for Claude/Codex."""
     return subprocess.run(
-        [sys.executable, str(SAFE), *args],
+        [sys.executable, str(VENV_EXEC), SAFE_ARG, *args],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -44,6 +46,7 @@ class EngineQaSafetyTests(unittest.TestCase):
     def start(self, env: dict[str, str]) -> dict:
         cp = run_safe(env, "start", "--budget", "2", "--seed", "17", "--provider", "test")
         self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+        self.assertTrue(cp.stdout.strip(), f"safe start produced no stdout; stderr={cp.stderr!r}")
         return json.loads(cp.stdout)
 
     def test_direct_entrypoint_runs_frozen_engine_outside_live_materias(self):
