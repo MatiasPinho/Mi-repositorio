@@ -1,6 +1,6 @@
 ---
 name: university-study
-description: Portable university study workflow. Uses the shared project core to ingest course sources, learn, summarize, review, quiz, simulate assessments, audit and track progress without duplicating provider-specific methodology.
+description: Portable university study workflow. Uses the shared project core to ingest sources, learn topics or concepts, summarize, review, quiz, simulate assessments and track progress. Maintenance audits stay internal.
 ---
 # University Study — adaptador portable
 
