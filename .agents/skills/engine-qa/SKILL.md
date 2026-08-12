@@ -1,6 +1,6 @@
 ---
 name: engine-qa
-description: Internal autonomous adversarial QA loop for the University Study engine. Creates only synthetic courses, executes a frozen engine copy through a guarded harness, records experiments/findings], and exports reproducible reports. Never edits engine code during the QA run.
+description: Internal autonomous adversarial QA loop for the University Study engine. Creates only synthetic courses, executes a frozen engine copy through a guarded harness, records experiments/findings, and exports reproducible reports. Never edits engine code during the QA run.
 argument-hint: "[experimentos opcionales]"
 disable-model-invocation: true
 ---
