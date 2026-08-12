@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shutil
 import sys
 import uuid
@@ -23,7 +22,9 @@ DEFAULT_REAL_QA_ROOT = REAL_ROOT / ".study" / "engine-qa"
 SANDBOX_SUBDIR = "sandboxes"
 GUARD_VERSION = 1
 
-# Files/directories whose drift in the live checkout invalidates an active QA run.
+# Drift in any of these live-checkout paths invalidates an active QA run.
+# The actual engine process executes a frozen copy, but this second guard also
+# prevents the agent from silently changing the source checkout while testing.
 LIVE_GUARD_PATHS = (
     "study.py",
     "core",
@@ -112,7 +113,13 @@ def copy_frozen_engine(destination: Path) -> None:
                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
             )
     # Some scripts discover root-level dependency/config files opportunistically.
-    for name in ("requirements.txt", "requirements-mcp.txt", "requirements-visual.txt", "requirements-design.txt", ".gitignore"):
+    for name in (
+        "requirements.txt",
+        "requirements-mcp.txt",
+        "requirements-visual.txt",
+        "requirements-design.txt",
+        ".gitignore",
+    ):
         src = REAL_ROOT / name
         if src.is_file():
             shutil.copy2(src, destination / name)
@@ -144,21 +151,28 @@ def guard_path(run_dir: Path) -> Path:
 
 def install_live_guard(run_dir: Path, sandbox: Path) -> None:
     rows = live_fingerprint()
+    digest = fingerprint_digest(rows)
     engine_qa.write_json(
         guard_path(run_dir),
         {
             "version": GUARD_VERSION,
             "sandbox_root": str(sandbox.resolve()),
-            "live_engine_sha256": fingerprint_digest(rows),
+            "live_engine_sha256": digest,
             "live_engine_files": rows,
         },
     )
     manifest = engine_qa.manifest_for(run_dir)
     manifest["sandbox_root"] = str(sandbox.resolve())
-    manifest["live_engine_sha256"] = fingerprint_digest(rows)
+    manifest["live_engine_sha256"] = digest
     manifest["safety_wrapper_version"] = GUARD_VERSION
     engine_qa.save_manifest(run_dir, manifest)
-    engine_qa.journal(run_dir, "safety-wrapper", sandbox_root=str(sandbox.resolve()), version=GUARD_VERSION)
+    engine_qa.journal(
+        run_dir,
+        "safety-wrapper",
+        sandbox_root=str(sandbox.resolve()),
+        live_engine_sha256=digest,
+        version=GUARD_VERSION,
+    )
 
 
 def load_live_guard(run_dir: Path) -> dict[str, Any]:
@@ -182,13 +196,20 @@ def verify_live_checkout(run_dir: Path, guard: dict[str, Any]) -> None:
     diff = fingerprint_diff(before, now)
     if any(diff.values()):
         manifest = engine_qa.manifest_for(run_dir)
-        manifest.update({
-            "blocked": True,
-            "block_reason": "live-checkout-mutated-during-qa",
-            "live_checkout_diff": diff,
-        })
+        manifest.update(
+            {
+                "blocked": True,
+                "block_reason": "live-checkout-mutated-during-qa",
+                "live_checkout_diff": diff,
+            }
+        )
         engine_qa.save_manifest(run_dir, manifest)
-        engine_qa.journal(run_dir, "fatal", reason="live-checkout-mutated-during-qa", diff=diff)
+        engine_qa.journal(
+            run_dir,
+            "fatal",
+            reason="live-checkout-mutated-during-qa",
+            diff=diff,
+        )
         raise engine_qa.QaError("El checkout real cambió desde el inicio del QA run.")
 
 
@@ -206,12 +227,20 @@ def _expand_safe_token(token: str, course: Path, run_dir: Path, sandbox: Path) -
     }
     if token in aliases:
         return aliases[token]
-    for prefix, base in (("@course/", course), ("@run/", run_dir), ("@root/", sandbox)):
+    for prefix, base in (
+        ("@course/", course),
+        ("@run/", run_dir),
+        ("@root/", sandbox),
+    ):
         if token.startswith(prefix):
-            relative = token[len(prefix):]
+            relative = token[len(prefix) :]
             if _contains_parent_segment(relative):
                 raise engine_qa.QaError("Path traversal rechazado en argumento de exec.")
             return str((base / relative).resolve())
+    if token.startswith("--") and "=" in token:
+        option, value = token.split("=", 1)
+        expanded = _expand_safe_token(value, course, run_dir, sandbox)
+        return f"{option}={expanded}"
     return token
 
 
@@ -221,6 +250,14 @@ def _inside(path: Path, root: Path) -> bool:
         return True
     except ValueError:
         return False
+
+
+def _validate_path_value(value: str, allowed_roots: tuple[Path, ...]) -> None:
+    if _contains_parent_segment(value):
+        raise engine_qa.QaError(f"Path traversal rechazado: {value}")
+    candidate = Path(value)
+    if candidate.is_absolute() and not any(_inside(candidate, root) for root in allowed_roots):
+        raise engine_qa.QaError(f"Ruta absoluta fuera del sandbox QA: {value}")
 
 
 def validate_exec_tokens(run_dir: Path, argv: list[str], sandbox: Path) -> list[str]:
@@ -238,8 +275,9 @@ def validate_exec_tokens(run_dir: Path, argv: list[str], sandbox: Path) -> list[
             script = token.split("=", 1)[1]
 
     for idx, token in enumerate(rewritten):
-        if _contains_parent_segment(token):
-            raise engine_qa.QaError(f"Path traversal rechazado: {token}")
+        value = token.split("=", 1)[1] if token.startswith("--") and "=" in token else token
+        _validate_path_value(value, allowed_roots)
+
         if token.startswith("--course="):
             supplied = Path(token.split("=", 1)[1]).resolve()
             if supplied != course:
@@ -249,14 +287,9 @@ def validate_exec_tokens(run_dir: Path, argv: list[str], sandbox: Path) -> list[
             if supplied != course:
                 raise engine_qa.QaError("--course debe apuntar a la materia QA del run.")
 
-        # Absolute paths are allowed only inside the frozen sandbox, this run,
-        # or the report outbox. This rejects real materias and live engine files.
-        candidate = Path(token)
-        if candidate.is_absolute() and not any(_inside(candidate, root) for root in allowed_roots):
-            raise engine_qa.QaError(f"Ruta absoluta fuera del sandbox QA: {token}")
-
     if script == "study.py":
-        tail = rewritten[rewritten.index("--script") + 2:] if "--script" in rewritten else rewritten
+        marker = rewritten.index("--script") + 2 if "--script" in rewritten else 0
+        tail = rewritten[marker:]
         if str(course) not in tail and course.name not in tail:
             raise engine_qa.QaError("study.py debe recibir exactamente @course o @slug del run.")
 
@@ -309,7 +342,13 @@ def main() -> int:
             return start_safely(argv)
         return continue_safely(argv)
     except (engine_qa.QaError, OSError, ValueError, json.JSONDecodeError) as exc:
-        print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                {"ok": False, "error": f"{type(exc).__name__}: {exc}"},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return 1
 
 
