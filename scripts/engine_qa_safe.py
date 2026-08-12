@@ -303,19 +303,48 @@ def _replace_argv(rewritten: list[str]) -> None:
 
 
 def start_safely(argv: list[str]) -> int:
+    parsed = engine_qa.parser().parse_args(argv)
+    if parsed.command != "start":
+        raise engine_qa.QaError("start_safely sólo admite el comando start.")
+
     base = sandbox_root_base()
     base.mkdir(parents=True, exist_ok=True)
     sandbox = base / f"engine-{uuid.uuid4().hex[:12]}"
     copy_frozen_engine(sandbox)
     os.environ["STUDY_ENGINE_QA_ROOT"] = str(qa_root())
-    os.environ["STUDY_ENGINE_QA_COURSES_ROOT"] = str((sandbox / "materias").resolve())
+    courses_root = (sandbox / "materias").resolve()
+    os.environ["STUDY_ENGINE_QA_COURSES_ROOT"] = str(courses_root)
     patch_engine_module(sandbox)
-    code = engine_qa.main()
-    if code != 0:
+
+    try:
+        result = engine_qa.start_run(
+            qa_root(),
+            courses_root,
+            parsed.budget,
+            parsed.seed,
+            parsed.provider,
+        )
+    except Exception:
         shutil.rmtree(sandbox, ignore_errors=True)
-        return code
-    run_dir = engine_qa.resolve_run(qa_root(), "latest")
-    install_live_guard(run_dir, sandbox)
+        raise
+
+    run_dir = Path(str(result["run_dir"])).resolve()
+    try:
+        install_live_guard(run_dir, sandbox)
+    except Exception:
+        manifest = engine_qa.manifest_for(run_dir)
+        manifest.update(
+            {
+                "blocked": True,
+                "block_reason": "safety-wrapper-initialization-failed",
+            }
+        )
+        engine_qa.save_manifest(run_dir, manifest)
+        raise
+
+    # The wrapper owns the success output so a caller never sees a successful
+    # start before the frozen sandbox and live-checkout guard are both ready.
+    print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
 
