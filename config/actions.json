@@ -6,8 +6,8 @@
   },
   "aprender": {
     "mode": "LEARN",
-    "description": "Enseña un tema observado por primera vez con comprensión progresiva.",
-    "hint": "[materia] [tema]"
+    "description": "Enseña un tema o concepto canónico con comprensión progresiva.",
+    "hint": "[materia] [tema o concepto]"
   },
   "estudiar": {
     "mode": "TODAY",
@@ -16,13 +16,8 @@
   },
   "resumen": {
     "mode": "SUMMARY",
-    "description": "Genera o actualiza un resumen humano, claro y estudiable.",
-    "hint": "[materia] [unidad]"
-  },
-  "guia": {
-    "mode": "GUIDE",
-    "description": "Genera una guía de estudio exhaustiva pero pedagógica.",
-    "hint": "[materia] [unidad]"
+    "description": "Genera o actualiza un resumen estudiable; puede pedirse en modo detallado.",
+    "hint": "[materia] [unidad] [detallado opcional]"
   },
   "repaso": {
     "mode": "REVIEW",
@@ -43,16 +38,6 @@
     "mode": "EXAM",
     "description": "Genera y administra un simulacro de una evaluación registrada dentro de una unidad.",
     "hint": "[materia] [evaluacion] [unidad]"
-  },
-  "explicar": {
-    "mode": "EXPLAIN",
-    "description": "Explica profundamente un concepto usando la materia como base.",
-    "hint": "[materia] [concepto]"
-  },
-  "auditar": {
-    "mode": "AUDIT",
-    "description": "Audita conocimiento o artefactos de una unidad contra las fuentes.",
-    "hint": "[materia] [unidad]"
   },
   "estado": {
     "mode": "STATUS",

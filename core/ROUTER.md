@@ -73,5 +73,17 @@ Use `study_get_unit_context` (or `scripts/course_layout.py` through the determin
 
 Provider-specific isolation (Claude subagents/context forks, Codex parallel agents/worktrees, etc.) is optional. If used, it must consume and produce the same handoff contracts and may not change the pipeline semantics.
 
-## Actions
-`procesar`, `aprender`, `estudiar`, `resumen`, `guia`, `repaso`, `preguntas`, `quiz`, `simulacro`, `explicar`, `auditar`, `estado` each map to `pipelines/<name>.md`.
+## Public actions
+Exactly nine student-facing actions are exposed through generated Claude/Codex adapters:
+
+`procesar`, `aprender`, `estudiar`, `resumen`, `repaso`, `preguntas`, `quiz`, `simulacro`, `estado`.
+
+Keep the public surface small:
+- `aprender` resolves either an observed topic or one canonical concept; concept explanation is not a separate public action.
+- `resumen` owns both standard and explicitly requested detailed/guide depth; do not expose a parallel `guia` action.
+- `auditar` is maintenance-only and must not appear as a student-facing adapter.
+
+## Internal compatibility and maintenance
+- `pipelines/guia.md` is a compatibility wrapper that routes legacy guide intent to detailed `resumen`.
+- `pipelines/explicar.md` is a compatibility wrapper that routes legacy concept-explanation intent to `aprender`.
+- `pipelines/auditar.md` remains an explicit maintenance/debugging pipeline for developers, not a public study command.

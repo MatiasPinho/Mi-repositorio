@@ -1,6 +1,6 @@
 ---
 name: aprender
-description: Enseña un tema observado por primera vez con comprensión progresiva.
+description: Enseña un tema o concepto canónico con comprensión progresiva.
 ---
 # Acción portable: aprender
 
