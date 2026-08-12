@@ -75,7 +75,7 @@ def sync_tree(src: Path, dst: Path) -> None:
 def sync_portable_skills(platform: str) -> None:
     sync_tree(ROOT / "vendor" / "humanizer", ROOT / platform / "skills" / "humanizer")
     sync_tree(ROOT / "vendor" / "frontend-design", ROOT / platform / "skills" / "frontend-design")
-    for name in ("study-design", "study-design-reviewer"):
+    for name in ("study-design", "study-design-reviewer", "engine-qa"):
         sync_tree(ROOT / "skills-src" / name, ROOT / platform / "skills" / name)
 
 
@@ -125,7 +125,13 @@ def verify() -> list[str]:
             for needle in (f"`{spec['mode']}`", f"../../../pipelines/{name}.md", "../../../core/ROUTER.md"):
                 if needle not in text:
                     errors.append(f"{p.relative_to(ROOT)} missing {needle}")
-        for source_root, name in ((ROOT / "vendor", "humanizer"), (ROOT / "vendor", "frontend-design"), (ROOT / "skills-src", "study-design"), (ROOT / "skills-src", "study-design-reviewer")):
+        for source_root, name in (
+            (ROOT / "vendor", "humanizer"),
+            (ROOT / "vendor", "frontend-design"),
+            (ROOT / "skills-src", "study-design"),
+            (ROOT / "skills-src", "study-design-reviewer"),
+            (ROOT / "skills-src", "engine-qa"),
+        ):
             src = source_root / name / "SKILL.md"
             dst = ROOT / platform / "skills" / name / "SKILL.md"
             if not dst.exists() or sha256(dst) != sha256(src):
