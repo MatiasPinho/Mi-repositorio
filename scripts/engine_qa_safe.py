@@ -12,7 +12,7 @@ import shutil
 import sys
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, TypeVar
 
 REAL_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REAL_ROOT))
@@ -23,6 +23,7 @@ REAL_REPORTS_ROOT = REAL_ROOT / "qa" / "reports"
 DEFAULT_REAL_QA_ROOT = REAL_ROOT / ".study" / "engine-qa"
 SANDBOX_SUBDIR = "sandboxes"
 GUARD_VERSION = 1
+T = TypeVar("T")
 
 # Drift in any of these live-checkout paths invalidates an active QA run.
 # The actual engine process executes a frozen copy, but this second guard also
@@ -59,6 +60,25 @@ def emit_json(value: Any) -> None:
     """Emit one UTF-8 JSON document without depending on a replaced sys.stdout."""
     payload = (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     os.write(1, payload)
+
+
+def call_with_stdout_to_stderr(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    """Keep machine stdout pure even when native dependencies print warnings."""
+    try:
+        sys.stdout.flush()
+    except Exception:
+        pass
+    saved_stdout = os.dup(1)
+    try:
+        os.dup2(2, 1)
+        return fn(*args, **kwargs)
+    finally:
+        try:
+            sys.stdout.flush()
+        except Exception:
+            pass
+        os.dup2(saved_stdout, 1)
+        os.close(saved_stdout)
 
 
 def qa_root() -> Path:
@@ -323,7 +343,8 @@ def start_safely(argv: list[str]) -> int:
     patch_engine_module(sandbox)
 
     try:
-        result = engine_qa.start_run(
+        result = call_with_stdout_to_stderr(
+            engine_qa.start_run,
             qa_root(),
             courses_root,
             parsed.budget,
@@ -348,9 +369,8 @@ def start_safely(argv: list[str]) -> int:
         engine_qa.save_manifest(run_dir, manifest)
         raise
 
-    # PyMuPDF is imported while the synthetic PDF is generated. Emit through
-    # fd=1 so start remains machine-readable even if a native dependency alters
-    # the Python-level stdout object on a platform.
+    # stdout is reserved for the machine-readable response. Any incidental
+    # output from fixture generation has already been redirected to stderr.
     emit_json(result)
     return 0
 
