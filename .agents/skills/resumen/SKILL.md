@@ -1,6 +1,6 @@
 ---
 name: resumen
-description: Genera o actualiza un resumen humano, claro y estudiable.
+description: Genera o actualiza un resumen estudiable; puede pedirse en modo detallado.
 ---
 # Acción portable: resumen
 
