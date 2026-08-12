@@ -17,11 +17,13 @@ from scripts import sync_materials as _materials
 
 # ``scripts._study_cli_impl`` was extracted from the historical root entrypoint.
 # Keep its root-sensitive constants anchored at the repository root before any
-# command executes.
+# command executes, and re-export those corrected values for import compatibility.
 ROOT = Path(__file__).resolve().parent
+COURSES_DIR = ROOT / "materias"
+SCRIPTS_DIR = ROOT / "scripts"
 _impl.ROOT = ROOT
-_impl.COURSES_DIR = ROOT / "materias"
-_impl.SCRIPTS_DIR = ROOT / "scripts"
+_impl.COURSES_DIR = COURSES_DIR
+_impl.SCRIPTS_DIR = SCRIPTS_DIR
 
 
 def material_kind(relative):
