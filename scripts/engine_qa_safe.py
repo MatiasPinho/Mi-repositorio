@@ -14,9 +14,11 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from scripts import engine_qa
-
 REAL_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REAL_ROOT))
+
+from scripts import engine_qa  # noqa: E402
+
 REAL_REPORTS_ROOT = REAL_ROOT / "qa" / "reports"
 DEFAULT_REAL_QA_ROOT = REAL_ROOT / ".study" / "engine-qa"
 SANDBOX_SUBDIR = "sandboxes"
