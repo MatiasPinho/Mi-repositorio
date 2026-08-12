@@ -4,16 +4,20 @@ Engine QA Lab es el entorno interno para someter el motor del University Study S
 
 ## Objetivo
 
-Separar tres responsabilidades:
+Separar cuatro responsabilidades:
 
 ```text
 Claude / Codex
     ↓
 explora, formula hipótesis, decide secuencias
     ↓
+scripts/engine_qa_rpc_entry.py
+    ↓
+distingue salud del transporte de rechazos del workflow
+    ↓
 scripts/engine_qa_rpc.py
     ↓
-transporta requests/responses JSON sin quoting de shell
+transporta/dispacha requests JSON sin quoting de shell
     ↓
 scripts/engine_qa_safe.py
     ↓
@@ -31,14 +35,14 @@ El agente sirve para descubrir espacios de fallo todavía desconocidos. El harne
 La entrada normal para Claude/Codex es:
 
 ```text
-python scripts/venv_exec.py scripts/engine_qa_rpc.py \
+python scripts/venv_exec.py scripts/engine_qa_rpc_entry.py \
   --request-file .study/engine-qa/requests/<id>.json \
   --response-file .study/engine-qa/responses/<id>.json
 ```
 
-`engine_qa_rpc.py` es la capa de transporte estructurado. `engine_qa_safe.py` conserva la seguridad de sandbox/rutas y queda como capa interna/compatibilidad. `engine_qa.py` es el harness interno y no debe invocarse directamente durante una corrida normal.
+`engine_qa_rpc_entry.py` es el entrypoint de proceso y reserva los exit codes para la salud del protocolo. `engine_qa_rpc.py` implementa el despacho estructurado. `engine_qa_safe.py` conserva la seguridad de sandbox/rutas y queda como capa interna/compatibilidad. `engine_qa.py` es el harness interno y no debe invocarse directamente durante una corrida normal.
 
-El RPC sólo usa argv para dos rutas ASCII simples (`--request-file`/`--response-file`). Todo contenido complejo —espacios, Unicode, JSON, aliases y flags de herramientas internas— viaja dentro del JSON request.
+El entrypoint sólo usa argv para dos rutas simples (`--request-file`/`--response-file`). Todo contenido complejo —espacios, Unicode, JSON, aliases y flags de herramientas internas— viaja dentro del JSON request.
 
 ## Por qué existe el RPC
 
@@ -96,9 +100,11 @@ Aunque la herramienta rechace deliberadamente ese flag desconocido, el journal p
 
 ## Semántica del exit code
 
-El proceso RPC usa el exit code sólo para el transporte:
-- `0`: request parseado y despachado; mirar `response.ok` para el resultado del motor;
-- `2`: request/response/protocolo inválido o fallo de transporte.
+El entrypoint usa el exit code sólo para el transporte:
+- `0`: request parseado y respuesta estructurada persistida; `response.ok` puede ser `true` o `false`;
+- `2`: request JSON/archivo/protocolo o persistencia de respuesta fallaron.
+
+Por ejemplo, intentar `finish` con 87/100 experimentos válidos devuelve exit `0`, `transport_ok=true`, `ok=false` y un error de campaña incompleta. No se confunde con un transporte roto.
 
 Esto permite probar errores esperados del motor sin que un wrapper de PowerShell aborte el lote antes de registrar evidencia.
 
