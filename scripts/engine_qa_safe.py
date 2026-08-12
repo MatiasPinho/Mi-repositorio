@@ -55,6 +55,12 @@ LIVE_GUARD_PATHS = (
 )
 
 
+def emit_json(value: Any) -> None:
+    """Emit one UTF-8 JSON document without depending on a replaced sys.stdout."""
+    payload = (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    os.write(1, payload)
+
+
 def qa_root() -> Path:
     return Path(os.environ.get("STUDY_ENGINE_QA_ROOT", DEFAULT_REAL_QA_ROOT)).resolve()
 
@@ -342,9 +348,10 @@ def start_safely(argv: list[str]) -> int:
         engine_qa.save_manifest(run_dir, manifest)
         raise
 
-    # The wrapper owns the success output so a caller never sees a successful
-    # start before the frozen sandbox and live-checkout guard are both ready.
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # PyMuPDF is imported while the synthetic PDF is generated. Emit through
+    # fd=1 so start remains machine-readable even if a native dependency alters
+    # the Python-level stdout object on a platform.
+    emit_json(result)
     return 0
 
 
@@ -373,13 +380,7 @@ def main() -> int:
             return start_safely(argv)
         return continue_safely(argv)
     except (engine_qa.QaError, OSError, ValueError, json.JSONDecodeError) as exc:
-        print(
-            json.dumps(
-                {"ok": False, "error": f"{type(exc).__name__}: {exc}"},
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
+        emit_json({"ok": False, "error": f"{type(exc).__name__}: {exc}"})
         return 1
 
 
