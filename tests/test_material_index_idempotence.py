@@ -154,12 +154,12 @@ class MaterialIndexIdempotenceTests(unittest.TestCase):
 
     def test_study_entrypoint_patches_all_material_callers_to_canonical_functions(self):
         import study
-        from scripts import study_cli
+        from scripts import _study_cli_impl
 
-        self.assertIs(study_cli.scan_materials, study.scan_materials)
-        self.assertIs(study_cli.materials_index_path, study.materials_index_path)
-        self.assertIs(study_cli.material_kind, study.material_kind)
-        self.assertIs(study_cli.cmd_materials_scan, study.cmd_materials_scan)
+        self.assertIs(_study_cli_impl.scan_materials, study.scan_materials)
+        self.assertIs(_study_cli_impl.materials_index_path, study.materials_index_path)
+        self.assertIs(_study_cli_impl.material_kind, study.material_kind)
+        self.assertIs(_study_cli_impl.cmd_materials_scan, study.cmd_materials_scan)
 
 
 if __name__ == "__main__":
