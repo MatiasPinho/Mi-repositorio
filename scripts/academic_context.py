@@ -231,7 +231,8 @@ def parser() -> argparse.ArgumentParser:
     p.set_defaults(func=add_assessment)
 
     p = sub.add_parser("set-rule")
-    p.add_argument("--course", required=True, choices=sorted(RULE_KINDS))
+    p.add_argument("--course", required=True)
+    p.add_argument("--kind", required=True, choices=sorted(RULE_KINDS))
     p.add_argument("--text", required=True)
     p.add_argument("--source")
     p.add_argument("--status", choices=["confirmed", "likely", "unknown"], default="unknown")
