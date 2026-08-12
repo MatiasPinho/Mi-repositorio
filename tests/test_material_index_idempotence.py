@@ -156,6 +156,12 @@ class MaterialIndexIdempotenceTests(unittest.TestCase):
         import study
         from scripts import _study_cli_impl
 
+        self.assertEqual(study.ROOT, ROOT)
+        self.assertEqual(study.COURSES_DIR, ROOT / "materias")
+        self.assertEqual(study.SCRIPTS_DIR, ROOT / "scripts")
+        self.assertEqual(_study_cli_impl.ROOT, ROOT)
+        self.assertEqual(_study_cli_impl.COURSES_DIR, ROOT / "materias")
+        self.assertEqual(_study_cli_impl.SCRIPTS_DIR, ROOT / "scripts")
         self.assertIs(_study_cli_impl.scan_materials, study.scan_materials)
         self.assertIs(_study_cli_impl.materials_index_path, study.materials_index_path)
         self.assertIs(_study_cli_impl.material_kind, study.material_kind)
