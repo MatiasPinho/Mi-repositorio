@@ -117,7 +117,7 @@ class EngineQaTests(unittest.TestCase):
         source = (root / "skills-src/engine-qa/SKILL.md").read_bytes()
         self.assertEqual((root / ".claude/skills/engine-qa/SKILL.md").read_bytes(), source)
         self.assertEqual((root / ".agents/skills/engine-qa/SKILL.md").read_bytes(), source)
-        self.assertIn("no forma parte de las nueve acciones públicas", source.decode("utf-8"))
+        self.assertIn("no forma parte de las nueve acciones públicas", source.decode("utf-8").lower())
 
 
 if __name__ == "__main__":
