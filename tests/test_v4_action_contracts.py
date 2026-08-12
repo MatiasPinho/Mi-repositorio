@@ -45,8 +45,8 @@ class V4ActionContractTests(unittest.TestCase):
             self.assertIn(f"`/{name}`", readme, name)
             self.assertIn(f"`${name}`", readme, name)
         for retired in ("guia", "explicar", "auditar"):
-            self.assertNotIn(f"`/{retired}`", readme, retired)
-            self.assertNotIn(f"`${retired}`", readme, retired)
+            self.assertNotIn(f"/{retired}", readme, retired)
+            self.assertNotIn(f"${retired}", readme, retired)
 
     def test_removed_actions_have_no_public_adapters(self):
         for platform in (".claude", ".agents"):
