@@ -126,7 +126,8 @@ class EngineQaSafetyTests(unittest.TestCase):
 
     def test_internal_skill_uses_structured_rpc_transport(self):
         source = (ROOT / "skills-src" / "engine-qa" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("scripts/engine_qa_rpc.py", source)
+        self.assertIn("scripts/engine_qa_rpc_entry.py", source)
+        self.assertIn("engine_qa_rpc.py", source)
         self.assertIn(".study/engine-qa/requests", source)
         self.assertIn(".study/engine-qa/responses", source)
         self.assertIn("experiment-result", source)
