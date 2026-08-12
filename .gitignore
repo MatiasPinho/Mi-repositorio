@@ -11,8 +11,9 @@ materias/*
 !materias/_plantilla/
 !materias/_plantilla/**
 
-# Ephemeral pipeline state and visual-test output
+# Ephemeral pipeline and autonomous QA state
 **/.study/runs/
+.study/engine-qa/
 visual-tests/
 
 # Local editor / OS noise
