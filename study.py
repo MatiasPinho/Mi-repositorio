@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 """Stable CLI entrypoint for University Study System.
 
-The large command surface lives in :mod:`study_cli`. Material indexing is
-injected from the canonical ``scripts.sync_materials`` module so the CLI,
-status/reset paths, Engine QA, and direct deterministic script all share one
+The command implementation lives in :mod:`scripts.study_cli`. Material indexing
+is injected from the canonical ``scripts.sync_materials`` module so the CLI,
+status/reset paths, Engine QA, and the direct deterministic script all share one
 implementation and one idempotence contract.
 """
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
-import study_cli as _impl
-from study_cli import *  # noqa: F401,F403
+from scripts import study_cli as _impl
+from scripts.study_cli import *  # noqa: F401,F403
 from scripts import sync_materials as _materials
+
+# ``scripts.study_cli`` was extracted from the historical root entrypoint. Keep
+# its root-sensitive constants anchored at the repository root before any
+# command executes.
+ROOT = Path(__file__).resolve().parent
+_impl.ROOT = ROOT
+_impl.COURSES_DIR = ROOT / "materias"
+_impl.SCRIPTS_DIR = ROOT / "scripts"
 
 
 def material_kind(relative):
@@ -65,9 +74,9 @@ def cmd_materials_scan(args) -> None:
         print("\nEstado actual de materiales registrado como procesado.")
 
 
-# Patch the implementation module because its parser and other commands resolve
-# these globals at call time. This keeps ``python study.py ...`` fully backward
-# compatible while making material indexing single-source at runtime.
+# The extracted implementation resolves these globals at call time. Patching
+# them here makes every caller use the canonical material-index module, including
+# status/reset and parser-dispatched ``materials scan``.
 _impl.material_kind = material_kind
 _impl.materials_index_path = materials_index_path
 _impl.scan_materials = scan_materials
