@@ -47,7 +47,15 @@ class EngineQaSafetyTests(unittest.TestCase):
         cp = run_safe(env, "start", "--budget", "2", "--seed", "17", "--provider", "test")
         self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
         self.assertTrue(cp.stdout.strip(), f"safe start produced no stdout; stderr={cp.stderr!r}")
-        return json.loads(cp.stdout)
+        try:
+            value = json.loads(cp.stdout)
+        except json.JSONDecodeError as exc:
+            self.fail(
+                "safe start stdout was not JSON: "
+                f"len={len(cp.stdout)} prefix={cp.stdout[:160]!r} stderr={cp.stderr[:300]!r}; {exc}"
+            )
+        self.assertIsInstance(value, dict)
+        return value
 
     def test_direct_entrypoint_runs_frozen_engine_outside_live_materias(self):
         with tempfile.TemporaryDirectory() as td:
