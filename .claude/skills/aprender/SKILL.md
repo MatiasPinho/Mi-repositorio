@@ -1,7 +1,7 @@
 ---
 name: aprender
-description: Enseña un tema observado por primera vez con comprensión progresiva.
-argument-hint: "[materia] [tema]"
+description: Enseña un tema o concepto canónico con comprensión progresiva.
+argument-hint: "[materia] [tema o concepto]"
 disable-model-invocation: true
 ---
 # Acción portable: aprender
