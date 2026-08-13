@@ -36,7 +36,12 @@ def graph_path(course: Path) -> Path:
 
 
 def normalize(text: str) -> str:
-    return " ".join(text.strip().lower().split())
+    value = unicodedata.normalize("NFC", str(text or "")).casefold()
+    return " ".join(value.strip().split())
+
+
+def display_text(text: str) -> str:
+    return unicodedata.normalize("NFC", str(text or "").strip())
 
 
 def slugify(text: str) -> str:
@@ -70,10 +75,9 @@ def save(course: Path, data: dict) -> None:
 def find_key(data: dict, name: str) -> str | None:
     target = normalize(name)
     for key, item in data.get("concepts", {}).items():
-        if normalize(item.get("name", "")) == target or key == target:
+        if normalize(item.get("name", "")) == target or normalize(key) == target:
             return key
     return None
-
 
 
 
@@ -98,6 +102,7 @@ def canonical_assessment(course: Path, value: str) -> str:
         raise SystemExit(f"Ambiguous assessment name: {value}; use its id")
     return matches[0].get("id", value).strip()
 
+
 def relevance_map(item: dict) -> dict:
     """Return assessment-specific relevance, migrating legacy single-status shape in memory."""
     raw = item.get("assessment_relevance", {})
@@ -112,11 +117,12 @@ def relevance_map(item: dict) -> dict:
 
 
 def ensure(data: dict, name: str, unit: str = "") -> tuple[str, dict]:
-    key = find_key(data, name) or normalize(name)
+    canonical_name = display_text(name)
+    key = find_key(data, canonical_name) or normalize(canonical_name)
     if key not in data["concepts"]:
         data["concepts"][key] = {
-            "id": slugify(name),
-            "name": name.strip(),
+            "id": slugify(canonical_name),
+            "name": canonical_name,
             "unit": unit.strip(),
             "unit_id": canonical_unit_id(unit) if unit else "",
             "summary": "",
@@ -133,6 +139,8 @@ def ensure(data: dict, name: str, unit: str = "") -> tuple[str, dict]:
         }
     item = data["concepts"][key]
     relevance_map(item)
+    if not item.get("name"):
+        item["name"] = canonical_name
     if unit and not item.get("unit"):
         item["unit"] = unit.strip()
     if unit and not item.get("unit_id"):
@@ -144,7 +152,7 @@ def uniq_strings(values: list[str]) -> list[str]:
     seen = set()
     result = []
     for value in values:
-        cleaned = value.strip()
+        cleaned = display_text(value)
         k = normalize(cleaned)
         if cleaned and k not in seen:
             seen.add(k)
@@ -157,8 +165,9 @@ def cmd_upsert(args):
     data = load(course)
     _, item = ensure(data, args.concept, args.unit or "")
     if args.unit is not None:
-        item["unit"] = args.unit.strip()
-        item["unit_id"] = resolve_unit(course, args.unit).get("unit_id", "")
+        resolved = resolve_unit(course, args.unit)
+        item["unit_id"] = resolved.get("unit_id", "")
+        item["unit"] = resolved.get("label") or resolved.get("unit_id") or args.unit.strip()
     if args.summary is not None:
         item["summary"] = args.summary.strip()
     if args.definition is not None:
@@ -181,7 +190,7 @@ def cmd_link(args):
     data = load(course)
     _, source = ensure(data, args.concept)
     ensure(data, args.target)
-    rel = {"type": args.type, "target": args.target.strip()}
+    rel = {"type": args.type, "target": display_text(args.target)}
     existing = {(r.get("type"), normalize(r.get("target", ""))) for r in source.get("relations", [])}
     if (rel["type"], normalize(rel["target"])) not in existing:
         source.setdefault("relations", []).append(rel)
@@ -227,7 +236,6 @@ def cmd_source(args):
     else:
         src["fingerprint_status"] = "source-file-not-found"
 
-    # Replace same logical source locator instead of accumulating stale fingerprints.
     def same_locator(x: dict) -> bool:
         return (
             normalize(x.get("file", "")) == normalize(src.get("file", ""))
@@ -265,7 +273,7 @@ def cmd_error(args):
         found["count"] = int(found.get("count", 1)) + 1
         found["last_seen"] = today
     else:
-        item["recurring_errors"].append({"text": args.error.strip(), "count": 1, "last_seen": today})
+        item["recurring_errors"].append({"text": display_text(args.error), "count": 1, "last_seen": today})
     item["last_updated"] = today
     save(course, data)
     print(json.dumps(item, ensure_ascii=False, indent=2))
@@ -339,7 +347,7 @@ def cmd_emphasis(args):
     _, item = ensure(data, args.concept)
     signal = {
         "type": args.type,
-        "text": args.text.strip(),
+        "text": display_text(args.text),
         "file": args.file.strip(),
         "confidence": args.confidence,
     }
@@ -349,7 +357,6 @@ def cmd_emphasis(args):
         signal["speaker"] = args.speaker.strip()
     if args.assessment:
         signal["assessment_id"] = canonical_assessment(course, args.assessment)
-    # Replace exact duplicate evidence rather than accumulating it.
     target = (normalize(signal.get("file", "")), normalize(signal.get("timestamp", "")), normalize(signal.get("text", "")), signal.get("type"))
     rows = item.setdefault("teaching_signals", [])
     replaced = False
