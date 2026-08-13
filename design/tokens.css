@@ -57,6 +57,9 @@
 
   /* Notebook geometry */
   --notebook-line-pitch: 1.6875rem;
+  --notebook-rule-offset: 1.25rem;
+  --notebook-prose-baseline-shift: -.5rem;
+  --notebook-heading-baseline-shift: -.625rem;
   --notebook-measure: 40rem;
   --notebook-wide: 44rem;
   --notebook-paper-width: 58rem;

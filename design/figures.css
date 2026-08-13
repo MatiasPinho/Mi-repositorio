@@ -3,7 +3,7 @@
 figure {
   counter-increment: study-figure;
   width: min(100%, var(--notebook-wide));
-  margin: calc(var(--notebook-line-pitch) * 1.35) 0;
+  margin: var(--notebook-line-pitch) 0;
   padding: 0;
 }
 figure .plate {

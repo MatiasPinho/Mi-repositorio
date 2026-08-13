@@ -60,6 +60,9 @@
 
   /* Notebook geometry */
   --notebook-line-pitch: 1.6875rem;
+  --notebook-rule-offset: 1.25rem;
+  --notebook-prose-baseline-shift: -.5rem;
+  --notebook-heading-baseline-shift: -.625rem;
   --notebook-measure: 40rem;
   --notebook-wide: 44rem;
   --notebook-paper-width: 58rem;
@@ -131,8 +134,11 @@ h1, h2, h3, h4 {
 }
 
 h1 {
+  display: inline-block;
   margin: 0 0 .35rem;
   max-width: var(--notebook-measure);
+  background: var(--study-paper);
+  box-shadow: 0 0 0 .18rem var(--study-paper);
   font-size: clamp(1.75rem, 1.48rem + 1vw, 2.15rem);
   line-height: 1.16;
   letter-spacing: -.018em;
@@ -291,17 +297,38 @@ article {
   width: min(100%, var(--notebook-paper-width));
   max-width: var(--notebook-paper-width);
   margin: 0 auto;
-  padding: clamp(2.2rem, 5vw, 3.4rem) clamp(1.25rem, 4vw, 2.5rem) 4rem clamp(5.4rem, 10vw, 7.2rem);
+  padding: calc(var(--notebook-line-pitch) * 2) clamp(1.25rem, 4vw, 2.5rem) 4rem clamp(5.4rem, 10vw, 7.2rem);
   overflow: hidden;
   color: var(--study-ink);
   background-color: var(--study-paper);
   background-image: var(--notebook-rule-image);
   background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 var(--notebook-rule-offset);
   background-repeat: repeat-y;
   border: 1px solid var(--study-rule);
   border-radius: 1px 7px 7px 1px;
   box-shadow: var(--notebook-shadow);
   counter-reset: study-figure study-table study-code study-section;
+}
+
+/* Every top-level content block finishes on the same 27px rhythm. Without
+   this snap, a callout or heading with a fractional height shifts all the
+   prose that follows and the rules eventually run through the letters. */
+article > :is(
+  .book-frontmatter,
+  .study-header,
+  .row,
+  .section-head,
+  .callout,
+  pre,
+  .code-caption,
+  blockquote,
+  hr,
+  .table-scroll,
+  .table-caption,
+  figure
+) {
+  block-size: calc-size(auto, round(up, size, var(--notebook-line-pitch)));
 }
 
 /* Red margin and punched binding: CSS-only so renderer output stays clean. */
@@ -342,10 +369,15 @@ article::after {
   max-width: var(--notebook-wide);
 }
 .row > .mark:empty { display: none; }
+/* Block snapping keeps the document on a 27px rhythm; these component-level
+   phase corrections place the actual font box above the following rule.
+   They are role- and viewport-based, so figures of arbitrary height cannot
+   change the alignment of prose that follows them. */
 .row > .body {
   width: min(100%, var(--notebook-measure));
   max-width: var(--notebook-measure);
   min-width: 0;
+  transform: translateY(var(--notebook-prose-baseline-shift));
 }
 .mark {
   font-family: var(--study-font-utility);
@@ -364,12 +396,13 @@ article::after {
   gap: 0 1.5rem;
   justify-content: space-between;
   align-items: baseline;
+  height: var(--notebook-line-pitch);
   min-height: var(--notebook-line-pitch);
-  padding-bottom: .15rem;
+  padding-bottom: 0;
   border-bottom: 1px solid var(--study-rule-strong);
   font-family: var(--study-font-utility);
   font-size: .68rem;
-  line-height: var(--notebook-line-pitch);
+  line-height: calc(var(--notebook-line-pitch) - 1px);
   font-weight: 600;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -380,7 +413,7 @@ article::after {
 
 .study-header {
   display: block;
-  margin: var(--notebook-line-pitch) 0 calc(var(--notebook-line-pitch) * 1.35);
+  margin: var(--notebook-line-pitch) 0;
 }
 .study-header > .mark,
 .book-chapter-label { display: none; }
@@ -401,7 +434,7 @@ article::after {
   gap: .45rem;
   align-items: baseline;
   width: min(100%, var(--notebook-measure));
-  margin: calc(var(--notebook-line-pitch) * 1.35) 0 var(--notebook-line-pitch);
+  margin: var(--notebook-line-pitch) 0;
 }
 .section-head > .num {
   flex: 0 0 auto;
@@ -414,6 +447,11 @@ article::after {
   letter-spacing: .01em;
   color: var(--study-accent);
   font-variant-numeric: tabular-nums;
+}
+.section-head > .num,
+.section-head > h2,
+.section-head > h3 {
+  transform: translateY(var(--notebook-heading-baseline-shift));
 }
 .section-head > .num::before { content: "§" counter(study-section); }
 .section-head > h2,
@@ -481,12 +519,17 @@ article::after {
 }
 .toc .depth-3 { padding-left: 1.25rem; }
 
-.subsection-head { margin: calc(var(--notebook-line-pitch) * 1.3) 0 .25rem; }
+.subsection-head { margin: var(--notebook-line-pitch) 0 0; }
 .subsection-head h3,
 .minor-head h4 { margin: 0; }
 .minor-head { margin: var(--notebook-line-pitch) 0 0; }
 
 @media (max-width: 48rem) {
+  :root {
+    --notebook-rule-offset: 1.5rem;
+    --notebook-prose-baseline-shift: -.6875rem;
+    --notebook-heading-baseline-shift: -.6875rem;
+  }
   body { background: var(--study-paper); }
   .study-shell { padding: 0; }
   .study-grid,
@@ -497,7 +540,7 @@ article::after {
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    padding: 2rem 1.2rem 4rem 3.45rem;
+    padding: var(--notebook-line-pitch) 1.2rem 4rem 3.45rem;
   }
   article::before { left: 2.75rem; }
   article::after { display: none; }
@@ -585,7 +628,7 @@ article::after {
 .callout.exam {
   --rail: var(--study-accent);
   width: min(100%, var(--notebook-measure));
-  margin: calc(var(--notebook-line-pitch) * .85) 0 var(--notebook-line-pitch);
+  margin: var(--notebook-line-pitch) 0;
   padding: 0 0 0 .15rem;
   border: 0;
   background: transparent;
@@ -613,7 +656,7 @@ article::after {
 .callout.recall {
   --rail: var(--study-recall);
   width: min(100%, var(--notebook-wide));
-  margin: calc(var(--notebook-line-pitch) * 1.25) 0;
+  margin: var(--notebook-line-pitch) 0;
   padding: 0;
   border: 1.5px solid var(--study-rule-strong);
   background: color-mix(in srgb, var(--study-paper) 97%, white 3%);
@@ -637,6 +680,7 @@ article::after {
   margin-top: .3rem;
   background-image: var(--notebook-rule-image);
   background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 var(--notebook-rule-offset);
   background-repeat: repeat-y;
 }
 .callout.recall .prompt {
@@ -712,8 +756,11 @@ tbody td:first-child {
   flex-wrap: wrap;
   gap: .25rem .65rem;
   width: min(100%, var(--notebook-wide));
-  margin: -.55rem 0 var(--notebook-line-pitch);
+  margin: 0 0 var(--notebook-line-pitch);
+  padding-top: .25rem;
 }
+pre:has(+ .code-caption),
+.table-scroll:has(+ .table-caption) { margin-bottom: 0; }
 .table-caption { counter-increment: study-table; }
 .code-caption { counter-increment: study-code; }
 .table-caption::before,
@@ -744,7 +791,7 @@ tbody td:first-child {
 figure {
   counter-increment: study-figure;
   width: min(100%, var(--notebook-wide));
-  margin: calc(var(--notebook-line-pitch) * 1.35) 0;
+  margin: var(--notebook-line-pitch) 0;
   padding: 0;
 }
 figure .plate {
@@ -803,6 +850,10 @@ figure.wide { max-width: none; }
     --study-rule-line: #dce5ef;
     --study-margin-rule: #dba9a4;
     --study-marker: #efe3a8;
+    --notebook-line-pitch: 6.7mm;
+    --notebook-rule-offset: 4mm;
+    --notebook-prose-baseline-shift: -1.85mm;
+    --notebook-heading-baseline-shift: -2.4mm;
     --study-measure: 100%;
     --study-wide: 100%;
     --shadow-paper: none;
@@ -838,6 +889,7 @@ figure.wide { max-width: none; }
     box-shadow: none;
     overflow: visible;
     background-size: 100% 6.7mm;
+    background-position: 0 var(--notebook-rule-offset);
   }
   article::before {
     display: block;
@@ -853,10 +905,10 @@ figure.wide { max-width: none; }
   h2 { font-size: 12.5pt; break-after: avoid; }
   h3 { font-size: 10.5pt; break-after: avoid; }
   .section-head {
-    margin-top: 8mm;
+    margin: var(--notebook-line-pitch) 0;
     break-after: avoid;
   }
-  .study-header { margin: 6.7mm 0 9mm; }
+  .study-header { margin: var(--notebook-line-pitch) 0; }
   p, li {
     orphans: 3;
     widows: 3;

@@ -21,8 +21,11 @@ h1, h2, h3, h4 {
 }
 
 h1 {
+  display: inline-block;
   margin: 0 0 .35rem;
   max-width: var(--notebook-measure);
+  background: var(--study-paper);
+  box-shadow: 0 0 0 .18rem var(--study-paper);
   font-size: clamp(1.75rem, 1.48rem + 1vw, 2.15rem);
   line-height: 1.16;
   letter-spacing: -.018em;

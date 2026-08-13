@@ -8,86 +8,114 @@
 :root {
   color-scheme: light;
 
-  /* Surfaces — warm, low chroma, higher contrast than v3.5 */
-  --study-canvas: #e9e5dc;
+  /* Surfaces — study notebook on a quiet desk */
+  --study-canvas: #6f7268;
   --study-paper: #fbf9f4;
-  --study-paper-muted: #f7f4ec;
-  --study-ink: #232019;
-  --study-ink-strong: #100f0c;
-  --study-ink-soft: #413c33;
-  --study-ink-muted: #6b6459;
-  --study-ink-faint: #746c5e;
-  --study-rule: #ddd7cb;
-  --study-rule-soft: #e6e0d4;
-  --study-rule-strong: #b9b1a2;
+  --study-paper-muted: #f4f3eb;
+  --study-ink: #1b2430;
+  --study-ink-strong: #10131a;
+  --study-ink-soft: #3c4657;
+  --study-ink-muted: #63665d;
+  --study-ink-faint: #7c7f74;
+  --study-rule: #c9c9bd;
+  --study-rule-soft: #dbe4ef;
+  --study-rule-strong: #1b2430;
+  --study-rule-line: #c9d6e4;
+  --study-margin-rule: #cf9a94;
+  --study-marker: #f2e39a;
+  --study-hole: #5b5e56;
 
-  /* Semantic signalling — one hue per academic role, all low saturation */
-  --study-link: #2f5d67;
-  --study-focus: #2f5d67;
-  --study-accent: #2f5d67;
-  --study-concept: #2f5d67;
-  --study-example: #4a6349;
-  --study-warning: #7a5a20;
-  --study-danger: #7e4238;
-  --study-connection: #5a5570;
-  --study-recall: #55605f;
-  --study-danger-soft: #f8efec;
-  --study-warning-soft: #f6f1e6;
+  /* Semantic ink */
+  --study-link: #1f4b7a;
+  --study-focus: #1f4b7a;
+  --study-accent: #1f4b7a;
+  --study-concept: #1f4b7a;
+  --study-example: #50664f;
+  --study-warning: #8a642b;
+  --study-danger: #a8564a;
+  --study-connection: #5d586f;
+  --study-recall: #1f4b7a;
+  --study-danger-soft: #fbefec;
+  --study-warning-soft: #f7f0df;
+  --study-concept-soft: #eaeff5;
+  --study-example-soft: #edf2eb;
 
-  /* Type — Google Fonts with full system fallbacks */
-  --study-font-body: "Source Serif 4", "Source Serif Pro", Georgia, Cambria, serif;
+  /* Type */
+  --study-font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
   --study-font-display: var(--study-font-body);
-  --study-font-utility: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-  --study-font-code: "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
+  --study-font-utility: "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
+  --study-font-code: var(--study-font-utility);
+  --study-font-hand: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --study-font-editorial-fallback: "Source Serif 4", "Source Serif Pro", Georgia, serif;
 
-  --study-body-size: clamp(1.0625rem, .98rem + .35vw, 1.1875rem);
+  /* Compatibility tokens retained for old artifacts/tests; notebook geometry
+     uses the notebook-specific tokens below. */
+  --study-body-size: clamp(1.125rem, 1.1rem + .1vw, 1.15625rem);
   --study-body-leading: 1.72;
-  --study-small-size: .82rem;
-
-  /* Measure system: prose stays narrow, figures/tables break wider */
-  --study-measure: 42rem;      /* ~68 characters */
-  --study-gutter: 8rem;        /* section numbers + semantic labels */
+  --study-small-size: .78rem;
+  --study-measure: 42rem;
+  --study-gutter: 8rem;
   --study-gutter-gap: 2rem;
-  --study-wide: 52rem;         /* figures, tables, code */
+  --study-wide: 52rem;
   --study-paper-width: 66rem;
   --study-shell-width: 86rem;
   --study-toc-width: 13rem;
+  --shadow-paper: none;
+
+  /* Notebook geometry */
+  --notebook-line-pitch: 1.6875rem;
+  --notebook-rule-offset: 1.25rem;
+  --notebook-prose-baseline-shift: -.5rem;
+  --notebook-heading-baseline-shift: -.625rem;
+  --notebook-measure: 40rem;
+  --notebook-wide: 44rem;
+  --notebook-paper-width: 58rem;
+  --notebook-section-mark: 1.8rem;
+  --notebook-shadow: 0 14px 30px rgba(0, 0, 0, .28), 0 2px 0 rgba(255, 255, 255, .42) inset;
+  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 26.5H1000' stroke='%23c9d6e4' stroke-width='1'/%3E%3C/svg%3E");
 
   --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
   --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
   --space-12: 3rem; --space-16: 4rem;
-  --radius-s: 0; --radius-m: 0; --shadow-paper: none;
+  --radius-s: 2px; --radius-m: 5px;
 }
 
-/* Opt-in dark surface for night sessions. Same hierarchy, same semantics. */
 html[data-study-theme="dark"] {
   color-scheme: dark;
-  --study-canvas: #16171a;
-  --study-paper: #1e2023;
-  --study-paper-muted: #24262a;
-  --study-ink: #ddd9d0;
-  --study-ink-strong: #f5f2ea;
-  --study-ink-soft: #c6c1b7;
-  --study-ink-muted: #a49d92;
-  --study-ink-faint: #7d766c;
-  --study-rule: #34373b;
-  --study-rule-soft: #2b2e32;
-  --study-rule-strong: #4d5157;
-  --study-link: #8fb6be;
-  --study-focus: #8fb6be;
-  --study-accent: #8fb6be;
-  --study-concept: #8fb6be;
-  --study-example: #a3bd9b;
-  --study-warning: #d3bb87;
-  --study-danger: #d99e93;
-  --study-connection: #b6b0c9;
-  --study-recall: #b0b9b8;
-  --study-danger-soft: #2a2320;
-  --study-warning-soft: #262218;
+  --study-canvas: #15161a;
+  --study-paper: #1d1f23;
+  --study-paper-muted: #26282d;
+  --study-ink: #d6d2c8;
+  --study-ink-strong: #f4f1ea;
+  --study-ink-soft: #e6e2d9;
+  --study-ink-muted: #a8a297;
+  --study-ink-faint: #78736a;
+  --study-rule: #4d4f56;
+  --study-rule-soft: #33363d;
+  --study-rule-strong: #777a82;
+  --study-rule-line: #33363d;
+  --study-margin-rule: #6e4a49;
+  --study-marker: #665a2e;
+  --study-hole: #101115;
+  --study-link: #d5b76f;
+  --study-focus: #cfa860;
+  --study-accent: #cfa860;
+  --study-concept: #cfa860;
+  --study-example: #9fb093;
+  --study-warning: #d0aa66;
+  --study-danger: #d39184;
+  --study-connection: #b4adc8;
+  --study-recall: #cfa860;
+  --study-danger-soft: #2b2221;
+  --study-warning-soft: #2a261e;
+  --study-concept-soft: #252931;
+  --study-example-soft: #252a24;
+  --notebook-shadow: 0 16px 36px rgba(0, 0, 0, .46);
+  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 26.5H1000' stroke='%2333363d' stroke-width='1'/%3E%3C/svg%3E");
 }
 
 /* --- typography.css --- */
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -102,333 +130,679 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4 { color: var(--study-ink-strong); font-family: var(--study-font-display); text-wrap: balance; scroll-margin-top: 3rem; }
+h1, h2, h3, h4 {
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-display);
+  text-wrap: balance;
+  scroll-margin-top: 3rem;
+}
 
 h1 {
-  margin: 0 0 1.1rem;
-  font-size: clamp(2.1rem, 1.5rem + 2vw, 2.85rem);
-  line-height: 1.08;
-  letter-spacing: -.022em;
-  font-weight: 600;
+  display: inline-block;
+  margin: 0 0 .35rem;
+  max-width: var(--notebook-measure);
+  background: var(--study-paper);
+  box-shadow: 0 0 0 .18rem var(--study-paper);
+  font-size: clamp(1.75rem, 1.48rem + 1vw, 2.15rem);
+  line-height: 1.16;
+  letter-spacing: -.018em;
+  font-weight: 700;
 }
 h2 {
   margin: 0;
-  font-size: clamp(1.42rem, 1.2rem + .7vw, 1.68rem);
-  line-height: 1.24;
-  letter-spacing: -.012em;
-  font-weight: 600;
+  font-size: clamp(1.16rem, 1.1rem + .25vw, 1.28rem);
+  line-height: var(--notebook-line-pitch);
+  letter-spacing: -.006em;
+  font-weight: 700;
 }
 h3 {
   margin: 0;
-  font-size: 1.1rem;
-  line-height: 1.4;
-  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 700;
 }
 h4 {
-  margin: var(--space-8) 0 var(--space-2);
+  margin: var(--notebook-line-pitch) 0 0;
   font-family: var(--study-font-utility);
-  font-size: .7rem;
-  line-height: 1.4;
+  font-size: .72rem;
+  line-height: var(--notebook-line-pitch);
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--study-ink-muted);
 }
 
-p { margin: 0 0 1.15em; text-wrap: pretty; }
-.study-lede { margin: 0; color: var(--study-ink-soft); font-size: 1.08em; line-height: 1.6; }
-strong { color: var(--study-ink-strong); font-weight: 600; }
+p {
+  margin: 0 0 var(--notebook-line-pitch);
+  line-height: var(--notebook-line-pitch);
+  text-wrap: pretty;
+  hanging-punctuation: first allow-end;
+}
+.study-lede {
+  margin: 0;
+  max-width: var(--notebook-measure);
+  color: var(--study-ink-soft);
+  font-size: var(--study-body-size);
+  line-height: var(--notebook-line-pitch);
+}
+strong {
+  color: var(--study-ink-strong);
+  font-weight: 600;
+  box-shadow: inset 0 -.42em 0 var(--study-marker);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
 em { font-style: italic; }
 
-a { color: var(--study-link); text-underline-offset: .18em; text-decoration-thickness: .05em; }
-a:hover { text-decoration-thickness: .09em; }
+a {
+  color: var(--study-link);
+  text-underline-offset: .18em;
+  text-decoration-thickness: .06em;
+}
+a:hover { text-decoration-thickness: .1em; }
 
-ul, ol { margin: .2rem 0 1.15em; padding-left: 1.15rem; display: flex; flex-direction: column; gap: .5rem; }
-li { padding-left: .15rem; text-wrap: pretty; }
-li::marker { color: var(--study-ink-faint); }
-li > ul, li > ol { margin-top: .5rem; margin-bottom: 0; }
+ul, ol {
+  margin: 0 0 var(--notebook-line-pitch);
+  padding-left: 1.35rem;
+}
+li {
+  padding-left: .1rem;
+  line-height: var(--notebook-line-pitch);
+  text-wrap: pretty;
+  hanging-punctuation: first allow-end;
+}
+li::marker { color: var(--study-accent); }
+li > ul, li > ol { margin-bottom: 0; }
 
 code {
   font-family: var(--study-font-code);
   font-size: .84em;
   color: var(--study-ink-strong);
-  background: var(--study-paper-muted);
-  border: 1px solid var(--study-rule-soft);
-  padding: .06em .3em;
+  background: color-mix(in srgb, var(--study-paper-muted) 86%, transparent);
+  border: 1px solid var(--study-rule);
+  padding: .05em .28em;
 }
 pre {
-  max-width: var(--study-wide);
+  width: min(100%, var(--notebook-wide));
   overflow-x: auto;
-  margin: 1.9rem 0 2.1rem;
-  padding: var(--space-5) var(--space-6);
-  border-top: 1px solid var(--study-rule-strong);
-  border-bottom: 1px solid var(--study-rule-strong);
-  background: var(--study-paper-muted);
+  margin: var(--notebook-line-pitch) 0;
+  padding: 1rem 1.15rem;
+  border: 1.5px solid var(--study-rule-strong);
+  background: color-mix(in srgb, var(--study-paper) 96%, white 4%);
   color: var(--study-ink-strong);
   font-family: var(--study-font-code);
-  font-size: .88rem;
-  line-height: 1.62;
+  font-size: .86rem;
+  line-height: 1.58;
   tab-size: 2;
 }
-pre code { padding: 0; border: 0; background: transparent; font-size: 1em; }
+pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 1em;
+}
 
 blockquote {
-  margin: var(--space-8) 0;
-  padding-left: var(--space-5);
-  border-left: 1px solid var(--study-rule-strong);
+  max-width: var(--notebook-measure);
+  margin: var(--notebook-line-pitch) 0;
+  padding-left: 1rem;
+  border-left: 2px solid var(--study-accent);
   color: var(--study-ink-soft);
 }
-hr { border: 0; border-top: 1px solid var(--study-rule); margin: var(--space-12) 0; }
+hr {
+  max-width: var(--notebook-wide);
+  border: 0;
+  border-top: 1px solid var(--study-rule-strong);
+  margin: calc(var(--notebook-line-pitch) * 2) 0;
+}
+
+::selection {
+  background: var(--study-marker);
+  color: var(--study-ink-strong);
+}
+:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
 
 /* --- layout.css --- */
-/* Gutter composition: a fixed left column carries section numbers and
-   semantic labels so the prose column is never interrupted. Every row is a
-   wrapping flexbox, so the layout collapses to one column by available width
-   rather than by viewport breakpoints. */
+/* Notebook composition: the binding is chrome; the content remains semantic,
+   continuous and readable. Ruled lines establish rhythm without changing the
+   Markdown or inserting decorative DOM into every artifact. */
 
 .study-shell {
   width: min(100%, var(--study-shell-width));
   margin: 0 auto;
-  padding: clamp(1.25rem, 4vw, 3.25rem) clamp(.75rem, 3vw, 2rem) 6rem;
+  padding: clamp(1.25rem, 4vw, 3rem) clamp(.75rem, 3vw, 2rem) 6rem;
   display: flex;
   flex-direction: column;
-  gap: clamp(2rem, 5vw, 4.5rem);
+  gap: clamp(2rem, 5vw, 4rem);
 }
 
-.study-grid { display: flex; flex-wrap: wrap-reverse; gap: clamp(1.5rem, 3vw, 3rem); justify-content: center; align-items: flex-start; }
+.study-grid {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  justify-content: center;
+  align-items: flex-start;
+}
 .study-grid.without-toc { display: block; }
 
 article {
+  position: relative;
+  isolation: isolate;
   flex: 1 1 34rem;
-  width: min(100%, var(--study-paper-width));
-  max-width: var(--study-paper-width);
+  width: min(100%, var(--notebook-paper-width));
+  max-width: var(--notebook-paper-width);
   margin: 0 auto;
-  background: var(--study-paper);
+  padding: calc(var(--notebook-line-pitch) * 2) clamp(1.25rem, 4vw, 2.5rem) 4rem clamp(5.4rem, 10vw, 7.2rem);
+  overflow: hidden;
+  color: var(--study-ink);
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 var(--notebook-rule-offset);
+  background-repeat: repeat-y;
   border: 1px solid var(--study-rule);
-  box-shadow: var(--shadow-paper);
-  padding: clamp(2.75rem, 6vw, 5.25rem) clamp(1.15rem, 5vw, 4.25rem) clamp(3.5rem, 7vw, 6rem);
+  border-radius: 1px 7px 7px 1px;
+  box-shadow: var(--notebook-shadow);
   counter-reset: study-figure study-table study-code study-section;
 }
 
-/* Row primitive */
-.row { display: flex; flex-wrap: wrap; gap: .4rem var(--study-gutter-gap); }
-.row > .mark { flex: 0 0 var(--study-gutter); }
-.row > .body { flex: 1 1 26rem; max-width: var(--study-measure); min-width: 0; }
-.mark {
-  font-family: var(--study-font-utility);
-  font-size: .66rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--study-ink-muted);
-  padding-top: .42rem;
+/* Every top-level content block finishes on the same 27px rhythm. Without
+   this snap, a callout or heading with a fractional height shifts all the
+   prose that follows and the rules eventually run through the letters. */
+article > :is(
+  .book-frontmatter,
+  .study-header,
+  .row,
+  .section-head,
+  .callout,
+  pre,
+  .code-caption,
+  blockquote,
+  hr,
+  .table-scroll,
+  .table-caption,
+  figure
+) {
+  block-size: calc-size(auto, round(up, size, var(--notebook-line-pitch)));
 }
 
-/* Front matter */
-.book-running-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .35rem var(--study-gutter-gap);
-  justify-content: space-between;
-  align-items: baseline;
-  padding-bottom: .7rem;
-  border-bottom: 1px solid var(--study-rule);
+/* Red margin and punched binding: CSS-only so renderer output stays clean. */
+article::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: clamp(4.05rem, 7.2vw, 5.35rem);
+  width: 1px;
+  background: var(--study-margin-rule);
+  opacity: .9;
+  pointer-events: none;
+}
+article::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: .8rem;
+  bottom: .8rem;
+  left: clamp(.8rem, 1.7vw, 1.35rem);
+  width: 1.45rem;
+  background:
+    radial-gradient(
+      circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem
+    )
+    center top / 1.45rem 2.25rem repeat-y;
+  pointer-events: none;
+}
+
+/* Prose no longer pays for a permanent semantic gutter. */
+.row {
+  display: block;
+  max-width: var(--notebook-wide);
+}
+.row > .mark:empty { display: none; }
+/* Block snapping keeps the document on a 27px rhythm; these component-level
+   phase corrections place the actual font box above the following rule.
+   They are role- and viewport-based, so figures of arbitrary height cannot
+   change the alignment of prose that follows them. */
+.row > .body {
+  width: min(100%, var(--notebook-measure));
+  max-width: var(--notebook-measure);
+  min-width: 0;
+  transform: translateY(var(--notebook-prose-baseline-shift));
+}
+.mark {
   font-family: var(--study-font-utility);
   font-size: .68rem;
   font-weight: 600;
-  letter-spacing: .11em;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--study-ink-muted);
+}
+
+/* Notebook header */
+.book-frontmatter { position: relative; z-index: 3; }
+.book-running-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
+  justify-content: space-between;
+  align-items: baseline;
+  height: var(--notebook-line-pitch);
+  min-height: var(--notebook-line-pitch);
+  padding-bottom: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  font-family: var(--study-font-utility);
+  font-size: .68rem;
+  line-height: calc(var(--notebook-line-pitch) - 1px);
+  font-weight: 600;
+  letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--study-ink-muted);
 }
 .book-course { color: var(--study-ink-strong); }
 .book-kind { white-space: nowrap; }
-.study-header { display: flex; flex-wrap: wrap; gap: .5rem var(--study-gutter-gap); margin: clamp(2.5rem, 5vw, 4rem) 0 clamp(2.25rem, 4vw, 3.25rem); }
-.study-header > .mark, .book-chapter-label {
-  flex: 0 0 var(--study-gutter);
-  color: var(--study-accent);
-  font-family: var(--study-font-utility);
-  font-size: .68rem;
-  font-weight: 600;
-  letter-spacing: .11em;
-  text-transform: uppercase;
-  padding-top: .65rem;
-}
-.study-header > .body { flex: 1 1 26rem; max-width: var(--study-measure); }
-.study-meta { color: var(--study-ink-muted); font-family: var(--study-font-utility); font-size: var(--study-small-size); }
 
-/* Section rows: number in the gutter, heading in the measure */
-.section-head { display: flex; flex-wrap: wrap; gap: .5rem var(--study-gutter-gap); align-items: baseline; margin: clamp(3rem, 5vw, 4.75rem) 0 1.35rem; }
+.study-header {
+  display: block;
+  margin: var(--notebook-line-pitch) 0;
+}
+.study-header > .mark,
+.book-chapter-label { display: none; }
+.study-header > .body {
+  width: min(100%, var(--notebook-measure));
+  max-width: var(--notebook-measure);
+}
+.study-meta {
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: var(--study-small-size);
+}
+
+/* Major sections use the notebook's compact § notation. */
+.section-head {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: .45rem;
+  align-items: baseline;
+  width: min(100%, var(--notebook-measure));
+  margin: var(--notebook-line-pitch) 0;
+}
 .section-head > .num {
-  flex: 0 0 var(--study-gutter);
+  flex: 0 0 auto;
+  min-width: var(--notebook-section-mark);
   counter-increment: study-section;
   font-family: var(--study-font-utility);
-  font-size: .95rem;
+  font-size: .84rem;
+  line-height: var(--notebook-line-pitch);
   font-weight: 600;
-  letter-spacing: .02em;
-  color: #57524a;
+  letter-spacing: .01em;
+  color: var(--study-accent);
   font-variant-numeric: tabular-nums;
 }
-.section-head > .num::before { content: counter(study-section); }
-.section-head > h2, .section-head > h3 { flex: 1 1 26rem; max-width: var(--study-measure); }
+.section-head > .num,
+.section-head > h2,
+.section-head > h3 {
+  transform: translateY(var(--notebook-heading-baseline-shift));
+}
+.section-head > .num::before { content: "§" counter(study-section); }
+.section-head > h2,
+.section-head > h3 {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: var(--notebook-measure);
+}
 
-/* Reading progress — 2px, chrome only, hidden in print */
-.reading-progress { position: fixed; inset: 0 0 auto; height: 2px; background: color-mix(in srgb, var(--study-rule-strong) 35%, transparent); z-index: 50; }
-.reading-progress > span { display: block; height: 100%; width: 0; background: var(--study-accent); }
+/* Long-guide chrome remains secondary to the sheet. */
+.reading-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 2px;
+  background: color-mix(in srgb, var(--study-rule-strong) 35%, transparent);
+  z-index: 50;
+}
+.reading-progress > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--study-accent);
+}
 
-/* Quiet editorial index — long guides only, never on a summary */
 .toc {
   flex: 0 1 var(--study-toc-width);
-  margin-right: auto; /* wrapped state: sits above the article, aligned left */
+  margin-right: auto;
   position: sticky;
   top: 2.5rem;
   max-height: calc(100vh - 5rem);
   overflow: auto;
-  padding-top: .4rem;
+  padding: .35rem 0;
   display: flex;
   flex-direction: column;
-  gap: .15rem;
+  gap: .12rem;
   font-family: var(--study-font-utility);
-  font-size: .76rem;
+  font-size: .72rem;
   line-height: 1.45;
-  color: var(--study-ink-muted);
+  color: color-mix(in srgb, var(--study-paper) 82%, var(--study-canvas));
 }
-.toc strong { display: block; margin-bottom: .85rem; color: var(--study-ink-muted); font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
-.toc a { display: block; padding: .3rem 0 .3rem .7rem; border-left: 1px solid var(--study-rule); color: var(--study-ink-muted); text-decoration: none; }
-.toc a:hover, .toc a:focus-visible { color: var(--study-ink-strong); border-left-color: var(--study-rule-strong); }
-.toc a[aria-current="true"] { color: var(--study-ink-strong); border-left-color: var(--study-accent); }
-.toc .depth-3 { padding-left: 1.4rem; }
-
-/* Renderer extensions for nested headings and empty prose gutters. */
-.row > .mark:empty { padding-top: 0; }
-.subsection-head { margin: 2.7rem 0 .8rem; }
-.subsection-head h3, .minor-head h4 { margin: 0; }
-.minor-head { margin: 2rem 0 .55rem; }
-
-@media (max-width: 48rem) {
-  body { background: var(--study-paper); }
-  .study-shell { padding: 0; }
-  article { border: 0; padding: 2.7rem 1.25rem 4.5rem; }
-  .row > .mark:empty { display: none; }
-  .row > .body { flex-basis: 100%; max-width: none; }
-  .study-header > .mark,
-  .section-head > .num,
-  .callout > .callout-title,
-  figcaption::before,
-  .table-caption::before,
-  .code-caption::before { flex-basis: 100%; }
-  .study-header > .body,
-  .section-head > h2,
-  .section-head > h3,
-  .callout > .callout-body,
-  figcaption > span,
-  .table-caption > span,
-  .code-caption > span { flex-basis: 100%; max-width: none; }
-  .book-kind { white-space: normal; text-align: right; }
-}
-
-/* --- components.css --- */
-/* Semantic rails: the role lives as a label in the gutter, the text keeps the
-   reading measure. No cards, no tinted blocks except where urgency is real. */
-.callout { display: flex; flex-wrap: wrap; gap: .4rem var(--study-gutter-gap); margin: 2.1rem 0; --rail: var(--study-rule-strong); }
-.callout > .callout-title {
-  flex: 0 0 var(--study-gutter);
-  color: var(--rail);
-  font-family: var(--study-font-utility);
-  font-size: .66rem;
+.toc strong {
+  display: block;
+  margin-bottom: .7rem;
+  color: var(--study-paper);
+  font-size: .64rem;
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
-  padding-top: .42rem;
 }
-.callout > .callout-body {
-  flex: 1 1 26rem;
-  max-width: var(--study-measure);
-  min-width: 0;
-  border-left: 1px solid var(--rail);
-  padding-left: 1.25rem;
+.toc a {
+  display: block;
+  padding: .3rem 0 .3rem .65rem;
+  border-left: 1px solid color-mix(in srgb, var(--study-paper) 45%, transparent);
+  color: color-mix(in srgb, var(--study-paper) 82%, var(--study-canvas));
+  text-decoration: none;
 }
-.callout > .callout-body > :last-child { margin-bottom: 0; }
-.callout .term { margin-bottom: .35rem; color: var(--study-ink-strong); font-weight: 600; }
-
-.callout.definition { --rail: var(--study-concept); }
-.callout.example { --rail: var(--study-example); }
-.callout.warning, .callout.exam { --rail: var(--study-warning); }
-.callout.warning > .callout-body, .callout.exam > .callout-body { border-left-width: 2px; padding-left: 1.15rem; }
-.callout.danger { --rail: var(--study-danger); }
-.callout.danger > .callout-body { border-left-width: 2px; padding-left: 1.15rem; background: var(--study-danger-soft); }
-.callout.danger > .callout-body > * { padding: .75rem .9rem .75rem 0; margin: 0; }
-.callout.connection { --rail: var(--study-connection); }
-
-/* Retrieval prompts stay visible: the student should see the question, not
-   have to open a disclosure to find out one exists. */
-.callout.recall {
-  --rail: var(--study-recall);
-  margin: 2.75rem 0;
-  padding: 1.4rem 0;
-  border-top: 1px solid var(--study-rule);
-  border-bottom: 1px solid var(--study-rule);
-  background: var(--study-paper-muted);
+.toc a:hover,
+.toc a:focus-visible {
+  color: var(--study-paper);
+  border-left-color: var(--study-paper);
 }
-.callout.recall > .callout-title { padding-top: .35rem; padding-left: .1rem; }
-.callout.recall > .callout-body { border-left: 0; padding-left: 0; }
-.callout.recall .prompt { margin-bottom: .55rem; color: var(--study-ink-strong); font-size: 1.02em; }
-.callout.recall .hint { margin: 0; color: var(--study-ink-muted); font-family: var(--study-font-utility); font-size: .76rem; line-height: 1.5; }
-details.callout.recall > .callout-body > summary { cursor: pointer; list-style: none; color: var(--study-recall); font-family: var(--study-font-utility); font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-details.callout.recall summary::-webkit-details-marker { display: none; }
+.toc a[aria-current="true"] {
+  color: var(--study-paper);
+  border-left-color: var(--study-accent);
+}
+.toc .depth-3 { padding-left: 1.25rem; }
 
-/* Tables break past the prose measure; rules only where they carry structure */
-.table-scroll { width: 100%; max-width: var(--study-wide); overflow-x: auto; margin: 1.6rem 0 1.9rem; }
-table { width: 100%; min-width: 34rem; border-collapse: collapse; font-family: var(--study-font-body); font-size: .94rem; line-height: 1.55; font-variant-numeric: tabular-nums; }
-th, td { text-align: left; vertical-align: top; padding: .72rem .85rem; }
-th:first-child, td:first-child { padding-left: 0; }
-th:last-child, td:last-child { padding-right: 0; }
-th {
-  padding-top: .9rem; padding-bottom: .55rem;
-  vertical-align: bottom;
-  border-top: 1px solid var(--study-rule-strong);
-  border-bottom: 1.5px solid var(--study-rule-strong);
-  color: var(--study-ink-strong);
+.subsection-head { margin: var(--notebook-line-pitch) 0 0; }
+.subsection-head h3,
+.minor-head h4 { margin: 0; }
+.minor-head { margin: var(--notebook-line-pitch) 0 0; }
+
+@media (max-width: 48rem) {
+  :root {
+    --notebook-rule-offset: 1.5rem;
+    --notebook-prose-baseline-shift: -.6875rem;
+    --notebook-heading-baseline-shift: -.6875rem;
+  }
+  body { background: var(--study-paper); }
+  .study-shell { padding: 0; }
+  .study-grid,
+  .study-grid.with-toc { display: block; }
+  article {
+    width: 100%;
+    max-width: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: var(--notebook-line-pitch) 1.2rem 4rem 3.45rem;
+  }
+  article::before { left: 2.75rem; }
+  article::after { display: none; }
+  .row > .body,
+  .study-header > .body,
+  .section-head { width: 100%; max-width: none; }
+  .book-kind { white-space: normal; text-align: right; }
+  .toc {
+    position: static;
+    max-height: none;
+    padding: 1rem 1.2rem 1.25rem;
+    background: var(--study-canvas);
+  }
+}
+
+@media (max-width: 34rem) {
+  article { padding-left: 1.2rem; }
+  article::before { display: none; }
+  .section-head { gap: .3rem; }
+  .section-head > .num { min-width: 1.65rem; }
+}
+
+/* --- components.css --- */
+/* Semantic rails and study marks translated into notebook language. Role words remain
+   explicit so colour and handwriting are never the only meaning channel. */
+.callout {
+  --rail: var(--study-rule-strong);
+  width: min(100%, var(--notebook-measure));
+  margin: var(--notebook-line-pitch) 0;
+  padding: .65rem .95rem .75rem;
+  border-left: 3px solid var(--rail);
+  background: color-mix(in srgb, var(--rail) 7%, var(--study-paper) 93%);
+}
+.callout > .callout-title {
+  margin-bottom: .18rem;
+  color: var(--rail);
   font-family: var(--study-font-utility);
-  font-size: .7rem;
-  line-height: 1.4;
+  font-size: .66rem;
+  line-height: 1.35rem;
   font-weight: 600;
   letter-spacing: .09em;
   text-transform: uppercase;
 }
-td { border-bottom: 1px solid var(--study-rule-soft); }
-tbody tr:last-child td { border-bottom: 1.5px solid var(--study-rule-strong); }
-tbody td:first-child { color: var(--study-ink-strong); font-weight: 600; }
-/* Table and code captions follow the figure pattern: label in the gutter,
-   description in the measure, so all apparatus reads the same way. */
-.table-caption, .code-caption { display: flex; flex-wrap: wrap; gap: .35rem var(--study-gutter-gap); margin: .85rem 0 0; }
-.table-caption { counter-increment: study-table; }
-.code-caption { counter-increment: study-code; }
-.table-caption::before, .code-caption::before {
-  flex: 0 0 var(--study-gutter);
+.callout > .callout-body {
+  min-width: 0;
+  color: var(--study-ink);
+}
+.callout > .callout-body > :last-child { margin-bottom: 0; }
+.callout .term {
+  margin-bottom: .2rem;
+  color: var(--study-ink-strong);
+  font-weight: 600;
+}
+
+.callout.definition {
+  --rail: var(--study-concept);
+  background: var(--study-concept-soft);
+}
+.callout.example {
+  --rail: var(--study-example);
+  background: var(--study-example-soft);
+}
+.callout.connection {
+  --rail: var(--study-connection);
+  background: color-mix(in srgb, var(--study-connection) 7%, var(--study-paper) 93%);
+}
+
+.callout.warning,
+.callout.danger {
+  width: min(100%, var(--notebook-wide));
+  border: 1.5px solid var(--rail);
+  border-left-width: 1.5px;
+}
+.callout.warning {
+  --rail: var(--study-warning);
+  background: var(--study-warning-soft);
+}
+.callout.danger {
+  --rail: var(--study-danger);
+  background: var(--study-danger-soft);
+}
+
+/* Exam relevance becomes a restrained handwritten margin note rather than
+   another boxed card. The role label is still literal text. */
+.callout.exam {
+  --rail: var(--study-accent);
+  width: min(100%, var(--notebook-measure));
+  margin: var(--notebook-line-pitch) 0;
+  padding: 0 0 0 .15rem;
+  border: 0;
+  background: transparent;
+  transform: rotate(-.2deg);
+  transform-origin: left top;
+}
+.callout.exam > .callout-title {
+  margin: 0;
+  font-family: var(--study-font-hand);
+  font-size: 1.08rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.callout.exam > .callout-title::before { content: "↑ "; }
+.callout.exam > .callout-body {
+  margin-left: .8rem;
+  padding: .2rem 0 .2rem .8rem;
+  border-left: 2px solid var(--rail);
+}
+
+/* Retrieval is a real worksheet: prompt first, then physical-looking answer
+   lines. Nothing is hidden behind a disclosure. */
+.callout.recall {
+  --rail: var(--study-recall);
+  width: min(100%, var(--notebook-wide));
+  margin: var(--notebook-line-pitch) 0;
+  padding: 0;
+  border: 1.5px solid var(--study-rule-strong);
+  background: color-mix(in srgb, var(--study-paper) 97%, white 3%);
+}
+.callout.recall > .callout-title {
+  margin: 0;
+  padding: .45rem .9rem;
+  border-bottom: 1px solid var(--study-rule);
+  background: color-mix(in srgb, var(--study-rule) 35%, var(--study-paper));
   color: var(--study-ink-strong);
   font-family: var(--study-font-utility);
-  font-size: .66rem;
+  line-height: 1.35rem;
+}
+.callout.recall > .callout-body {
+  padding: .85rem 1rem 1rem;
+}
+.callout.recall > .callout-body::after {
+  content: "";
+  display: block;
+  height: calc(var(--notebook-line-pitch) * 3.3);
+  margin-top: .3rem;
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 var(--notebook-rule-offset);
+  background-repeat: repeat-y;
+}
+.callout.recall .prompt {
+  margin-bottom: .25rem;
+  color: var(--study-ink-strong);
+}
+.callout.recall .hint {
+  margin: 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .7rem;
+  line-height: 1.4;
+}
+
+details.callout.recall > .callout-body > summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--study-recall);
+  font-family: var(--study-font-utility);
+  font-size: .72rem;
   font-weight: 600;
-  letter-spacing: .1em;
+}
+details.callout.recall summary::-webkit-details-marker { display: none; }
+
+/* Tables look like something ruled deliberately into the notebook, not a UI
+   data grid. */
+.table-scroll {
+  width: min(100%, var(--notebook-wide));
+  overflow-x: auto;
+  margin: var(--notebook-line-pitch) 0;
+  border: 1.5px solid var(--study-rule-strong);
+  background: color-mix(in srgb, var(--study-paper) 97%, white 3%);
+}
+table {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-family: var(--study-font-body);
+  font-size: .9rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: .66rem .78rem;
+  border-right: 1px solid var(--study-rule);
+  border-bottom: 1px solid var(--study-rule);
+}
+th:last-child, td:last-child { border-right: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+th {
+  background: color-mix(in srgb, var(--study-rule) 28%, var(--study-paper));
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-utility);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+tbody td:first-child {
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-utility);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+/* Apparatus captions stay compact. Figure captions carry more handwriting;
+   table/code captions stay technical. */
+.table-caption,
+.code-caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem .65rem;
+  width: min(100%, var(--notebook-wide));
+  margin: 0 0 var(--notebook-line-pitch);
+  padding-top: .25rem;
+}
+pre:has(+ .code-caption),
+.table-scroll:has(+ .table-caption) { margin-bottom: 0; }
+.table-caption { counter-increment: study-table; }
+.code-caption { counter-increment: study-code; }
+.table-caption::before,
+.code-caption::before {
+  flex: 0 0 auto;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  font-weight: 600;
+  letter-spacing: .07em;
   text-transform: uppercase;
 }
 .table-caption::before { content: "Tabla " counter(study-table); }
 .code-caption::before { content: "Pseudocódigo " counter(study-code); }
-.table-caption > span, .code-caption > span { flex: 1 1 26rem; max-width: var(--study-measure); color: var(--study-ink-muted); font-size: .86rem; line-height: 1.55; text-wrap: pretty; }
-
-:focus-visible { outline: 2px solid var(--study-focus); outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+.table-caption > span,
+.code-caption > span {
+  flex: 1 1 18rem;
+  max-width: var(--notebook-measure);
+  color: var(--study-ink-muted);
+  font-size: .82rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
 
 /* --- figures.css --- */
-/* Figures are instructional objects: framed plate at wide measure, caption
-   label in the gutter so it reads as textbook apparatus. */
+/* Figures are study objects inside the notebook. The image itself is never
+   stylized or filtered; only its placement and caption take on notebook cues. */
 figure {
   counter-increment: study-figure;
-  max-width: var(--study-wide);
-  margin: 2.9rem 0 3.1rem;
+  width: min(100%, var(--notebook-wide));
+  margin: var(--notebook-line-pitch) 0;
   padding: 0;
 }
-figure .plate { border: 1px solid var(--study-rule); background: #fff; padding: 1.6rem 1.2rem; }
+figure .plate {
+  border: 1px solid var(--study-rule);
+  background: color-mix(in srgb, var(--study-paper) 96%, white 4%);
+  padding: 1rem;
+}
 figure img {
   display: block;
   width: auto;
@@ -437,18 +811,29 @@ figure img {
   height: auto;
   margin: 0 auto;
 }
-figcaption { display: flex; flex-wrap: wrap; gap: .35rem var(--study-gutter-gap); margin: .85rem 0 0; }
-figcaption::before {
-  content: "Figura " counter(study-figure);
-  flex: 0 0 var(--study-gutter);
-  color: var(--study-ink-strong);
-  font-family: var(--study-font-utility);
-  font-size: .66rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
+figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .15rem .55rem;
+  margin: .45rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-hand);
+  font-size: 1rem;
+  line-height: 1.45;
+  transform: rotate(-.12deg);
+  transform-origin: left top;
 }
-figcaption > span { flex: 1 1 26rem; max-width: var(--study-measure); color: var(--study-ink-muted); font-size: .86rem; line-height: 1.55; text-wrap: pretty; }
+figcaption::before {
+  content: "fig. " counter(study-figure) " —";
+  flex: 0 0 auto;
+  color: var(--study-accent);
+  font-weight: 600;
+}
+figcaption > span {
+  flex: 1 1 20rem;
+  max-width: var(--notebook-measure);
+  text-wrap: pretty;
+}
 figure.wide { max-width: none; }
 
 /* --- print.css --- */
@@ -457,64 +842,117 @@ figure.wide { max-width: none; }
     color-scheme: light;
     --study-canvas: #fff;
     --study-paper: #fff;
-    --study-paper-muted: #f6f3ec;
-    --study-ink: #1d1b16;
+    --study-paper-muted: #f7f7f2;
+    --study-ink: #1b2430;
     --study-ink-strong: #000;
-    --study-ink-soft: #2e2a24;
-    --study-ink-muted: #57524a;
-    --study-ink-faint: #837c71;
-    --study-rule: #d3cdc2;
-    --study-rule-soft: #e2ddd3;
-    --study-rule-strong: #948d82;
+    --study-ink-soft: #303743;
+    --study-ink-muted: #555b64;
+    --study-ink-faint: #777;
+    --study-rule: #c9c9bd;
+    --study-rule-soft: #dbe4ef;
+    --study-rule-strong: #30343a;
+    --study-rule-line: #dce5ef;
+    --study-margin-rule: #dba9a4;
+    --study-marker: #efe3a8;
+    --notebook-line-pitch: 6.7mm;
+    --notebook-rule-offset: 4mm;
+    --notebook-prose-baseline-shift: -1.85mm;
+    --notebook-heading-baseline-shift: -2.4mm;
     --study-measure: 100%;
     --study-wide: 100%;
-    --study-gutter: 24mm;
-    --study-gutter-gap: 6mm;
     --shadow-paper: none;
   }
+
   @page {
-    margin: 18mm 16mm 20mm;
+    margin: 16mm 15mm 18mm;
     @bottom-center {
       content: counter(page);
       color: #6f6960;
-      font-family: "Source Serif 4", Georgia, serif;
+      font-family: "IBM Plex Mono", Consolas, monospace;
       font-size: 8.5pt;
     }
   }
+
   html[data-study-theme="dark"] { color-scheme: light; }
-  body { background: #fff; font-size: 10.8pt; line-height: 1.58; }
-  .study-shell { width: auto; padding: 0; display: block; }
+  body {
+    background: #fff;
+    font-size: 10.5pt;
+    line-height: 6.7mm;
+  }
+  .study-shell {
+    width: auto;
+    padding: 0;
+    display: block;
+  }
   .study-grid { display: block; }
-  article { max-width: none; padding: 0; border: 0; box-shadow: none; }
-  .toc, .reading-progress { display: none; }
+  article {
+    max-width: none;
+    padding: 0 0 0 11mm;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    background-size: 100% 6.7mm;
+    background-position: 0 var(--notebook-rule-offset);
+  }
+  article::before {
+    display: block;
+    left: 7mm;
+    background: var(--study-margin-rule);
+  }
+  article::after { display: none; }
 
-  h1 { font-size: 23pt; }
-  h2 { font-size: 15pt; break-after: avoid; }
-  h3 { font-size: 11.5pt; break-after: avoid; }
-  .section-head { margin-top: 20pt; break-after: avoid; }
-  .study-header { margin: 14pt 0 16pt; }
-  p, li { orphans: 3; widows: 3; }
+  .toc,
+  .reading-progress { display: none; }
 
-  .callout, figure, .table-scroll, table, pre, figcaption { break-inside: avoid; }
-  .callout.recall { background: transparent; }
+  h1 { font-size: 22pt; }
+  h2 { font-size: 12.5pt; break-after: avoid; }
+  h3 { font-size: 10.5pt; break-after: avoid; }
+  .section-head {
+    margin: var(--notebook-line-pitch) 0;
+    break-after: avoid;
+  }
+  .study-header { margin: var(--notebook-line-pitch) 0; }
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .callout,
+  figure,
+  .table-scroll,
+  table,
+  pre,
+  figcaption {
+    break-inside: avoid;
+  }
+  .callout.exam { transform: none; }
+  .callout.recall > .callout-body::after { height: 20mm; }
   .table-scroll { overflow: visible; }
   table { min-width: 0; }
-  figure .plate { padding: 4mm; border-color: #cfc9be; }
-  a { color: inherit; text-decoration: none; }
-  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  figure .plate { padding: 3mm; }
+  figcaption { transform: none; }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 </style></head>
 <body><div class="reading-progress" aria-hidden="true"><span></span></div><main class="study-shell"><div class="study-grid with-toc"><article data-kind="guide"><div class="book-frontmatter"><div class="book-running-line"><span class="book-course">Sistemas Operativos</span><span class="book-kind">Guía · Unidad 2</span></div></div><header class="study-header"><div class="mark">Capítulo 2</div><div class="body"><h1 id="estados-de-un-proceso">Estados de un proceso</h1><p class="study-lede">Explicación, comparación, tabla y recuperación activa en una página más densa.</p></div></header>
 <div class="section-head"><div class="num"></div><h2 id="estado-no-significa-prioridad">Estado no significa prioridad</h2></div>
 <div class="row"><div class="mark"></div><div class="body"><p>Un proceso puede cambiar de estado porque está ejecutándose, esperando un recurso o listo para recibir CPU. El estado describe <strong>qué condición de ejecución tiene ahora</strong>, no cuán importante es para el sistema.</p></div></div>
-<aside class="callout danger"><div class="callout-title">Error típico</div><div class="callout-body"><p>«Listo» no significa «ejecutándose». Significa que el proceso puede ejecutar, pero todavía no tiene asignado el procesador.</p></div></aside>
+<aside class="callout danger"><div class="callout-title">Error típico</div><div class="callout-body"><p class="term">Confusión típica</p><p>«Listo» no significa «ejecutándose». Significa que el proceso puede ejecutar, pero todavía no tiene asignado el procesador.</p></div></aside>
 <div class="section-head"><div class="num"></div><h2 id="comparación-rápida">Comparación rápida</h2></div>
 <div class="table-scroll"><table><thead><tr><th>Estado</th><th>Qué significa</th><th>Qué necesita para avanzar</th></tr></thead><tbody><tr><td>Listo</td><td>Puede ejecutar</td><td>Recibir CPU</td></tr><tr><td>Ejecutando</td><td>Tiene CPU</td><td>Continuar o ser interrumpido</td></tr><tr><td>Bloqueado</td><td>Espera un evento o recurso</td><td>Que ocurra aquello que espera</td></tr></tbody></table></div><div class="table-caption"><span>Los tres estados básicos y su condición de avance.</span></div>
 <div class="row"><div class="mark"></div><div class="body"><p>La tabla sirve para comparar roles; no reemplaza una explicación de las transiciones entre estados.</p></div></div>
 <aside class="callout connection"><div class="callout-title">Relación</div><div class="callout-body"><p class="term">Cambio de contexto</p><p>Cuando el sistema deja de ejecutar un proceso y pasa a otro, debe conservar el estado necesario para poder retomarlo después.</p></div></aside>
 <div class="section-head"><div class="num"></div><h2 id="qué-debería-quedar-después-de-leer">Qué debería quedar después de leer</h2></div>
 <div class="row"><div class="mark"></div><div class="body"><p>Podés mirar un escenario y justificar por qué un proceso está listo, ejecutando o bloqueado sin usar esos nombres como etiquetas memorizadas.</p></div></div>
-<aside class="callout recall"><div class="callout-title">Recuperación</div><div class="callout-body"><p class="prompt">Un proceso necesita leer un dato de disco y no puede continuar hasta recibirlo. ¿Qué estado esperarías durante esa espera y qué tendría que ocurrir para que vuelva a competir por CPU?</p><p class="hint">Respondé sin mirar antes de seguir leyendo.</p></div></aside></article><nav class="toc" aria-label="Índice"><strong>Índice</strong><a class="depth-2" href="#estado-no-significa-prioridad">Estado no significa prioridad</a><a class="depth-2" href="#comparación-rápida">Comparación rápida</a><a class="depth-2" href="#qué-debería-quedar-después-de-leer">Qué debería quedar después de leer</a></nav></div></main><script>
+<aside class="callout recall"><div class="callout-title">Recuperación</div><div class="callout-body"><p class="term">Caso corto</p><p class="prompt">Un proceso necesita leer un dato de disco y no puede continuar hasta recibirlo. ¿Qué estado esperarías durante esa espera y qué tendría que ocurrir para que vuelva a competir por CPU?</p><p class="hint">Respondé sin mirar antes de seguir leyendo.</p></div></aside></article><nav class="toc" aria-label="Índice"><strong>Índice</strong><a class="depth-2" href="#estado-no-significa-prioridad">Estado no significa prioridad</a><a class="depth-2" href="#comparación-rápida">Comparación rápida</a><a class="depth-2" href="#qué-debería-quedar-después-de-leer">Qué debería quedar después de leer</a></nav></div></main><script>
 (() => {
   const bar = document.querySelector('.reading-progress > span');
   if (!bar) return;

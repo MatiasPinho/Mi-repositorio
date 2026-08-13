@@ -62,7 +62,7 @@
 .callout.exam {
   --rail: var(--study-accent);
   width: min(100%, var(--notebook-measure));
-  margin: calc(var(--notebook-line-pitch) * .85) 0 var(--notebook-line-pitch);
+  margin: var(--notebook-line-pitch) 0;
   padding: 0 0 0 .15rem;
   border: 0;
   background: transparent;
@@ -90,7 +90,7 @@
 .callout.recall {
   --rail: var(--study-recall);
   width: min(100%, var(--notebook-wide));
-  margin: calc(var(--notebook-line-pitch) * 1.25) 0;
+  margin: var(--notebook-line-pitch) 0;
   padding: 0;
   border: 1.5px solid var(--study-rule-strong);
   background: color-mix(in srgb, var(--study-paper) 97%, white 3%);
@@ -114,6 +114,7 @@
   margin-top: .3rem;
   background-image: var(--notebook-rule-image);
   background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 var(--notebook-rule-offset);
   background-repeat: repeat-y;
 }
 .callout.recall .prompt {
@@ -189,8 +190,11 @@ tbody td:first-child {
   flex-wrap: wrap;
   gap: .25rem .65rem;
   width: min(100%, var(--notebook-wide));
-  margin: -.55rem 0 var(--notebook-line-pitch);
+  margin: 0 0 var(--notebook-line-pitch);
+  padding-top: .25rem;
 }
+pre:has(+ .code-caption),
+.table-scroll:has(+ .table-caption) { margin-bottom: 0; }
 .table-caption { counter-increment: study-table; }
 .code-caption { counter-increment: study-code; }
 .table-caption::before,

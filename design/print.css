@@ -15,6 +15,10 @@
     --study-rule-line: #dce5ef;
     --study-margin-rule: #dba9a4;
     --study-marker: #efe3a8;
+    --notebook-line-pitch: 6.7mm;
+    --notebook-rule-offset: 4mm;
+    --notebook-prose-baseline-shift: -1.85mm;
+    --notebook-heading-baseline-shift: -2.4mm;
     --study-measure: 100%;
     --study-wide: 100%;
     --shadow-paper: none;
@@ -50,6 +54,7 @@
     box-shadow: none;
     overflow: visible;
     background-size: 100% 6.7mm;
+    background-position: 0 var(--notebook-rule-offset);
   }
   article::before {
     display: block;
@@ -65,10 +70,10 @@
   h2 { font-size: 12.5pt; break-after: avoid; }
   h3 { font-size: 10.5pt; break-after: avoid; }
   .section-head {
-    margin-top: 8mm;
+    margin: var(--notebook-line-pitch) 0;
     break-after: avoid;
   }
-  .study-header { margin: 6.7mm 0 9mm; }
+  .study-header { margin: var(--notebook-line-pitch) 0; }
   p, li {
     orphans: 3;
     widows: 3;
