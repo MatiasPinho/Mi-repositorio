@@ -11,6 +11,21 @@ FIGURES = ROOT / "scripts" / "figure_assets.py"
 
 
 class VisualSystemTests(unittest.TestCase):
+    def test_figure_treatment_policy_is_semantic_and_canonical(self):
+        rule = (ROOT / "rules" / "visual" / "figures.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "Toda figura debe integrarse al lenguaje visual del cuaderno. "
+            "Las figuras pedagógicas derivadas tienden por defecto a una reinterpretación "
+            "tipo notebook sketch/lápiz, salvo cuando la fidelidad del contenido requiera "
+            "preservar el original.",
+            rule,
+        )
+        for treatment in ("reinterpret", "preserve", "preserve+derived_sketch"):
+            self.assertIn(f"`{treatment}`", rule)
+        self.assertIn("not a blanket image filter", rule)
+        design_readme = (ROOT / "design" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("rules/visual/figures.md", design_readme)
+
     def test_theme_contains_learning_readability_defaults(self):
         css = (ROOT / "assets" / "study-theme.css").read_text(encoding="utf-8")
         self.assertIn("--study-body-leading: 1.72", css)
@@ -152,6 +167,32 @@ class VisualSystemTests(unittest.TestCase):
             self.assertIn('class="plate"', page)
             self.assertIn('counter(study-figure)', (ROOT / "assets" / "study-theme.css").read_text(encoding="utf-8"))
             self.assertIn('<figcaption><span>Jerarquía de memoria</span></figcaption>', page)
+
+    def test_generated_sketch_is_rendered_as_transparent_notebook_overlay(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            (td / "sketch.svg").write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg" data-study-sketch="1" '
+                'data-transparent-canvas="1"></svg>',
+                encoding="utf-8",
+            )
+            md = td / "x.md"
+            out = td / "x.html"
+            md.write_text(
+                '# X\n\n![Esquema](sketch.svg "Dibujo sobre el apunte")\n', encoding="utf-8"
+            )
+            cp = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(out), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            page = out.read_text(encoding="utf-8")
+            self.assertIn('<figure class="study-sketch">', page)
+            css = (ROOT / "assets" / "study-theme.css").read_text(encoding="utf-8")
+            self.assertIn("figure.study-sketch .plate", css)
+            self.assertIn("background: transparent", css)
 
     def test_reference_design_keeps_lede_inside_chapter_header_and_captions_apparatus(self):
         with tempfile.TemporaryDirectory() as td:

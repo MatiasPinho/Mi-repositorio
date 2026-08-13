@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://university-study.local/contracts/sketch-figure.schema.json",
+  "title": "University Study deterministic sketch figure",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "kind",
+    "visual_treatment",
+    "description",
+    "alt",
+    "caption",
+    "based_on",
+    "nodes",
+    "edges"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$", "maxLength": 64},
+    "title": {"$ref": "#/$defs/title"},
+    "kind": {
+      "enum": ["flow", "tree", "concept-map", "relations", "technical-schematic"]
+    },
+    "visual_treatment": {"enum": ["reinterpret", "preserve+derived_sketch"]},
+    "role": {"enum": ["essential", "supporting"], "default": "supporting"},
+    "description": {"$ref": "#/$defs/longText"},
+    "alt": {"$ref": "#/$defs/longText"},
+    "caption": {"$ref": "#/$defs/longText"},
+    "based_on": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/reference"}
+    },
+    "concepts": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 100}
+    },
+    "learner_focus": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 180}
+    },
+    "source_figure_id": {"type": "string", "minLength": 1, "maxLength": 100},
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "direction": {"enum": ["top-to-bottom", "left-to-right"], "default": "top-to-bottom"},
+        "background": {"const": "transparent", "default": "transparent"},
+        "rank_gap": {"type": "integer", "minimum": 72, "maximum": 220, "default": 108},
+        "node_gap": {"type": "integer", "minimum": 28, "maximum": 140, "default": 56}
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 36,
+      "items": {"$ref": "#/$defs/node"}
+    },
+    "edges": {
+      "type": "array",
+      "maxItems": 72,
+      "items": {"$ref": "#/$defs/edge"}
+    },
+    "groups": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {"$ref": "#/$defs/group"}
+    }
+  },
+  "$defs": {
+    "title": {"type": "string", "minLength": 1, "maxLength": 120},
+    "longText": {"type": "string", "minLength": 1, "maxLength": 320},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$", "maxLength": 64},
+    "reference": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:.+",
+      "maxLength": 180
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/reference"}
+    },
+    "tone": {"enum": ["neutral", "primary", "example", "warning", "connection", "danger"]},
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "based_on"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "label": {"type": "string", "minLength": 1, "maxLength": 90},
+        "detail": {"type": "string", "maxLength": 180},
+        "shape": {
+          "enum": ["box", "rounded", "terminal", "process", "decision", "data", "circle", "note", "component", "datastore"],
+          "default": "rounded"
+        },
+        "tone": {"$ref": "#/$defs/tone"},
+        "rank": {"type": "integer", "minimum": 0, "maximum": 30},
+        "order": {"type": "integer", "minimum": 0, "maximum": 200},
+        "based_on": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "based_on"],
+      "properties": {
+        "from": {"$ref": "#/$defs/id"},
+        "to": {"$ref": "#/$defs/id"},
+        "label": {"type": "string", "maxLength": 72},
+        "relation": {"enum": ["flow", "relation", "dependency", "feedback"], "default": "flow"},
+        "style": {"enum": ["solid", "dashed"], "default": "solid"},
+        "tone": {"$ref": "#/$defs/tone"},
+        "based_on": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "nodes", "based_on"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "label": {"type": "string", "minLength": 1, "maxLength": 80},
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 36,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "tone": {"$ref": "#/$defs/tone"},
+        "based_on": {"$ref": "#/$defs/evidence"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"visual_treatment": {"const": "preserve+derived_sketch"}}},
+      "then": {"required": ["source_figure_id"]},
+      "else": {"not": {"required": ["source_figure_id"]}}
+    }
+  ]
+}

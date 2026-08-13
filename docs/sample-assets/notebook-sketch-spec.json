@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "id": "flujo-figura-determinista",
+  "title": "De la decisión visual al SVG auditable",
+  "kind": "flow",
+  "visual_treatment": "reinterpret",
+  "role": "supporting",
+  "description": "Flujo de decisión y construcción de una figura pedagógica determinista.",
+  "alt": "Flujo desde el planner hasta el registro y las auditorías de una figura SVG",
+  "caption": "La reinterpretación solo avanza cuando la estructura puede reconstruirse sin pérdida; en caso contrario se conserva el original.",
+  "based_on": [
+    "canonical:visual-treatment",
+    "canonical:sketch-spec",
+    "canonical:deterministic-generator",
+    "canonical:figure-registration",
+    "canonical:integrity-gates"
+  ],
+  "concepts": [
+    "visual-treatment",
+    "deterministic-figure"
+  ],
+  "learner_focus": [
+    "Separar la decisión semántica de la ejecución gráfica",
+    "Conservar el original cuando una reinterpretación pueda perder información"
+  ],
+  "layout": {
+    "direction": "top-to-bottom",
+    "background": "transparent",
+    "rank_gap": 112,
+    "node_gap": 64
+  },
+  "nodes": [
+    {
+      "id": "planner",
+      "label": "Planner",
+      "detail": "Decide necesidad y tratamiento visual",
+      "shape": "terminal",
+      "tone": "primary",
+      "rank": 0,
+      "order": 0,
+      "based_on": ["canonical:visual-treatment"]
+    },
+    {
+      "id": "lossless",
+      "label": "¿Puede reconstruirse sin pérdida?",
+      "shape": "decision",
+      "tone": "warning",
+      "rank": 1,
+      "order": 0,
+      "based_on": ["canonical:visual-treatment"]
+    },
+    {
+      "id": "preserve",
+      "label": "Preservar original",
+      "detail": "La precisión tiene prioridad",
+      "shape": "note",
+      "tone": "warning",
+      "rank": 2,
+      "order": 0,
+      "based_on": ["canonical:visual-treatment"]
+    },
+    {
+      "id": "spec",
+      "label": "Sketch spec",
+      "detail": "Nodos, relaciones y evidencia exacta",
+      "shape": "data",
+      "tone": "connection",
+      "rank": 2,
+      "order": 1,
+      "based_on": ["canonical:sketch-spec"]
+    },
+    {
+      "id": "svg",
+      "label": "Generador SVG",
+      "detail": "Layout y trazos reproducibles",
+      "shape": "process",
+      "tone": "example",
+      "rank": 3,
+      "order": 0,
+      "based_on": ["canonical:deterministic-generator"]
+    },
+    {
+      "id": "gates",
+      "label": "Registro + gates",
+      "detail": "Hashes, integridad y auditoría visual",
+      "shape": "terminal",
+      "tone": "primary",
+      "rank": 4,
+      "order": 0,
+      "based_on": [
+        "canonical:figure-registration",
+        "canonical:integrity-gates"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "planner",
+      "to": "lossless",
+      "relation": "flow",
+      "tone": "primary",
+      "based_on": ["canonical:visual-treatment"]
+    },
+    {
+      "from": "lossless",
+      "to": "preserve",
+      "label": "No",
+      "relation": "flow",
+      "tone": "warning",
+      "based_on": ["canonical:visual-treatment"]
+    },
+    {
+      "from": "lossless",
+      "to": "spec",
+      "label": "Sí",
+      "relation": "flow",
+      "tone": "connection",
+      "based_on": ["canonical:sketch-spec"]
+    },
+    {
+      "from": "spec",
+      "to": "svg",
+      "relation": "flow",
+      "tone": "example",
+      "based_on": ["canonical:deterministic-generator"]
+    },
+    {
+      "from": "svg",
+      "to": "gates",
+      "relation": "flow",
+      "tone": "primary",
+      "based_on": [
+        "canonical:figure-registration",
+        "canonical:integrity-gates"
+      ]
+    }
+  ],
+  "groups": []
+}

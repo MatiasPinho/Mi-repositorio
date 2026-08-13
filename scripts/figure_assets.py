@@ -17,6 +17,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+VISUAL_TREATMENTS = {
+    "reinterpret",
+    "preserve",
+    "preserve+derived_sketch",
+}
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from study import resolve_course  # noqa: E402
@@ -134,6 +140,61 @@ def registry_issues(course: Path, data: dict[str, Any] | None = None) -> list[di
                 issues.append({"figure": key, "reason": "derived-provenance-missing"})
         elif origin and origin != "source":
             issues.append({"figure": key, "reason": "invalid-origin", "origin": origin})
+        if "visual_treatment" in item:
+            visual_treatment = str(item.get("visual_treatment") or "").strip()
+            if visual_treatment not in VISUAL_TREATMENTS:
+                issues.append({
+                    "figure": key,
+                    "reason": "invalid-visual-treatment",
+                    "visual_treatment": visual_treatment,
+                })
+            elif visual_treatment == "reinterpret" and origin != "derived":
+                issues.append({"figure": key, "reason": "reinterpret-origin-invalid"})
+            elif visual_treatment == "preserve" and origin != "source":
+                issues.append({"figure": key, "reason": "preserve-origin-invalid"})
+            elif visual_treatment == "preserve+derived_sketch":
+                source_id = str(item.get("source_figure_id") or "").strip()
+                if origin != "derived":
+                    issues.append({"figure": key, "reason": "derived-sketch-origin-invalid"})
+                if not source_id:
+                    issues.append({"figure": key, "reason": "derived-sketch-source-missing"})
+                else:
+                    source_item = figures.get(source_id)
+                    if not isinstance(source_item, dict):
+                        source_item = next(
+                            (
+                                candidate for candidate in figures.values()
+                                if isinstance(candidate, dict)
+                                and str(candidate.get("id") or "").strip() == source_id
+                            ),
+                            None,
+                        )
+                    if not isinstance(source_item, dict):
+                        issues.append({
+                            "figure": key,
+                            "reason": "derived-sketch-source-unknown",
+                            "source_figure_id": source_id,
+                        })
+                    else:
+                        source_origin = str(
+                            source_item.get("origin") or ("source" if source_item.get("source_file") else "")
+                        ).strip().lower()
+                        if source_origin != "source":
+                            issues.append({
+                                "figure": key,
+                                "reason": "derived-sketch-source-not-original",
+                                "source_figure_id": source_id,
+                            })
+                        source_unit = record_unit_id(course, source_item)
+                        item_unit = record_unit_id(course, item)
+                        if source_unit and item_unit and source_unit != item_unit:
+                            issues.append({
+                                "figure": key,
+                                "reason": "derived-sketch-source-wrong-unit",
+                                "source_figure_id": source_id,
+                            })
+            elif item.get("source_figure_id"):
+                issues.append({"figure": key, "reason": "source-companion-without-derived-sketch"})
         # Source figures may be registered before a raster/vector asset has been
         # extracted. JSON null means "known pedagogical figure, asset pending" and
         # is valid for source records. Derived figures, however, must always point
@@ -141,10 +202,11 @@ def registry_issues(course: Path, data: dict[str, Any] | None = None) -> list[di
         # to create both false asset-missing errors and false collisions.
         asset_value = item.get("asset")
         asset = asset_value.strip() if isinstance(asset_value, str) else ""
+        target: Path | None = None
+        unit_value = record_unit_id(course, item)
         if origin == "derived" and not asset:
             issues.append({"figure": key, "reason": "derived-asset-missing"})
         if asset:
-            unit_value = record_unit_id(course, item)
             target = content_path(course, unit_value, asset) if unit_value and has_unit_layout(course) else (course / asset).resolve()
             if not target.is_file():
                 issues.append({"figure": key, "reason": "asset-missing", "asset": asset})
@@ -158,6 +220,69 @@ def registry_issues(course: Path, data: dict[str, Any] | None = None) -> list[di
                 issues.append({"figure": key, "reason": "asset-collision", "asset": asset, "other": prior[0], "origins": [prior[1], origin]})
             else:
                 seen_assets[asset_identity] = (key, origin)
+        generation = item.get("generation")
+        if generation is not None:
+            if not isinstance(generation, dict):
+                issues.append({"figure": key, "reason": "invalid-generation-metadata"})
+            else:
+                method = str(generation.get("method") or "").strip()
+                generator = str(generation.get("generator") or "").strip()
+                version = generation.get("version")
+                spec_asset = str(generation.get("spec") or "").strip()
+                spec_sha = str(generation.get("spec_sha256") or "").strip()
+                treatment = str(item.get("visual_treatment") or "").strip()
+                if origin != "derived":
+                    issues.append({"figure": key, "reason": "generated-origin-invalid"})
+                if treatment not in {"reinterpret", "preserve+derived_sketch"}:
+                    issues.append({"figure": key, "reason": "generated-treatment-invalid"})
+                if method != "deterministic-svg":
+                    issues.append({"figure": key, "reason": "invalid-generation-method"})
+                if not generator or isinstance(version, bool) or not isinstance(version, int) or version < 1:
+                    issues.append({"figure": key, "reason": "invalid-generator-identity"})
+                if not asset.lower().endswith(".svg"):
+                    issues.append({"figure": key, "reason": "generated-asset-not-svg"})
+                if not spec_asset or not spec_sha:
+                    issues.append({"figure": key, "reason": "generated-spec-metadata-missing"})
+                else:
+                    base = unit_root(course, unit_value) if unit_value and has_unit_layout(course) else course
+                    spec_path = (base / spec_asset).resolve()
+                    figure_root = (base / "assets" / "figures").resolve()
+                    if not spec_path.is_relative_to(figure_root):
+                        issues.append({"figure": key, "reason": "generated-spec-outside-figures"})
+                    elif not spec_path.is_file():
+                        issues.append({"figure": key, "reason": "generated-spec-missing", "spec": spec_asset})
+                    elif sha256(spec_path) != spec_sha:
+                        issues.append({"figure": key, "reason": "generated-spec-changed", "spec": spec_asset})
+                    else:
+                        try:
+                            spec_data = json.loads(spec_path.read_text(encoding="utf-8"))
+                        except (json.JSONDecodeError, OSError, UnicodeError):
+                            issues.append({"figure": key, "reason": "generated-spec-invalid-json", "spec": spec_asset})
+                        else:
+                            expected_id = str(item.get("id") or key).removeprefix("derived:")
+                            if not isinstance(spec_data, dict) or spec_data.get("schema_version") != 1:
+                                issues.append({"figure": key, "reason": "generated-spec-version-invalid"})
+                            elif str(spec_data.get("id") or "") != expected_id:
+                                issues.append({"figure": key, "reason": "generated-spec-id-mismatch"})
+                if target and target.is_file():
+                    try:
+                        svg_text = target.read_text(encoding="utf-8")
+                    except (OSError, UnicodeError):
+                        issues.append({"figure": key, "reason": "generated-svg-unreadable"})
+                    else:
+                        if 'data-study-sketch="1"' not in svg_text:
+                            issues.append({"figure": key, "reason": "generated-svg-marker-missing"})
+                        if spec_sha and f'data-spec-sha256="{spec_sha}"' not in svg_text:
+                            issues.append({"figure": key, "reason": "generated-svg-spec-mismatch"})
+                        if generator and f'data-generator="{generator}"' not in svg_text:
+                            issues.append({"figure": key, "reason": "generated-svg-generator-mismatch"})
+                        if isinstance(version, int) and not isinstance(version, bool) and version >= 2:
+                            if 'data-transparent-canvas="1"' not in svg_text:
+                                issues.append({"figure": key, "reason": "generated-svg-opaque-canvas"})
+                            if 'data-pencil-style="graphite-overlay-v1"' not in svg_text:
+                                issues.append({"figure": key, "reason": "generated-svg-pencil-style-missing"})
+                            if "<rect" in svg_text or "<pattern" in svg_text:
+                                issues.append({"figure": key, "reason": "generated-svg-frame-or-background"})
         source = item.get("source_file")
         expected = item.get("source_sha256")
         if source and expected:
@@ -362,6 +487,9 @@ def register_derived(
     learner_focus: list[str] | None = None,
     kind: str = "diagram",
     role: str = "supporting",
+    visual_treatment: str | None = None,
+    source_figure_id: str | None = None,
+    generation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Collision-safe derived figure registration for CLI and MCP callers."""
     if not based_on:
@@ -400,6 +528,12 @@ def register_derived(
         "origin": "derived",
         "based_on": based_on,
     }
+    if visual_treatment is not None:
+        record["visual_treatment"] = visual_treatment.strip()
+    if source_figure_id is not None:
+        record["source_figure_id"] = source_figure_id.strip()
+    if generation is not None:
+        record["generation"] = dict(generation)
     figures[key] = record
     data["version"] = max(int(data.get("version", 1) or 1), 2)
     issues = registry_issues(course, data)
@@ -416,7 +550,8 @@ def cmd_register_derived(args: argparse.Namespace) -> None:
         result = register_derived(
             course, args.id, args.unit, args.asset, args.description, args.based_on or [],
             concepts=args.concept or [], learner_focus=args.learner_focus or [],
-            kind=args.kind, role=args.role,
+            kind=args.kind, role=args.role, visual_treatment=args.visual_treatment,
+            source_figure_id=args.source_figure_id,
         )
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
@@ -514,6 +649,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--concept", action="append")
     p.add_argument("--learner-focus", action="append")
     p.add_argument("--based-on", action="append", required=True)
+    p.add_argument("--visual-treatment", choices=sorted(VISUAL_TREATMENTS))
+    p.add_argument("--source-figure-id")
     p.set_defaults(func=cmd_register_derived)
     p = sub.add_parser("migrate-registry", help="Normalize legacy derived figure records without reprocessing sources")
     p.add_argument("--course", required=True)

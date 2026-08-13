@@ -14,12 +14,27 @@ Lower the score when:
 - a figure introduces unsupported information;
 - color/visual emphasis is inconsistent or used as the sole meaning channel;
 - raw source screenshots are dumped without interpretation.
+- a pedagogical derived diagram ignores the planned notebook-sketch treatment
+  without a fidelity reason;
+- a pencil-like treatment is applied mechanically to a screenshot, dense
+  chart, visual table, formula, code or other precision-sensitive content;
+- `preserve+derived_sketch` duplicates the source without adding a simpler,
+  supported mental model.
 
 Hard fail:
 - broken image paths in the published artifact;
 - any rendered figure fails to decode (`complete != true`, `naturalWidth == 0` or `naturalHeight == 0`) in an audited viewport;
 - unreadable/missing alt text for an essential figure;
 - a derived diagram changes academic meaning;
+- a reinterpretation drops, obscures or invents a label, relation, direction,
+  scale or other meaningful feature;
+- a deterministic sketch omits element-level provenance, does not match its
+  registered spec hash, or contains a node/edge not present in that spec;
+- a reinterpreted sketch carries an opaque canvas, internal notebook paper,
+  outer frame or pasted-card plate instead of revealing the real document
+  rules behind it;
+- generated nodes or edges use a single perfectly geometric trace instead of
+  the audited deterministic pencil treatment;
 - the artifact claims an image shows something the reviewer cannot verify from canonical/source evidence;
 - a rendered summary/guide/rapid-review is published without a successful `visual_audit.py` browser report;
 - the final response claims visual PASS when rendered screenshots were not actually available for inspection.

@@ -118,11 +118,27 @@ def _row(body: str, mark: str = "", extra_class: str = "") -> str:
     return f'<div class="{cls}"><div class="mark">{mark}</div><div class="body">{body}</div></div>'
 
 
+def is_study_sketch(src: str, image_base: Path | None) -> bool:
+    """Recognize only SVGs emitted by the deterministic sketch generator."""
+    if image_base is None or re.match(r"^[a-z]+://", src) or src.startswith("data:"):
+        return False
+    target = (image_base / src).resolve()
+    if target.suffix.lower() != ".svg" or not target.is_file():
+        return False
+    try:
+        with target.open("r", encoding="utf-8") as stream:
+            head = stream.read(4096)
+    except (OSError, UnicodeError):
+        return False
+    return 'data-study-sketch="1"' in head and 'data-transparent-canvas="1"' in head
+
+
 def render_markdown(
     text: str,
     scope: str = "",
     *,
     wrap_prose: bool = True,
+    image_base: Path | None = None,
 ) -> tuple[str, list[tuple[int, str, str]], str]:
     """Render Markdown.
 
@@ -229,7 +245,9 @@ def render_markdown(
             while i < len(lines) and lines[i].lstrip().startswith(">"):
                 buf.append(re.sub(r"^\s*>\s?", "", lines[i]))
                 i += 1
-            body, _toc, _title = render_markdown("\n".join(buf), scope="", wrap_prose=False) if buf else ("", [], "")
+            body, _toc, _title = render_markdown(
+                "\n".join(buf), scope="", wrap_prose=False, image_base=image_base
+            ) if buf else ("", [], "")
 
             # The gutter label is the stable semantic role (Cuidado, Definición,
             # Recuperación...). A specific author title carries additional meaning
@@ -267,8 +285,9 @@ def render_markdown(
         im = re.fullmatch(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)\s*", line.strip())
         if im:
             alt, src, cap = im.group(1), im.group(2), im.group(3) or im.group(1)
+            figure_class = ' class="study-sketch"' if is_study_sketch(src, image_base) else ""
             out.append(
-                '<figure>'
+                f'<figure{figure_class}>'
                 '<div class="plate">'
                 f'<img src="{html.escape(src, quote=True)}" alt="{html.escape(alt, quote=True)}" loading="lazy">'
                 '</div>'
@@ -398,7 +417,9 @@ def render(input_path: Path, output_path: Path, kind: str, course: str = "", sco
     text = input_path.read_text(encoding="utf-8")
     issues = validate_images(input_path, text) + validate_caption_comments(text)
     rendered_text = rebase_local_images(text, input_path.parent, output_path.parent)
-    content, toc, title = render_markdown(rendered_text, scope=scope)
+    content, toc, title = render_markdown(
+        rendered_text, scope=scope, image_base=output_path.parent.resolve()
+    )
     css = THEME.read_text(encoding="utf-8")
 
     toc_html = "".join(f'<a class="depth-{d}" href="#{hid}">{html.escape(label)}</a>' for d, hid, label in toc)

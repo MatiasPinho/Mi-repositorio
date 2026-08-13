@@ -14,8 +14,16 @@ The previous **contemporary technical manual** direction remains preserved in re
 - `typography.css` — sustained-reading type, marker emphasis, code and baseline rhythm.
 - `layout.css` — notebook sheet, CSS-only binding/margin, running line, section marks, progress and long-guide index.
 - `components.css` — semantic notes, exam annotations, retrieval worksheet, tables and apparatus captions.
-- `figures.css` — instructional figures and handwritten-style captions without filtering the source image.
+- `figures.css` — instructional figures and handwritten-style captions without filtering the source image. Semantic `reinterpret` / `preserve` decisions belong to `rules/visual/figures.md`, not to CSS.
 - `print.css` — A4/paged-media behaviour that keeps the notebook identity without printing binding holes.
+
+Deterministic derived diagrams are rendered by `scripts/sketch_figure.py`. Its
+SVG canvas is always transparent: the notebook paper and rules remain owned by
+CSS and show through the drawing. The generator uses a restrained
+graphite/ink subset of the notebook palette, while the planner remains limited
+to semantic tones and structure. The renderer removes the normal image plate
+only for SVGs carrying the deterministic sketch marker. Source images are never
+filtered or converted by that generator.
 
 ## Composition rules
 

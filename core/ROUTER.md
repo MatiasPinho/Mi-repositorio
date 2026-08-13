@@ -53,7 +53,7 @@ Do not read every rule file for every task. Follow the pipeline's `READ` section
 Use `study.py` and scripts for directory creation, hashes, stale status, due review, assessment listings, run manifests and structural validation. Do not spend model reasoning on deterministic administration.
 
 ## MCP fast path
-When the local `university-study` MCP server is connected, prefer its coarse-grained read tools (`study_get_course_context`, `study_get_unit_context`, `study_list_units`, `study_list_artifacts`, etc.) instead of reopening and filtering the same canonical JSON files manually. Prefer MCP write tools for operations they explicitly cover, especially `study_register_derived_figure` and `study_mark_artifact`; do not bypass them by editing registries directly.
+When the local `university-study` MCP server is connected, prefer its coarse-grained read tools (`study_get_course_context`, `study_get_unit_context`, `study_list_units`, `study_list_artifacts`, etc.) instead of reopening and filtering the same canonical JSON files manually. Prefer MCP write tools for operations they explicitly cover, especially `study_generate_sketch_figure`, `study_register_derived_figure` and `study_mark_artifact`; do not bypass them by editing registries directly.
 
 MCP is an adapter, not a new source of truth. Pipelines, handoffs and deterministic scripts remain authoritative. Do not fan out into many tiny MCP calls when one context call is sufficient. Topic/concept lookup must follow the exact resolution rules defined by the owning pipeline; never use fuzzy matching to silently choose an academic scope.
 

@@ -11,6 +11,7 @@ FIG = ROOT / "scripts" / "figure_assets.py"
 RENDER = ROOT / "scripts" / "render_study.py"
 INTEGRITY = ROOT / "scripts" / "artifact_integrity.py"
 ARTIFACT = ROOT / "scripts" / "artifact_state.py"
+STUDY = ROOT / "study.py"
 
 
 class InfrastructureHardeningTests(unittest.TestCase):
@@ -67,6 +68,71 @@ class InfrastructureHardeningTests(unittest.TestCase):
         )
         self.assertNotEqual(again.returncode, 0)
         self.assertIn("refusing overwrite", again.stderr + again.stdout)
+
+    def test_derived_registration_records_visual_treatment_without_breaking_legacy_records(self):
+        registry = {
+            "version": 2,
+            "figures": {
+                "u1-source-process": {
+                    "id": "u1-source-process",
+                    "unit": "U1",
+                    "unit_id": "unidad-1",
+                    "origin": "source",
+                    "source_file": "oficiales/process.pdf",
+                    "asset": None,
+                }
+            },
+        }
+        (self.course / "conocimiento" / "figures.json").write_text(json.dumps(registry), encoding="utf-8")
+        asset = self.course / "assets" / "figures" / "process-sketch.svg"
+        asset.write_text("<svg xmlns='http://www.w3.org/2000/svg'></svg>", encoding="utf-8")
+
+        cp = self.run_cli(
+            STUDY, "figures", "register-derived", self.slug,
+            "--id", "process-sketch", "--unit", "U1", "--asset", "assets/figures/process-sketch.svg",
+            "--description", "Simplificación pedagógica", "--based-on", "figure:u1-source-process",
+            "--visual-treatment", "preserve+derived_sketch", "--source-figure-id", "u1-source-process",
+        )
+        record = json.loads(cp.stdout)["record"]
+        self.assertEqual(record["visual_treatment"], "preserve+derived_sketch")
+        self.assertEqual(record["source_figure_id"], "u1-source-process")
+
+        verified = json.loads(self.run_cli(FIG, "verify", "--course", self.slug).stdout)
+        self.assertTrue(verified["ok"], verified)
+
+    def test_figure_registry_rejects_invalid_or_unpaired_visual_treatment(self):
+        registry = {
+            "version": 2,
+            "figures": {
+                "derived:bad-mode": {
+                    "id": "derived:bad-mode", "unit": "U1", "unit_id": "unidad-1",
+                    "origin": "derived", "based_on": ["concept:x"],
+                    "asset": "assets/figures/bad-mode.svg", "visual_treatment": "pencil-filter",
+                },
+                "derived:unpaired": {
+                    "id": "derived:unpaired", "unit": "U1", "unit_id": "unidad-1",
+                    "origin": "derived", "based_on": ["concept:x"],
+                    "asset": "assets/figures/unpaired.svg", "visual_treatment": "preserve+derived_sketch",
+                },
+                "derived:false-preserve": {
+                    "id": "derived:false-preserve", "unit": "U1", "unit_id": "unidad-1",
+                    "origin": "derived", "based_on": ["concept:x"],
+                    "asset": "assets/figures/false-preserve.svg", "visual_treatment": "preserve",
+                },
+            },
+        }
+        for name in ("bad-mode.svg", "unpaired.svg", "false-preserve.svg"):
+            (self.course / "assets" / "figures" / name).write_text(
+                "<svg xmlns='http://www.w3.org/2000/svg'></svg>", encoding="utf-8"
+            )
+        (self.course / "conocimiento" / "figures.json").write_text(json.dumps(registry), encoding="utf-8")
+
+        cp = self.run_cli(FIG, "verify", "--course", self.slug, check=False)
+        self.assertNotEqual(cp.returncode, 0)
+        reasons = {item["reason"] for item in json.loads(cp.stdout)["issues"]}
+        self.assertIn("invalid-visual-treatment", reasons)
+        self.assertIn("derived-sketch-source-missing", reasons)
+        self.assertIn("preserve-origin-invalid", reasons)
 
     def test_integrity_gate_counts_registered_figures_by_stable_unit_id(self):
         asset = self.course / "assets" / "figures" / "derived-diagram.svg"

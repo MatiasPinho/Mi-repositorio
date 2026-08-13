@@ -13,6 +13,7 @@ Este directorio contiene la documentación técnica del University Study System.
 - [`unit-layout.md`](unit-layout.md): contrato V4 materia → unidades, invariantes de rutas y migración V3.
 - [`topics.md`](topics.md): contrato V1 de temas observados, reconciliación estable, asignación de conceptos y progreso derivado.
 - [`quiz.md`](quiz.md): contrato del multiple choice HTML offline, modos práctica/examen, JSON semántico, gates y frontera con progreso.
+- [`sketch-figures.md`](sketch-figures.md): sketch specs, generador SVG determinista, registro derivado y reglas de preservación.
 
 ## Ingesta y calidad de fuentes
 
@@ -125,6 +126,7 @@ Cuando una materia real o Engine QA descubre un fallo:
 | MCP / herramientas disponibles | `mcp.md` |
 | Estructura materia/unidades o migración V3 | `unit-layout.md` |
 | Temas observados / asignación semántica de conceptos | `topics.md` |
+| Figuras dibujadas / sketch specs / SVG determinista | `sketch-figures.md` |
 | Flujo global o experiencia de uso | `../README.md` |
 
 Una modificación de comportamiento no se considera completamente cerrada si cambia un contrato descrito aquí y la documentación correspondiente no se actualiza.

@@ -11,6 +11,7 @@ Only genuinely course-wide runs may live under
 ## Standard stage files
 - `01-input.json`: resolved course/scope, relevant canonical paths/fingerprints, requested mode.
 - `02-plan.json`: pedagogical/content plan. No polished prose.
+- `02-sketches/<id>.json`: optional structured specs for deterministic derived SVGs selected by the plan.
 - `03-draft.md`: first student-facing draft.
 - `04-humanized.md`: Humanizer output.
 - `05-review.json`: independent fidelity + pedagogy review.
@@ -66,7 +67,49 @@ Required fidelity-check keys are fixed. `status` is only `pass`, `fail` or `not_
 Handoff files are working state and are not automatically student artifacts.
 
 ## Plan visual contract
-`02-plan.json` should include a `visuals` section for student-facing content. Each major concept receives one of `visual_required`, `visual_helpful`, `visual_not_needed`. Selected source visuals reference ids from `unidades/<unit-id>/conocimiento/figures.json`; derived diagrams must be explicitly marked derived.
+`02-plan.json` should include a `visuals` section for student-facing content. Each major concept receives one of `visual_required`, `visual_helpful`, `visual_not_needed`. Every required/helpful entry also records `visual_treatment` as exactly `reinterpret`, `preserve` or `preserve+derived_sketch`, following `rules/visual/figures.md`. Selected source visuals reference ids from `unidades/<unit-id>/conocimiento/figures.json`; derived diagrams must be explicitly marked derived.
+
+Minimum shape for a selected visual:
+
+```json
+{
+  "concept_id": "stable-concept-id",
+  "need": "visual_required",
+  "visual_treatment": "preserve+derived_sketch",
+  "source_figure_id": "u2-source-process",
+  "derived_figure_id": "derived:u2-process-overview",
+  "sketch_spec": "02-sketches/u2-process-overview.json",
+  "based_on": ["concept:stable-concept-id", "figure:u2-source-process"],
+  "reason": "The source preserves exact detail; the sketch exposes the high-level flow."
+}
+```
+
+`source_figure_id` is required for `preserve` and
+`preserve+derived_sketch`; `derived_figure_id` and non-empty `based_on` are
+required whenever a derived asset will be created. `preserve+derived_sketch`
+means two distinct figures are retained, never one source image overwritten by
+an artistic derivative.
+
+For `reinterpret` and `preserve+derived_sketch`, the visual entry also includes
+`sketch_spec`, a run-relative path under `02-sketches/`. The referenced JSON
+must validate against `contracts/sketch-figure.schema.json`. The planner owns
+labels, node/edge identity, semantic shapes, relationships, groups, rank/order
+and element-level `based_on` references. It must not emit SVG, pixels, colors,
+fonts or free-form drawing instructions. `preserve` never has a sketch spec.
+
+Example:
+
+```json
+{
+  "concept_id": "stable-concept-id",
+  "need": "visual_required",
+  "visual_treatment": "reinterpret",
+  "derived_figure_id": "derived:process-overview",
+  "sketch_spec": "02-sketches/process-overview.json",
+  "based_on": ["concept:stable-concept-id"],
+  "reason": "The process can be reconstructed without losing any relation."
+}
+```
 
 ## Plan topic coverage contract
 For unit-scoped summaries, `02-plan.json` should record which observed topic ids
@@ -84,3 +127,20 @@ only under its own `unidades/<unit-id>/` directory.
 
 ## Derived figure registration
 Derived visuals are namespaced as `derived:<id>` and must include `origin: derived`, `unit_id`, `asset`, and non-empty `based_on` provenance. Registration is collision-safe and must go through `study.py figures register-derived`; source records/assets are never overwritten.
+
+The registry accepts additive optional `visual_treatment` metadata with the
+same three values as the plan. New generated figures should record it. A
+`preserve+derived_sketch` derived record also requires `source_figure_id`, which
+must identify an existing source-origin figure in the same registry. Legacy
+records without either field remain valid for backward compatibility.
+`reinterpret` belongs to a derived record; `preserve` belongs to a source
+record; and `preserve+derived_sketch` belongs to the derived companion while
+the linked source remains unchanged.
+
+Figures produced by the deterministic sketch generator also contain a
+`generation` object with `method: deterministic-svg`, generator identity and
+version, the canonical `.sketch.json` asset and its SHA-256. The SVG embeds the
+same spec hash. Registry verification and the artifact integrity gate reject a
+modified spec, modified SVG, mismatched ID, missing generator marker or asset
+outside `assets/figures/`. Exact retries are idempotent; an existing ID/path
+with different bytes is never overwritten.

@@ -614,7 +614,20 @@ def cmd_figures_register_derived(args: argparse.Namespace) -> None:
         cmd += ["--learner-focus", value]
     for value in args.based_on or []:
         cmd += ["--based-on", value]
+    if args.visual_treatment:
+        cmd += ["--visual-treatment", args.visual_treatment]
+    if args.source_figure_id:
+        cmd += ["--source-figure-id", args.source_figure_id]
     out, _ = run_script("figure_assets.py", *cmd)
+    print(out)
+
+
+def cmd_figures_generate_sketch(args: argparse.Namespace) -> None:
+    course = resolve_course(args.course)
+    out, _ = run_script(
+        "sketch_figure.py", "generate", "--course", str(course),
+        "--unit", args.unit, "--spec", args.spec,
+    )
     print(out)
 
 
@@ -1242,7 +1255,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--concept", action="append")
     p.add_argument("--learner-focus", action="append")
     p.add_argument("--based-on", action="append", required=True)
+    p.add_argument("--visual-treatment")
+    p.add_argument("--source-figure-id")
     p.set_defaults(func=cmd_figures_register_derived)
+    p = fsub.add_parser(
+        "generate-sketch",
+        help="Generar SVG de cuaderno desde una sketch spec y registrarlo de forma atómica",
+    )
+    p.add_argument("course")
+    p.add_argument("--unit", required=True)
+    p.add_argument("--spec", required=True)
+    p.set_defaults(func=cmd_figures_generate_sketch)
     p = fsub.add_parser("migrate", help="Normalizar registros legacy de figuras derivadas sin reprocesar fuentes")
     p.add_argument("course")
     p.add_argument("--dry-run", action="store_true")

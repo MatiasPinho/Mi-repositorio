@@ -98,12 +98,21 @@ def study_register_derived_figure(
     learner_focus: list[str] | None = None,
     kind: str = "diagram",
     role: str = "supporting",
+    visual_treatment: str | None = None,
+    source_figure_id: str | None = None,
 ) -> dict:
     """Registrar una figura derivada mediante el core collision-safe; nunca sobrescribe."""
     return service.register_derived_figure(
         course, figure_id, unit, asset, description, based_on,
         concepts=concepts, learner_focus=learner_focus, kind=kind, role=role,
+        visual_treatment=visual_treatment, source_figure_id=source_figure_id,
     )
+
+
+@mcp.tool(annotations=WRITE_IDEMPOTENT)
+def study_generate_sketch_figure(course: str, unit: str, spec: dict) -> dict:
+    """Generar y registrar un SVG de cuaderno determinista desde una especificación estructurada."""
+    return service.generate_sketch_figure(course, unit, spec)
 
 
 @mcp.tool(annotations=READ)

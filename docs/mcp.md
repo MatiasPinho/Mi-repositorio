@@ -30,7 +30,8 @@ Lectura:
 - `study_validate_course`
 
 Escritura segura:
-- `study_register_derived_figure` — usa el helper collision-safe de `figure_assets.py`; no sobrescribe IDs/assets.
+- `study_register_derived_figure` — usa el helper collision-safe de `figure_assets.py`; no sobrescribe IDs/assets y acepta `visual_treatment` más `source_figure_id` para registrar la política semántica de figuras sin invalidar registros legacy.
+- `study_generate_sketch_figure` — valida una sketch spec estructurada, genera SVG determinista y registra asset, spec, hashes y procedencia como una operación idempotente.
 - `study_mark_artifact` — usa directamente el helper de `artifact_state.py`.
 
 ## Resources
@@ -63,7 +64,7 @@ No se exponen herramientas de borrado, reset, edición arbitraria de JSON ni pub
 
 ## Test stdio end-to-end
 
-Con el SDK MCP instalado, la suite levanta un servidor real por `stdio`, negocia una sesión de cliente, lista las 13 tools V4 y ejecuta cada una con timeout:
+Con el SDK MCP instalado, la suite levanta un servidor real por `stdio`, negocia una sesión de cliente, lista las 14 tools V4 y ejecuta cada una con timeout:
 
 ```powershell
 python -m unittest tests.test_mcp.StudyMCPTests.test_stdio_e2e_curated_tools_return_without_hanging -v

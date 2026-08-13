@@ -18,6 +18,27 @@ sys.path.insert(0, str(ROOT))
 from study_mcp import service
 
 
+def sketch_spec(figure_id: str = "generated-map") -> dict:
+    return {
+        "schema_version": 1,
+        "id": figure_id,
+        "title": "Base y resultado",
+        "kind": "flow",
+        "visual_treatment": "reinterpret",
+        "description": "Flujo mínimo generado por el core determinista.",
+        "alt": "La base produce un resultado",
+        "caption": "La flecha conserva la relación declarada.",
+        "based_on": ["concept:base"],
+        "nodes": [
+            {"id": "base", "label": "Base", "shape": "terminal", "based_on": ["concept:base"]},
+            {"id": "result", "label": "Resultado", "shape": "process", "based_on": ["concept:base"]},
+        ],
+        "edges": [
+            {"from": "base", "to": "result", "relation": "flow", "based_on": ["concept:base"]}
+        ],
+    }
+
+
 class StudyMCPTests(unittest.TestCase):
     def setUp(self):
         self.slug = "zz-mcp-" + uuid.uuid4().hex[:8]
@@ -71,16 +92,30 @@ class StudyMCPTests(unittest.TestCase):
         asset = self.course / "assets" / "figures" / "derived.svg"
         asset.write_text("<svg xmlns='http://www.w3.org/2000/svg'></svg>", encoding="utf-8")
         result = service.register_derived_figure(
-            self.slug, "mapa", "U1", "assets/figures/derived.svg", "Mapa", ["concept:base"], concepts=["Base"]
+            self.slug, "mapa", "U1", "assets/figures/derived.svg", "Mapa", ["concept:base"],
+            concepts=["Base"], visual_treatment="reinterpret",
         )
         self.assertTrue(result["ok"])
         self.assertEqual(result["key"], "derived:mapa")
         registry = json.loads((self.course / "conocimiento" / "figures.json").read_text(encoding="utf-8"))
         self.assertEqual(registry["figures"]["derived:mapa"]["unit_id"], "unidad-1")
+        self.assertEqual(registry["figures"]["derived:mapa"]["visual_treatment"], "reinterpret")
         with self.assertRaises(service.StudyMCPError):
             service.register_derived_figure(
                 self.slug, "mapa", "U1", "assets/figures/derived.svg", "Otra", ["concept:base"]
             )
+
+    def test_mcp_generates_and_registers_deterministic_sketch_in_process(self):
+        result = service.generate_sketch_figure(self.slug, "U1", sketch_spec())
+        self.assertTrue(result["ok"], result)
+        self.assertTrue(result["created"])
+        again = service.generate_sketch_figure(self.slug, "U1", sketch_spec())
+        self.assertFalse(again["created"])
+        self.assertEqual(result["svg_sha256"], again["svg_sha256"])
+        registry = json.loads((self.course / "conocimiento" / "figures.json").read_text(encoding="utf-8"))
+        row = registry["figures"]["derived:generated-map"]
+        self.assertEqual(row["generation"]["method"], "deterministic-svg")
+        self.assertEqual(row["generation"]["spec_sha256"], result["spec_sha256"])
 
     def test_configs_are_local_stdio_and_no_port_is_configured(self):
         claude = json.loads((ROOT / ".mcp.json").read_text(encoding="utf-8"))
@@ -111,6 +146,7 @@ class StudyMCPTests(unittest.TestCase):
         self.assertEqual(tools, {
             "study_list_courses", "study_material_changes", "study_list_units", "study_get_course_context", "study_get_unit_context",
             "study_get_progress", "study_list_figures", "study_verify_figures", "study_register_derived_figure",
+            "study_generate_sketch_figure",
             "study_list_artifacts", "study_validate_artifact", "study_mark_artifact", "study_validate_course",
         })
         self.assertEqual(len(resources), 5)
@@ -217,6 +253,7 @@ class StudyMCPTests(unittest.TestCase):
                     expected = {
                         "study_list_courses", "study_material_changes", "study_list_units", "study_get_course_context", "study_get_unit_context",
                         "study_get_progress", "study_list_figures", "study_verify_figures", "study_register_derived_figure",
+                        "study_generate_sketch_figure",
                         "study_list_artifacts", "study_validate_artifact", "study_mark_artifact", "study_validate_course",
                     }
                     self.assertEqual(tool_names, expected)
@@ -240,8 +277,17 @@ class StudyMCPTests(unittest.TestCase):
                         "description": "E2E map",
                         "based_on": ["concept:base"],
                         "concepts": ["Base"],
+                        "visual_treatment": "reinterpret",
                     })
                     self.assertTrue(registered["ok"])
+
+                    generated = await call(session, "study_generate_sketch_figure", {
+                        "course": self.slug,
+                        "unit": "Unidad 1",
+                        "spec": sketch_spec("e2e-generated-map"),
+                    })
+                    self.assertTrue(generated["ok"])
+                    self.assertTrue(generated["created"])
 
                     artifacts = await call(session, "study_list_artifacts", {"course": self.slug})
                     self.assertIn("artifacts", artifacts)

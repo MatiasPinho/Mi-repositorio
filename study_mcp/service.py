@@ -23,6 +23,7 @@ import artifact_integrity  # noqa: E402
 import artifact_state  # noqa: E402
 import concept_graph  # noqa: E402
 import figure_assets  # noqa: E402
+import sketch_figure  # noqa: E402
 import course_layout  # noqa: E402
 import topic_catalog  # noqa: E402
 from artifact_state import scoped_concepts, scoped_figures  # noqa: E402
@@ -252,14 +253,26 @@ def register_derived_figure(
     learner_focus: list[str] | None = None,
     kind: str = "diagram",
     role: str = "supporting",
+    visual_treatment: str | None = None,
+    source_figure_id: str | None = None,
 ) -> dict[str, Any]:
     course = _course(course_name)
     try:
         return figure_assets.register_derived(
             course, figure_id, unit, asset, description, based_on,
             concepts=concepts, learner_focus=learner_focus, kind=kind, role=role,
+            visual_treatment=visual_treatment, source_figure_id=source_figure_id,
         )
     except (ValueError, SystemExit, OSError, json.JSONDecodeError) as exc:
+        raise StudyMCPError(str(exc)) from exc
+
+
+def generate_sketch_figure(course_name: str, unit: str, spec: dict[str, Any]) -> dict[str, Any]:
+    """Generate and register one deterministic SVG from a structured visual spec."""
+    course = _course(course_name)
+    try:
+        return sketch_figure.generate_and_register(course, unit, spec)
+    except (sketch_figure.SketchSpecError, ValueError, SystemExit, OSError, json.JSONDecodeError) as exc:
         raise StudyMCPError(str(exc)) from exc
 
 

@@ -24,8 +24,14 @@ referencing later. A figure record may contain:
 - `source_sha256`;
 - optional `asset` path if already rendered;
 - `origin`: source or derived.
+- optional `visual_treatment`: `reinterpret`, `preserve` or
+  `preserve+derived_sketch` when a later pedagogical decision has been made;
+- optional `source_figure_id`: the preserved source companion required by a
+  `preserve+derived_sketch` derived record.
 
 Do not register every image object in a PDF. Register pedagogically meaningful visuals.
+Missing treatment metadata in an older record is valid and means "not yet
+decided", not permission to infer a pencil treatment during ingestion.
 
 ## Rendering source figures
 Render only selected pages/figures, not every PDF page:
