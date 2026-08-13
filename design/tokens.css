@@ -1,80 +1,105 @@
 :root {
   color-scheme: light;
 
-  /* Surfaces — warm, low chroma, higher contrast than v3.5 */
-  --study-canvas: #e9e5dc;
+  /* Surfaces — study notebook on a quiet desk */
+  --study-canvas: #6f7268;
   --study-paper: #fbf9f4;
-  --study-paper-muted: #f7f4ec;
-  --study-ink: #232019;
-  --study-ink-strong: #100f0c;
-  --study-ink-soft: #413c33;
-  --study-ink-muted: #6b6459;
-  --study-ink-faint: #746c5e;
-  --study-rule: #ddd7cb;
-  --study-rule-soft: #e6e0d4;
-  --study-rule-strong: #b9b1a2;
+  --study-paper-muted: #f4f3eb;
+  --study-ink: #1b2430;
+  --study-ink-strong: #10131a;
+  --study-ink-soft: #3c4657;
+  --study-ink-muted: #63665d;
+  --study-ink-faint: #7c7f74;
+  --study-rule: #c9c9bd;
+  --study-rule-soft: #dbe4ef;
+  --study-rule-strong: #1b2430;
+  --study-rule-line: #c9d6e4;
+  --study-margin-rule: #cf9a94;
+  --study-marker: #f2e39a;
+  --study-hole: #5b5e56;
 
-  /* Semantic signalling — one hue per academic role, all low saturation */
-  --study-link: #2f5d67;
-  --study-focus: #2f5d67;
-  --study-accent: #2f5d67;
-  --study-concept: #2f5d67;
-  --study-example: #4a6349;
-  --study-warning: #7a5a20;
-  --study-danger: #7e4238;
-  --study-connection: #5a5570;
-  --study-recall: #55605f;
-  --study-danger-soft: #f8efec;
-  --study-warning-soft: #f6f1e6;
+  /* Semantic ink */
+  --study-link: #1f4b7a;
+  --study-focus: #1f4b7a;
+  --study-accent: #1f4b7a;
+  --study-concept: #1f4b7a;
+  --study-example: #50664f;
+  --study-warning: #8a642b;
+  --study-danger: #a8564a;
+  --study-connection: #5d586f;
+  --study-recall: #1f4b7a;
+  --study-danger-soft: #fbefec;
+  --study-warning-soft: #f7f0df;
+  --study-concept-soft: #eaeff5;
+  --study-example-soft: #edf2eb;
 
-  /* Type — Google Fonts with full system fallbacks */
-  --study-font-body: "Source Serif 4", "Source Serif Pro", Georgia, Cambria, serif;
+  /* Type */
+  --study-font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
   --study-font-display: var(--study-font-body);
-  --study-font-utility: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-  --study-font-code: "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
+  --study-font-utility: "IBM Plex Mono", "Cascadia Code", Consolas, monospace;
+  --study-font-code: var(--study-font-utility);
+  --study-font-hand: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --study-font-editorial-fallback: "Source Serif 4", "Source Serif Pro", Georgia, serif;
 
-  --study-body-size: clamp(1.0625rem, .98rem + .35vw, 1.1875rem);
+  /* Compatibility tokens retained for old artifacts/tests; notebook geometry
+     uses the notebook-specific tokens below. */
+  --study-body-size: clamp(1rem, .985rem + .12vw, 1.03125rem);
   --study-body-leading: 1.72;
-  --study-small-size: .82rem;
-
-  /* Measure system: prose stays narrow, figures/tables break wider */
-  --study-measure: 42rem;      /* ~68 characters */
-  --study-gutter: 8rem;        /* section numbers + semantic labels */
+  --study-small-size: .78rem;
+  --study-measure: 42rem;
+  --study-gutter: 8rem;
   --study-gutter-gap: 2rem;
-  --study-wide: 52rem;         /* figures, tables, code */
+  --study-wide: 52rem;
   --study-paper-width: 66rem;
   --study-shell-width: 86rem;
   --study-toc-width: 13rem;
+  --shadow-paper: none;
+
+  /* Notebook geometry */
+  --notebook-line-pitch: 1.6875rem;
+  --notebook-measure: 40rem;
+  --notebook-wide: 44rem;
+  --notebook-paper-width: 58rem;
+  --notebook-section-mark: 1.8rem;
+  --notebook-shadow: 0 14px 30px rgba(0, 0, 0, .28), 0 2px 0 rgba(255, 255, 255, .42) inset;
+  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 26.5H1000' stroke='%23c9d6e4' stroke-width='1'/%3E%3C/svg%3E");
 
   --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
   --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
   --space-12: 3rem; --space-16: 4rem;
-  --radius-s: 0; --radius-m: 0; --shadow-paper: none;
+  --radius-s: 2px; --radius-m: 5px;
 }
 
-/* Opt-in dark surface for night sessions. Same hierarchy, same semantics. */
 html[data-study-theme="dark"] {
   color-scheme: dark;
-  --study-canvas: #16171a;
-  --study-paper: #1e2023;
-  --study-paper-muted: #24262a;
-  --study-ink: #ddd9d0;
-  --study-ink-strong: #f5f2ea;
-  --study-ink-soft: #c6c1b7;
-  --study-ink-muted: #a49d92;
-  --study-ink-faint: #7d766c;
-  --study-rule: #34373b;
-  --study-rule-soft: #2b2e32;
-  --study-rule-strong: #4d5157;
-  --study-link: #8fb6be;
-  --study-focus: #8fb6be;
-  --study-accent: #8fb6be;
-  --study-concept: #8fb6be;
-  --study-example: #a3bd9b;
-  --study-warning: #d3bb87;
-  --study-danger: #d99e93;
-  --study-connection: #b6b0c9;
-  --study-recall: #b0b9b8;
-  --study-danger-soft: #2a2320;
-  --study-warning-soft: #262218;
+  --study-canvas: #15161a;
+  --study-paper: #1d1f23;
+  --study-paper-muted: #26282d;
+  --study-ink: #d6d2c8;
+  --study-ink-strong: #f4f1ea;
+  --study-ink-soft: #e6e2d9;
+  --study-ink-muted: #a8a297;
+  --study-ink-faint: #78736a;
+  --study-rule: #4d4f56;
+  --study-rule-soft: #33363d;
+  --study-rule-strong: #777a82;
+  --study-rule-line: #33363d;
+  --study-margin-rule: #6e4a49;
+  --study-marker: #665a2e;
+  --study-hole: #101115;
+  --study-link: #d5b76f;
+  --study-focus: #cfa860;
+  --study-accent: #cfa860;
+  --study-concept: #cfa860;
+  --study-example: #9fb093;
+  --study-warning: #d0aa66;
+  --study-danger: #d39184;
+  --study-connection: #b4adc8;
+  --study-recall: #cfa860;
+  --study-danger-soft: #2b2221;
+  --study-warning-soft: #2a261e;
+  --study-concept-soft: #252931;
+  --study-example-soft: #252a24;
+  --notebook-shadow: 0 16px 36px rgba(0, 0, 0, .46);
+  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 26.5H1000' stroke='%2333363d' stroke-width='1'/%3E%3C/svg%3E");
 }

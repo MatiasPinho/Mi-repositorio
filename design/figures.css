@@ -1,12 +1,16 @@
-/* Figures are instructional objects: framed plate at wide measure, caption
-   label in the gutter so it reads as textbook apparatus. */
+/* Figures are study objects inside the notebook. The image itself is never
+   stylized or filtered; only its placement and caption take on notebook cues. */
 figure {
   counter-increment: study-figure;
-  max-width: var(--study-wide);
-  margin: 2.9rem 0 3.1rem;
+  width: min(100%, var(--notebook-wide));
+  margin: calc(var(--notebook-line-pitch) * 1.35) 0;
   padding: 0;
 }
-figure .plate { border: 1px solid var(--study-rule); background: #fff; padding: 1.6rem 1.2rem; }
+figure .plate {
+  border: 1px solid var(--study-rule);
+  background: color-mix(in srgb, var(--study-paper) 96%, white 4%);
+  padding: 1rem;
+}
 figure img {
   display: block;
   width: auto;
@@ -15,16 +19,27 @@ figure img {
   height: auto;
   margin: 0 auto;
 }
-figcaption { display: flex; flex-wrap: wrap; gap: .35rem var(--study-gutter-gap); margin: .85rem 0 0; }
-figcaption::before {
-  content: "Figura " counter(study-figure);
-  flex: 0 0 var(--study-gutter);
-  color: var(--study-ink-strong);
-  font-family: var(--study-font-utility);
-  font-size: .66rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
+figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .15rem .55rem;
+  margin: .45rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-hand);
+  font-size: 1rem;
+  line-height: 1.45;
+  transform: rotate(-.12deg);
+  transform-origin: left top;
 }
-figcaption > span { flex: 1 1 26rem; max-width: var(--study-measure); color: var(--study-ink-muted); font-size: .86rem; line-height: 1.55; text-wrap: pretty; }
+figcaption::before {
+  content: "fig. " counter(study-figure) " —";
+  flex: 0 0 auto;
+  color: var(--study-accent);
+  font-weight: 600;
+}
+figcaption > span {
+  flex: 1 1 20rem;
+  max-width: var(--notebook-measure);
+  text-wrap: pretty;
+}
 figure.wide { max-width: none; }

@@ -3,49 +3,97 @@
     color-scheme: light;
     --study-canvas: #fff;
     --study-paper: #fff;
-    --study-paper-muted: #f6f3ec;
-    --study-ink: #1d1b16;
+    --study-paper-muted: #f7f7f2;
+    --study-ink: #1b2430;
     --study-ink-strong: #000;
-    --study-ink-soft: #2e2a24;
-    --study-ink-muted: #57524a;
-    --study-ink-faint: #837c71;
-    --study-rule: #d3cdc2;
-    --study-rule-soft: #e2ddd3;
-    --study-rule-strong: #948d82;
+    --study-ink-soft: #303743;
+    --study-ink-muted: #555b64;
+    --study-ink-faint: #777;
+    --study-rule: #c9c9bd;
+    --study-rule-soft: #dbe4ef;
+    --study-rule-strong: #30343a;
+    --study-rule-line: #dce5ef;
+    --study-margin-rule: #dba9a4;
+    --study-marker: #efe3a8;
     --study-measure: 100%;
     --study-wide: 100%;
-    --study-gutter: 24mm;
-    --study-gutter-gap: 6mm;
     --shadow-paper: none;
   }
+
   @page {
-    margin: 18mm 16mm 20mm;
+    margin: 16mm 15mm 18mm;
     @bottom-center {
       content: counter(page);
       color: #6f6960;
-      font-family: "Source Serif 4", Georgia, serif;
+      font-family: "IBM Plex Mono", Consolas, monospace;
       font-size: 8.5pt;
     }
   }
+
   html[data-study-theme="dark"] { color-scheme: light; }
-  body { background: #fff; font-size: 10.8pt; line-height: 1.58; }
-  .study-shell { width: auto; padding: 0; display: block; }
+  body {
+    background: #fff;
+    font-size: 10.5pt;
+    line-height: 6.7mm;
+  }
+  .study-shell {
+    width: auto;
+    padding: 0;
+    display: block;
+  }
   .study-grid { display: block; }
-  article { max-width: none; padding: 0; border: 0; box-shadow: none; }
-  .toc, .reading-progress { display: none; }
+  article {
+    max-width: none;
+    padding: 0 0 0 11mm;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    background-size: 100% 6.7mm;
+  }
+  article::before {
+    display: block;
+    left: 7mm;
+    background: var(--study-margin-rule);
+  }
+  article::after { display: none; }
 
-  h1 { font-size: 23pt; }
-  h2 { font-size: 15pt; break-after: avoid; }
-  h3 { font-size: 11.5pt; break-after: avoid; }
-  .section-head { margin-top: 20pt; break-after: avoid; }
-  .study-header { margin: 14pt 0 16pt; }
-  p, li { orphans: 3; widows: 3; }
+  .toc,
+  .reading-progress { display: none; }
 
-  .callout, figure, .table-scroll, table, pre, figcaption { break-inside: avoid; }
-  .callout.recall { background: transparent; }
+  h1 { font-size: 22pt; }
+  h2 { font-size: 12.5pt; break-after: avoid; }
+  h3 { font-size: 10.5pt; break-after: avoid; }
+  .section-head {
+    margin-top: 8mm;
+    break-after: avoid;
+  }
+  .study-header { margin: 6.7mm 0 9mm; }
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .callout,
+  figure,
+  .table-scroll,
+  table,
+  pre,
+  figcaption {
+    break-inside: avoid;
+  }
+  .callout.exam { transform: none; }
+  .callout.recall > .callout-body::after { height: 20mm; }
   .table-scroll { overflow: visible; }
   table { min-width: 0; }
-  figure .plate { padding: 4mm; border-color: #cfc9be; }
-  a { color: inherit; text-decoration: none; }
-  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  figure .plate { padding: 3mm; }
+  figcaption { transform: none; }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

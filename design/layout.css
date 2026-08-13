@@ -1,144 +1,257 @@
-/* Gutter composition: a fixed left column carries section numbers and
-   semantic labels so the prose column is never interrupted. Every row is a
-   wrapping flexbox, so the layout collapses to one column by available width
-   rather than by viewport breakpoints. */
+/* Notebook composition: the binding is chrome; the content remains semantic,
+   continuous and readable. Ruled lines establish rhythm without changing the
+   Markdown or inserting decorative DOM into every artifact. */
 
 .study-shell {
   width: min(100%, var(--study-shell-width));
   margin: 0 auto;
-  padding: clamp(1.25rem, 4vw, 3.25rem) clamp(.75rem, 3vw, 2rem) 6rem;
+  padding: clamp(1.25rem, 4vw, 3rem) clamp(.75rem, 3vw, 2rem) 6rem;
   display: flex;
   flex-direction: column;
-  gap: clamp(2rem, 5vw, 4.5rem);
+  gap: clamp(2rem, 5vw, 4rem);
 }
 
-.study-grid { display: flex; flex-wrap: wrap-reverse; gap: clamp(1.5rem, 3vw, 3rem); justify-content: center; align-items: flex-start; }
+.study-grid {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  justify-content: center;
+  align-items: flex-start;
+}
 .study-grid.without-toc { display: block; }
 
 article {
+  position: relative;
+  isolation: isolate;
   flex: 1 1 34rem;
-  width: min(100%, var(--study-paper-width));
-  max-width: var(--study-paper-width);
+  width: min(100%, var(--notebook-paper-width));
+  max-width: var(--notebook-paper-width);
   margin: 0 auto;
-  background: var(--study-paper);
+  padding: clamp(2.2rem, 5vw, 3.4rem) clamp(1.25rem, 4vw, 2.5rem) 4rem clamp(5.4rem, 10vw, 7.2rem);
+  overflow: hidden;
+  color: var(--study-ink);
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-repeat: repeat-y;
   border: 1px solid var(--study-rule);
-  box-shadow: var(--shadow-paper);
-  padding: clamp(2.75rem, 6vw, 5.25rem) clamp(1.15rem, 5vw, 4.25rem) clamp(3.5rem, 7vw, 6rem);
+  border-radius: 1px 7px 7px 1px;
+  box-shadow: var(--notebook-shadow);
   counter-reset: study-figure study-table study-code study-section;
 }
 
-/* Row primitive */
-.row { display: flex; flex-wrap: wrap; gap: .4rem var(--study-gutter-gap); }
-.row > .mark { flex: 0 0 var(--study-gutter); }
-.row > .body { flex: 1 1 26rem; max-width: var(--study-measure); min-width: 0; }
-.mark {
-  font-family: var(--study-font-utility);
-  font-size: .66rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--study-ink-muted);
-  padding-top: .42rem;
+/* Red margin and punched binding: CSS-only so renderer output stays clean. */
+article::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: clamp(4.05rem, 7.2vw, 5.35rem);
+  width: 1px;
+  background: var(--study-margin-rule);
+  opacity: .9;
+  pointer-events: none;
+}
+article::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: .8rem;
+  bottom: .8rem;
+  left: clamp(.8rem, 1.7vw, 1.35rem);
+  width: 1.45rem;
+  background:
+    radial-gradient(
+      circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem
+    )
+    center top / 1.45rem 2.25rem repeat-y;
+  pointer-events: none;
 }
 
-/* Front matter */
-.book-running-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .35rem var(--study-gutter-gap);
-  justify-content: space-between;
-  align-items: baseline;
-  padding-bottom: .7rem;
-  border-bottom: 1px solid var(--study-rule);
+/* Prose no longer pays for a permanent semantic gutter. */
+.row {
+  display: block;
+  max-width: var(--notebook-wide);
+}
+.row > .mark:empty { display: none; }
+.row > .body {
+  width: min(100%, var(--notebook-measure));
+  max-width: var(--notebook-measure);
+  min-width: 0;
+}
+.mark {
   font-family: var(--study-font-utility);
   font-size: .68rem;
   font-weight: 600;
-  letter-spacing: .11em;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--study-ink-muted);
+}
+
+/* Notebook header */
+.book-frontmatter { position: relative; z-index: 3; }
+.book-running-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
+  justify-content: space-between;
+  align-items: baseline;
+  min-height: var(--notebook-line-pitch);
+  padding-bottom: .15rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+  font-family: var(--study-font-utility);
+  font-size: .68rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 600;
+  letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--study-ink-muted);
 }
 .book-course { color: var(--study-ink-strong); }
 .book-kind { white-space: nowrap; }
-.study-header { display: flex; flex-wrap: wrap; gap: .5rem var(--study-gutter-gap); margin: clamp(2.5rem, 5vw, 4rem) 0 clamp(2.25rem, 4vw, 3.25rem); }
-.study-header > .mark, .book-chapter-label {
-  flex: 0 0 var(--study-gutter);
-  color: var(--study-accent);
-  font-family: var(--study-font-utility);
-  font-size: .68rem;
-  font-weight: 600;
-  letter-spacing: .11em;
-  text-transform: uppercase;
-  padding-top: .65rem;
-}
-.study-header > .body { flex: 1 1 26rem; max-width: var(--study-measure); }
-.study-meta { color: var(--study-ink-muted); font-family: var(--study-font-utility); font-size: var(--study-small-size); }
 
-/* Section rows: number in the gutter, heading in the measure */
-.section-head { display: flex; flex-wrap: wrap; gap: .5rem var(--study-gutter-gap); align-items: baseline; margin: clamp(3rem, 5vw, 4.75rem) 0 1.35rem; }
+.study-header {
+  display: block;
+  margin: var(--notebook-line-pitch) 0 calc(var(--notebook-line-pitch) * 1.35);
+}
+.study-header > .mark,
+.book-chapter-label { display: none; }
+.study-header > .body {
+  width: min(100%, var(--notebook-measure));
+  max-width: var(--notebook-measure);
+}
+.study-meta {
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: var(--study-small-size);
+}
+
+/* Major sections use the notebook's compact § notation. */
+.section-head {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: .45rem;
+  align-items: baseline;
+  width: min(100%, var(--notebook-measure));
+  margin: calc(var(--notebook-line-pitch) * 1.35) 0 var(--notebook-line-pitch);
+}
 .section-head > .num {
-  flex: 0 0 var(--study-gutter);
+  flex: 0 0 auto;
+  min-width: var(--notebook-section-mark);
   counter-increment: study-section;
   font-family: var(--study-font-utility);
-  font-size: .95rem;
+  font-size: .84rem;
+  line-height: var(--notebook-line-pitch);
   font-weight: 600;
-  letter-spacing: .02em;
-  color: #57524a;
+  letter-spacing: .01em;
+  color: var(--study-accent);
   font-variant-numeric: tabular-nums;
 }
-.section-head > .num::before { content: counter(study-section); }
-.section-head > h2, .section-head > h3 { flex: 1 1 26rem; max-width: var(--study-measure); }
+.section-head > .num::before { content: "§" counter(study-section); }
+.section-head > h2,
+.section-head > h3 {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: var(--notebook-measure);
+}
 
-/* Reading progress — 2px, chrome only, hidden in print */
-.reading-progress { position: fixed; inset: 0 0 auto; height: 2px; background: color-mix(in srgb, var(--study-rule-strong) 35%, transparent); z-index: 50; }
-.reading-progress > span { display: block; height: 100%; width: 0; background: var(--study-accent); }
+/* Long-guide chrome remains secondary to the sheet. */
+.reading-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 2px;
+  background: color-mix(in srgb, var(--study-rule-strong) 35%, transparent);
+  z-index: 50;
+}
+.reading-progress > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--study-accent);
+}
 
-/* Quiet editorial index — long guides only, never on a summary */
 .toc {
   flex: 0 1 var(--study-toc-width);
-  margin-right: auto; /* wrapped state: sits above the article, aligned left */
+  margin-right: auto;
   position: sticky;
   top: 2.5rem;
   max-height: calc(100vh - 5rem);
   overflow: auto;
-  padding-top: .4rem;
+  padding: .35rem 0;
   display: flex;
   flex-direction: column;
-  gap: .15rem;
+  gap: .12rem;
   font-family: var(--study-font-utility);
-  font-size: .76rem;
+  font-size: .72rem;
   line-height: 1.45;
-  color: var(--study-ink-muted);
+  color: color-mix(in srgb, var(--study-paper) 82%, var(--study-canvas));
 }
-.toc strong { display: block; margin-bottom: .85rem; color: var(--study-ink-muted); font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
-.toc a { display: block; padding: .3rem 0 .3rem .7rem; border-left: 1px solid var(--study-rule); color: var(--study-ink-muted); text-decoration: none; }
-.toc a:hover, .toc a:focus-visible { color: var(--study-ink-strong); border-left-color: var(--study-rule-strong); }
-.toc a[aria-current="true"] { color: var(--study-ink-strong); border-left-color: var(--study-accent); }
-.toc .depth-3 { padding-left: 1.4rem; }
+.toc strong {
+  display: block;
+  margin-bottom: .7rem;
+  color: var(--study-paper);
+  font-size: .64rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.toc a {
+  display: block;
+  padding: .3rem 0 .3rem .65rem;
+  border-left: 1px solid color-mix(in srgb, var(--study-paper) 45%, transparent);
+  color: color-mix(in srgb, var(--study-paper) 82%, var(--study-canvas));
+  text-decoration: none;
+}
+.toc a:hover,
+.toc a:focus-visible {
+  color: var(--study-paper);
+  border-left-color: var(--study-paper);
+}
+.toc a[aria-current="true"] {
+  color: var(--study-paper);
+  border-left-color: var(--study-accent);
+}
+.toc .depth-3 { padding-left: 1.25rem; }
 
-/* Renderer extensions for nested headings and empty prose gutters. */
-.row > .mark:empty { padding-top: 0; }
-.subsection-head { margin: 2.7rem 0 .8rem; }
-.subsection-head h3, .minor-head h4 { margin: 0; }
-.minor-head { margin: 2rem 0 .55rem; }
+.subsection-head { margin: calc(var(--notebook-line-pitch) * 1.3) 0 .25rem; }
+.subsection-head h3,
+.minor-head h4 { margin: 0; }
+.minor-head { margin: var(--notebook-line-pitch) 0 0; }
 
 @media (max-width: 48rem) {
   body { background: var(--study-paper); }
   .study-shell { padding: 0; }
-  article { border: 0; padding: 2.7rem 1.25rem 4.5rem; }
-  .row > .mark:empty { display: none; }
-  .row > .body { flex-basis: 100%; max-width: none; }
-  .study-header > .mark,
-  .section-head > .num,
-  .callout > .callout-title,
-  figcaption::before,
-  .table-caption::before,
-  .code-caption::before { flex-basis: 100%; }
+  .study-grid,
+  .study-grid.with-toc { display: block; }
+  article {
+    width: 100%;
+    max-width: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 2rem 1.2rem 4rem 3.45rem;
+  }
+  article::before { left: 2.75rem; }
+  article::after { display: none; }
+  .row > .body,
   .study-header > .body,
-  .section-head > h2,
-  .section-head > h3,
-  .callout > .callout-body,
-  figcaption > span,
-  .table-caption > span,
-  .code-caption > span { flex-basis: 100%; max-width: none; }
+  .section-head { width: 100%; max-width: none; }
   .book-kind { white-space: normal; text-align: right; }
+  .toc {
+    position: static;
+    max-height: none;
+    padding: 1rem 1.2rem 1.25rem;
+    background: var(--study-canvas);
+  }
+}
+
+@media (max-width: 34rem) {
+  article { padding-left: 1.2rem; }
+  article::before { display: none; }
+  .section-head { gap: .3rem; }
+  .section-head > .num { min-width: 1.65rem; }
 }
