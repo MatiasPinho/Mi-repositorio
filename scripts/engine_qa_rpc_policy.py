@@ -10,16 +10,25 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, TypeVar
 
 from scripts import engine_qa
 from scripts import engine_qa_safe as safe
 
 EVIDENCE_MODES = {"engine", "guard", "state"}
+T = TypeVar("T")
 
 
 class EvidenceError(RuntimeError):
     pass
+
+
+def _quality_call(fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    """Map audit-quality policy rejections onto the canonical workflow error."""
+    try:
+        return fn(*args, **kwargs)
+    except quality.AuditQualityError as exc:
+        raise EvidenceError(str(exc)) from exc
 
 
 def _mode(value: Any) -> str:
@@ -44,7 +53,7 @@ def validate_hypothesis_request(request: dict[str, Any]) -> str:
     """Validate evidence intent and any required replacement link."""
     mode = _mode(request.get("evidence_mode"))
     _expected_check_ok(request, mode)
-    replacement = quality.validate_hypothesis_replacement(request)
+    replacement = _quality_call(quality.validate_hypothesis_replacement, request)
     if replacement is not None:
         request["_quality_replacement"] = replacement
     return mode
@@ -123,7 +132,7 @@ def require_valid_evidence(request: dict[str, Any]) -> dict[str, Any] | None:
     status = str(request.get("status", "")).strip().lower()
     if status != "valid":
         if status == "invalid":
-            quality.enrich_invalid_row_before_dispatch(request)
+            _quality_call(quality.enrich_invalid_row_before_dispatch, request)
         return None
     run_dir = _resolve_run(request)
     manifest = engine_qa.manifest_for(run_dir)
@@ -147,7 +156,7 @@ def require_valid_evidence(request: dict[str, Any]) -> dict[str, Any] | None:
     result = {"evidence_mode": mode, "evidence_steps": steps}
     if mode == "state":
         result["expected_check_ok"] = expected_check_ok
-    signature = quality.require_unique_valid_evidence(request, result)
+    signature = _quality_call(quality.require_unique_valid_evidence, request, result)
     if signature is not None:
         request["_quality_signature"] = signature
     return result
@@ -155,7 +164,7 @@ def require_valid_evidence(request: dict[str, Any]) -> dict[str, Any] | None:
 
 def _install_audit_quality_patches() -> None:
     """Patch RPC hooks once so audit guarantees apply without changing argv transport."""
-    quality.install_runtime_patches()
+    _quality_call(quality.install_runtime_patches)
     if getattr(rpc, "_audit_quality_patched", False):
         return
 
@@ -167,19 +176,24 @@ def _install_audit_quality_patches() -> None:
         result = original_hypothesis(run_dir, request)
         replacement = request.get("_quality_replacement")
         if isinstance(replacement, dict):
-            quality.after_hypothesis(request, result, replacement)
+            _quality_call(quality.after_hypothesis, request, result, replacement)
         return result
 
     def experiment_result(run_dir: Path, request: dict[str, Any]) -> dict[str, Any]:
         result = original_result(run_dir, request)
-        quality.repair_invalid_row_after_dispatch(request, result)
+        _quality_call(quality.repair_invalid_row_after_dispatch, request, result)
         signature = request.get("_quality_signature")
-        quality.after_experiment_result(request, result, signature if isinstance(signature, dict) else None)
+        _quality_call(
+            quality.after_experiment_result,
+            request,
+            result,
+            signature if isinstance(signature, dict) else None,
+        )
         return result
 
     def finish(run_dir: Path, request: dict[str, Any]) -> dict[str, Any]:
         result = original_finish(run_dir, request)
-        quality.enrich_finish_result(request, result)
+        _quality_call(quality.enrich_finish_result, request, result)
         return result
 
     rpc.rpc_hypothesis = hypothesis
