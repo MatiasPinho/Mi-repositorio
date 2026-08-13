@@ -1,0 +1,73 @@
+# Engine QA Report
+
+- Run: `20260813T052216Z-s260813407`
+- Provider: `codex`
+- Seed: `260813407`
+- Experimentos válidos: **100/100**
+- Intentos totales: **105**
+- Inválidos por arnés/transporte: **5**
+- Pasos registrados: **440**
+- Hallazgos confirmados: **3**
+- Invariantes finales: **PASS**
+- Bloqueado: **no**
+
+## Cobertura
+- baseline-6
+- guard-course-6
+- guard-traversal-6
+- guard-absolute-path-6
+- guard-output-6
+- guard-publication-6
+- guard-input-6
+- transport-metaphoric-6
+- assessment-alias-6
+- cli-aliases-6
+- cli-readonly-6
+- academic-mutation-6
+- layout-convergence-6
+- academic-validation-6
+- academic-errors-6
+- assessment-hierarchy-6
+- academic-rules-6
+- academic-readback-6
+- materials-metaphoric-6
+- materials-idempotence-6
+- materials-line-endings-6
+- materials-fingerprints-6
+- materials-unicode-6
+- transcript-metaphoric-6
+- transcript-idempotence-6
+- transcript-unicode-6
+- pdf-transcript-boundary-6
+- concept-normalization-6
+- concept-idempotence-6
+- concept-unit-move-6
+- concept-partition-6
+- concept-relations-6
+- evidence-fingerprints-6
+- evidence-idempotence-6
+- teaching-signals-6
+- misconception-history-6
+- assessment-relevance-6
+- evidence-stale-6
+- mastery-thresholds-6
+- tracker-sequence-6
+- mastery-transitions-6
+- assessment-tracker-6
+- tracker-aliases-6
+- tracker-readonly-6
+- topics-coverage-6
+- topics-progress-6
+- topics-structured-input-6
+- claims-unit-isolation-6
+- claims-idempotence-6
+- claims-resolution-6
+- long-sequence-validation-6
+- pipeline-boundaries-6
+- quiz-boundaries-6
+- harness-recovery-6
+
+## Hallazgos
+- **QA-001 · HIGH** — unicode_equivalent_concept_names_create_duplicate_stable_id (`concept-unicode-canonical-identity`)
+- **QA-002 · MEDIUM** — tracker_progress_name_keys_fail_stable_id_checker (`progress-concept-stable-identity`)
+- **QA-003 · LOW** — equivalent_unit_aliases_rewrite_concept_registry (`concept-unit-alias-idempotence`)
