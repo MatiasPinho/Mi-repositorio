@@ -29,9 +29,22 @@ def _mode(value: Any) -> str:
     return mode
 
 
+def _expected_check_ok(request: dict[str, Any], mode: str) -> bool:
+    if "expected_check_ok" not in request:
+        return True
+    value = request.get("expected_check_ok")
+    if mode != "state":
+        raise EvidenceError("expected_check_ok is only valid with evidence_mode=state")
+    if not isinstance(value, bool):
+        raise EvidenceError("expected_check_ok must be a JSON boolean")
+    return value
+
+
 def validate_hypothesis_request(request: dict[str, Any]) -> str:
-    """Validate and normalize the evidence mode before creating a hypothesis."""
-    return _mode(request.get("evidence_mode"))
+    """Validate and normalize the evidence contract before creating a hypothesis."""
+    mode = _mode(request.get("evidence_mode"))
+    _expected_check_ok(request, mode)
+    return mode
 
 
 def _resolve_run(request: dict[str, Any]) -> Path:
@@ -50,6 +63,9 @@ def annotate_pending_hypothesis(request: dict[str, Any], result: dict[str, Any])
         raise EvidenceError("hypothesis completed without a pending experiment")
     mode = _mode(request.get("evidence_mode"))
     pending["evidence_mode"] = mode
+    if mode == "state":
+        pending["expected_check_ok"] = _expected_check_ok(request, mode)
+        result["expected_check_ok"] = pending["expected_check_ok"]
     manifest["pending_experiment"] = pending
     engine_qa.save_manifest(run_dir, manifest)
     result["evidence_mode"] = mode
@@ -70,17 +86,17 @@ def _journal_since(run_dir: Path, step: int) -> list[dict[str, Any]]:
     return rows
 
 
-def _qualifying_steps(mode: str, rows: list[dict[str, Any]]) -> list[int]:
+def _qualifying_steps(
+    mode: str,
+    rows: list[dict[str, Any]],
+    *,
+    expected_check_ok: bool = True,
+) -> list[int]:
     steps: list[int] = []
     for row in rows:
         kind = str(row.get("kind", ""))
         qualifies = False
         if mode == "engine":
-            # Reaching the process is not enough: the invocation must also match
-            # the expectation declared by the experiment (``rpc-exec.ok``). A
-            # negative-path test still qualifies by setting expect_code to the
-            # intended non-zero code. Unexpected errors/timeouts must be retried
-            # or classified INVALID instead of inflating the valid budget.
             qualifies = (
                 kind == "rpc-exec"
                 and row.get("engine_invoked") is True
@@ -89,7 +105,15 @@ def _qualifying_steps(mode: str, rows: list[dict[str, Any]]) -> list[int]:
         elif mode == "guard":
             qualifies = kind == "rpc-exec-rejected" and row.get("engine_invoked") is False
         elif mode == "state":
-            qualifies = kind in {"mutation", "check", "checkpoint"}
+            # A state hypothesis that performs a check must prove the check had
+            # the declared outcome. This prevents a failed final invariant sweep
+            # from counting VALID merely because a check happened. Mutation-only
+            # or checkpoint-only experiments remain valid state evidence.
+            check_rows = [candidate for candidate in rows if str(candidate.get("kind", "")) == "check"]
+            if check_rows:
+                qualifies = kind == "check" and row.get("ok") is expected_check_ok
+            else:
+                qualifies = kind in {"mutation", "checkpoint"}
         if qualifies:
             steps.append(int(row.get("step", 0) or 0))
     return steps
@@ -107,14 +131,18 @@ def require_valid_evidence(request: dict[str, Any]) -> dict[str, Any] | None:
     mode = _mode(pending.get("evidence_mode"))
     hypothesis_step = int(pending.get("hypothesis_step", 0) or 0)
     rows = _journal_since(run_dir, hypothesis_step)
-    steps = _qualifying_steps(mode, rows)
+    expected_check_ok = bool(pending.get("expected_check_ok", True))
+    steps = _qualifying_steps(mode, rows, expected_check_ok=expected_check_ok)
     if not steps:
         descriptions = {
             "engine": "an engine invocation that matched its declared expectation (rpc-exec with engine_invoked=true and ok=true)",
             "guard": "a guard rejection (rpc-exec-rejected with engine_invoked=false)",
-            "state": "a state operation (mutation/check/checkpoint)",
+            "state": f"a state operation whose check outcome matches expected_check_ok={str(expected_check_ok).lower()}",
         }
         raise EvidenceError(
             f"Cannot mark experiment VALID: evidence_mode={mode} requires {descriptions[mode]} after the hypothesis"
         )
-    return {"evidence_mode": mode, "evidence_steps": steps}
+    result = {"evidence_mode": mode, "evidence_steps": steps}
+    if mode == "state":
+        result["expected_check_ok"] = expected_check_ok
+    return result
