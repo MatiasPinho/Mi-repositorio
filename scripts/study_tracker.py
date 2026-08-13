@@ -38,7 +38,12 @@ def save(course: Path, data: dict) -> None:
 
 
 def key_for(name: str) -> str:
-    return " ".join(name.strip().lower().split())
+    value = unicodedata.normalize("NFC", str(name or "")).casefold()
+    return " ".join(value.strip().split())
+
+
+def display_text(text: str) -> str:
+    return unicodedata.normalize("NFC", str(text or "").strip())
 
 
 def slugify(text: str) -> str:
@@ -47,11 +52,22 @@ def slugify(text: str) -> str:
     return value or "concepto"
 
 
-def ensure(data: dict, concept: str, unit: str = "") -> dict:
-    k = key_for(concept)
+def find_progress_key(data: dict, concept: str) -> str | None:
+    target = key_for(concept)
+    for key, item in data.get("concepts", {}).items():
+        if key_for(key) == target:
+            return key
+        if isinstance(item, dict) and key_for(item.get("name", "")) == target:
+            return key
+    return None
+
+
+def ensure(data: dict, concept: str, unit: str = "", concept_id: str = "") -> dict:
+    canonical_name = display_text(concept)
+    k = find_progress_key(data, canonical_name) or key_for(canonical_name)
     if k not in data["concepts"]:
         data["concepts"][k] = {
-            "name": concept.strip(),
+            "name": canonical_name,
             "unit": unit.strip(),
             "mastery": 0.0,
             "attempts": 0,
@@ -63,9 +79,14 @@ def ensure(data: dict, concept: str, unit: str = "") -> dict:
             "next_review": date.today().isoformat(),
             "notes": [],
         }
-    elif unit and not data["concepts"][k].get("unit"):
-        data["concepts"][k]["unit"] = unit.strip()
-    return data["concepts"][k]
+    item = data["concepts"][k]
+    if not item.get("name"):
+        item["name"] = canonical_name
+    if unit and not item.get("unit"):
+        item["unit"] = unit.strip()
+    if concept_id:
+        item["id"] = str(concept_id).strip()
+    return item
 
 
 def knowledge(course: Path) -> dict:
@@ -77,10 +98,10 @@ def knowledge(course: Path) -> dict:
 
 def graph_item(graph: dict, concept_name: str) -> dict | None:
     key = key_for(concept_name)
-    if key in graph.get("concepts", {}):
-        return graph["concepts"][key]
-    for item in graph.get("concepts", {}).values():
-        if key_for(item.get("name", "")) == key:
+    for graph_key, item in graph.get("concepts", {}).items():
+        if not isinstance(item, dict):
+            continue
+        if key_for(graph_key) == key or key_for(item.get("name", "")) == key:
             return item
     return None
 
@@ -115,7 +136,6 @@ def recurring_error_score(item: dict | None) -> tuple[float, list[str]]:
     return min(4.0, total * 0.75), names
 
 
-
 def teaching_signal_score(item: dict | None, assessment_id: str | None = None) -> tuple[float, list[str]]:
     """Soft pedagogical signal from class transcripts; never equals confirmed exam scope."""
     if not item:
@@ -136,7 +156,6 @@ def teaching_signal_score(item: dict | None, assessment_id: str | None = None) -
             score += 0.4 * weight
             labels.append(typ)
     return min(1.5, score), sorted(set(labels))
-
 
 
 def academic_state(course: Path) -> dict:
@@ -171,7 +190,6 @@ def scope_relevance(course: Path, item: dict | None, assessment_id: str | None, 
     if not item or not assessment_id:
         return "unknown"
 
-    # Explicit concept-level evidence wins.
     raw = item.get("assessment_relevance", {})
     if isinstance(raw, dict):
         mapping = raw.get("by_assessment", {})
@@ -181,7 +199,6 @@ def scope_relevance(course: Path, item: dict | None, assessment_id: str | None, 
             if key_for(key) == target or rec_id == target:
                 return rec.get("status", "unknown") if isinstance(rec, dict) else "unknown"
 
-    # Otherwise infer from the structured unit scope, if the concept has a matching unit.
     if not assessment:
         return "unknown"
     concept_unit = key_for(item.get("unit", ""))
@@ -202,7 +219,10 @@ def scope_relevance(course: Path, item: dict | None, assessment_id: str | None, 
 def add(args):
     course = Path(args.course)
     data = load(course)
-    item = ensure(data, args.concept, args.unit or "")
+    graph = knowledge(course)
+    g = graph_item(graph, args.concept)
+    unit = args.unit or (g.get("unit", "") if g else "")
+    item = ensure(data, args.concept, unit, str(g.get("id", "")) if g else "")
     save(course, data)
     print(json.dumps(item, ensure_ascii=False, indent=2))
 
@@ -214,13 +234,13 @@ def sync_graph(args):
     added = []
     updated_units = []
     for concept in graph.get("concepts", {}).values():
-        name = concept.get("name", "").strip()
+        name = display_text(concept.get("name", ""))
         if not name:
             continue
-        key = key_for(name)
-        existed = key in data["concepts"]
-        before_unit = data["concepts"].get(key, {}).get("unit", "") if existed else ""
-        item = ensure(data, name, concept.get("unit", ""))
+        existing_key = find_progress_key(data, name)
+        existed = existing_key is not None
+        before_unit = data["concepts"].get(existing_key, {}).get("unit", "") if existing_key else ""
+        item = ensure(data, name, concept.get("unit", ""), str(concept.get("id", "")))
         if not existed:
             added.append(name)
         elif not before_unit and item.get("unit"):
@@ -235,11 +255,12 @@ def record_graph_error(course: Path, concept: str, error: str) -> None:
     graph = knowledge(course)
     graph.setdefault("version", 2)
     graph.setdefault("concepts", {})
-    k = key_for(concept)
+    canonical_name = display_text(concept)
+    k = key_for(canonical_name)
     if k not in graph["concepts"]:
         graph["concepts"][k] = {
-            "id": slugify(concept),
-            "name": concept.strip(),
+            "id": slugify(canonical_name),
+            "name": canonical_name,
             "unit": "",
             "summary": "",
             "precise_definition": "",
@@ -264,7 +285,7 @@ def record_graph_error(course: Path, concept: str, error: str) -> None:
         found["last_seen"] = date.today().isoformat()
     else:
         item["recurring_errors"].append(
-            {"text": error.strip(), "count": 1, "last_seen": date.today().isoformat()}
+            {"text": display_text(error), "count": 1, "last_seen": date.today().isoformat()}
         )
     item["last_updated"] = date.today().isoformat()
     try:
@@ -278,7 +299,10 @@ def record(args):
         raise SystemExit("--rating must be between 0 and 5")
     course = Path(args.course)
     data = load(course)
-    item = ensure(data, args.concept, args.unit or "")
+    graph = knowledge(course)
+    g = graph_item(graph, args.concept)
+    unit = args.unit or (g.get("unit", "") if g else "")
+    item = ensure(data, args.concept, unit, str(g.get("id", "")) if g else "")
     q = args.rating
     item["attempts"] += 1
     item["last_rating"] = q
@@ -335,11 +359,6 @@ def due(args):
         nr = item.get("next_review")
         g = graph_item(graph, item["name"])
         relevance = scope_relevance(course, g, assessment_id, assessment)
-        # A registered assessment is an explicit scope filter, not merely a
-        # priority hint. Only confirmed/likely concepts may surface. This keeps
-        # overdue or generally-due concepts from leaking across exam boundaries.
-        # Legacy ad-hoc concept relevance remains supported when no assessment
-        # record exists in academic.json.
         if assessment is not None and relevance not in {"confirmed", "likely"}:
             continue
         try:
@@ -402,7 +421,7 @@ def due(args):
             if g:
                 enriched["prerequisites"] = g.get("prerequisites", [])
             items.append(enriched)
-    items.sort(key=lambda x: (-x["study_priority"], x["name"].lower()))
+    items.sort(key=lambda x: (-x["study_priority"], key_for(x["name"])))
     print(json.dumps(items, ensure_ascii=False, indent=2))
 
 
@@ -411,7 +430,7 @@ def status(args):
     data = load(course)
     graph = knowledge(course)
     items = list(data["concepts"].values())
-    items.sort(key=lambda x: (x.get("mastery", 0), x["name"].lower()))
+    items.sort(key=lambda x: (x.get("mastery", 0), key_for(x["name"])))
     if not items:
         print("No concepts tracked yet.")
         return
