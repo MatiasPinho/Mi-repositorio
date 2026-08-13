@@ -106,7 +106,7 @@ Invoke-EngineQA @{
 
 Para un sweep final o una hipótesis que espera un workspace sano, omití `expected_check_ok` o usá `$true`. Un `check ok=false` inesperado **no puede** sumar como `VALID`; confirmalo como finding o clasificá el intento `INVALID` y restaurá el estado según corresponda.
 
-Sólo puede existir una hipótesis pendiente. `VALID` será rechazado mecánicamente si no existe evidencia del tipo y resultado declarados después de la hipótesis.
+Sólo puede existir una hipótesis pendiente. `VALID` será rechazado mecánicamente si no existe evidencia del tipo y resultado declarados después de la hipótesis. Además, **la misma evidencia mecánica sobre el mismo estado del workspace no puede contabilizarse dos veces**: repetir el mismo probe sin cambiar estado ni operación no sirve para rellenar presupuesto.
 
 ### 2. Ejecutar el motor con tokens estructurados
 
@@ -132,6 +132,8 @@ args=@('status','--run','pipeline-run-id')
 Se conservan `@course`, `@slug`, `@run`, `@root` y sus formas `@course/...`, `@run/...`, `@root/...`. El guard rechaza `..`, cursos ajenos y rutas absolutas fuera del sandbox/run/outbox antes de lanzar el proceso.
 
 La respuesta de `exec` incluye `engine_invoked` y `ok`. En `evidence_mode='engine'`, sólo `engine_invoked=true` **y** `ok=true` puede terminar como `VALID`. Un retorno no-cero esperado sigue siendo `ok=true` si `expect_code` lo declara correctamente. En `evidence_mode='guard'`, en cambio, un rechazo del guard es precisamente la evidencia esperada.
+
+Nota de contrato: en `render_study.py`, `--course` es **texto visible del encabezado**, no una ruta hacia la materia. La entrada/salida siguen confinadas por sus paths, pero una etiqueta como `--course 'Sistemas Operativos'` es válida.
 
 ### 3. Mutaciones adversariales
 
@@ -167,13 +169,27 @@ Invoke-EngineQA @{ command='experiment-result'; qa_run='latest'; status='valid';
 Si el arnés/transport impidió ejecutar la prueba pretendida o la evidencia esperada no pudo producirse:
 
 ```powershell
-Invoke-EngineQA @{
+$invalid = Invoke-EngineQA @{
   command='experiment-result'; qa_run='latest'; status='invalid';
   reason='la prueba no llegó al motor por ...'
 }
 ```
 
-Un `INVALID` incrementa intentos/ruido pero **no consume el presupuesto**. Reemplazalo con otra hipótesis hasta alcanzar N experimentos válidos. Un retorno no-cero esperado del motor puede seguir siendo `VALID`; lo decisivo es que exista la evidencia mecánica correcta para la hipótesis declarada.
+Un `INVALID` incrementa intentos/ruido pero **no consume el presupuesto**. Su respuesta incluye `replacement_required.attempt` y la **siguiente hipótesis debe enlazar explícitamente ese intento**:
+- `replacement_kind='retry'` cuando corregís la invocación y volvés a probar el mismo `invariant` + `category`;
+- `replacement_kind='distinct'` cuando reemplazás la prueba por una hipótesis genuinamente diferente.
+
+Ejemplo de retry:
+
+```powershell
+Invoke-EngineQA @{
+  command='hypothesis'; qa_run='latest'; invariant='<mismo-invariant>';
+  category='<misma-categoria>'; text='<hipotesis corregida>'; evidence_mode='engine';
+  replaces_attempt=[int]$invalid.replacement_required.attempt; replacement_kind='retry'
+}
+```
+
+No saltees ese enlace y **no reemplaces INVALIDs con probes read-only genéricos o repetidos sólo para completar N/N**. Si el intento original falló por un selector/slug equivocado, corregí ese selector y reintentá la hipótesis. Si la prueba dejó de tener sentido, usá `distinct` con una prueba realmente diferente. Un retorno no-cero esperado del motor puede seguir siendo `VALID`; lo decisivo es que exista la evidencia mecánica correcta para la hipótesis declarada.
 
 ## Qué atacar
 
@@ -234,12 +250,15 @@ Invoke-EngineQA @{ command='finish'; qa_run='latest'; export=$true }
 ```
 
 El reporte distingue:
-- `valid_experiments`;
-- `attempted_experiments`;
-- `invalid_experiments`;
+- `valid_experiments`, `attempted_experiments` e `invalid_experiments`;
+- `valid_by_category` y `attempted_by_category`;
+- `invalid_rows` y `replacement_rows`;
+- cantidad de evidencias mecánicas únicas;
 - findings e invariantes finales.
 
-Así `100/100` significa cien hipótesis cerradas con **evidencia mecánica compatible con el modo y resultado declarados**, aunque hayan sido necesarios intentos adicionales por ruido del arnés.
+El `replay.json` exportado conserva **todo el journal**, compactando stdout/stderr grandes y guardando su SHA-256 y cantidad de caracteres. No se limita a los últimos eventos, por lo que los INVALID y sus reemplazos quedan auditables desde el reporte publicado.
+
+Así `100/100` significa cien hipótesis cerradas con **evidencia mecánica compatible, única para ese estado y resultado declarado**, y cualquier ruido del arnés queda preservado y enlazado en la evidencia de campaña.
 
 ## Publicación del reporte
 
@@ -259,7 +278,7 @@ Nunca incluyas `materias/`, `.study/` ni cambios del engine. Si no hay findings,
 Informá sólo:
 - experimentos **válidos / presupuesto**;
 - intentos inválidos si existieron;
-- categorías cubiertas;
+- categorías cubiertas y distribución válida por categoría;
 - cantidad/severidad de findings;
 - draft PR si se publicó;
 - cualquier bloqueo real del harness.
