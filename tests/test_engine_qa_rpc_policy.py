@@ -270,6 +270,51 @@ class EngineQaRpcPolicyTests(unittest.TestCase):
             self.assertEqual(done["attempted_experiments"], 3)
             self.assertEqual(done["invalid_experiments"], 1)
 
+    def test_render_study_course_option_is_display_text(self):
+        with tempfile.TemporaryDirectory() as td:
+            env, qa_root, _sandbox_root = self.make_env(td)
+            self.start(env, qa_root, budget=1)
+            self.assertTrue(self.hypothesis(env, qa_root, "engine", invariant="render-course-label", category="publication")["ok"])
+            cp, created = self.invoke(
+                env,
+                qa_root,
+                {
+                    "version": 2,
+                    "command": "mutate",
+                    "qa_run": "latest",
+                    "op": "write",
+                    "path": "unidades/unidad-1/resumenes/_source/audit.md",
+                    "text": "# Estados de un proceso\n\nContenido QA.\n",
+                },
+            )
+            self.assertEqual(cp.returncode, 0, created)
+            self.assertTrue(created["ok"], created)
+            cp, rendered = self.invoke(
+                env,
+                qa_root,
+                {
+                    "version": 2,
+                    "command": "exec",
+                    "qa_run": "latest",
+                    "script": "render_study.py",
+                    "args": [
+                        "@course/unidades/unidad-1/resumenes/_source/audit.md",
+                        "@course/unidades/unidad-1/resumenes/audit.html",
+                        "--kind",
+                        "summary",
+                        "--course",
+                        "Sistemas Operativos QA",
+                        "--scope",
+                        "Unidad 1",
+                    ],
+                    "expect_code": 0,
+                },
+            )
+            self.assertEqual(cp.returncode, 0, rendered)
+            self.assertTrue(rendered["engine_invoked"], rendered)
+            self.assertTrue(rendered["ok"], rendered)
+            self.assertTrue(self.complete(env, qa_root, "valid")["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()
