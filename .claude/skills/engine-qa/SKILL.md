@@ -21,7 +21,7 @@ Leé primero:
 
 Durante un Engine QA run **no edites el checkout real**. Esto incluye `study.py`, `core/`, `rules/`, `pipelines/`, `contracts/`, `vendor/`, `scripts/`, `study_mcp/`, `config/`, `actions/`, `assets/`, `design/`, `skills-src/`, `.claude/skills/`, `.agents/skills/`, `tests/`, `docs/` y `.github/`.
 
-La entrada canónica para Claude/Codex es `scripts/engine_qa_rpc_entry.py`. Esta entrada usa `engine_qa_rpc.py` para el despacho estructurado y `engine_qa_safe.py` para crear el sandbox congelado, confinar rutas y vigilar el checkout real. Nunca invoques `scripts/engine_qa.py` directamente ni uses el CLI posicional de `engine_qa_safe.py` durante una corrida normal.
+La entrada canónica para Claude/Codex es `scripts/engine_qa_rpc_entry.py`. Esta entrada usa `engine_qa_rpc.py` para el despacho estructurado y `engine_qa_safe.py` para crear el sandbox congelado, confinar rutas y vigilar el checkout real. Nunca invoques `scripts/engine_qa.py` directamente, nunca ejecutes `scripts/engine_qa_rpc.py` como CLI y no uses el CLI posicional de `engine_qa_safe.py` durante una corrida normal.
 
 Un hallazgo se arregla después, en un PR distinto.
 
@@ -54,7 +54,7 @@ function Invoke-EngineQA([hashtable]$Body) {
 
 En otros shells hacé lo equivalente con un serializador JSON real y archivos UTF-8. **No construyas JSON a mano ni reconstruyas arrays como strings.**
 
-El exit code del entrypoint informa salud del transporte: `0` significa que la petición fue parseada y produjo una respuesta estructurada, incluso cuando `response.ok=false`; `2` significa fallo real del protocolo/transporte.
+El exit code del entrypoint informa salud del transporte: `0` significa que la petición fue parseada y produjo una respuesta estructurada, incluso cuando `response.ok=false`; `2` significa fallo real del protocolo/transporte. Tanto el request como el response se validan dentro del QA root **antes** de ejecutar una operación stateful.
 
 ## Inicio
 
@@ -69,16 +69,41 @@ Si el usuario no indicó cantidad, usá **25 experimentos válidos**. Variá el 
 
 ## Ciclo obligatorio por experimento
 
-### 1. Abrir hipótesis
+### 1. Abrir hipótesis y declarar qué evidencia la valida
+
+Toda hipótesis declara `evidence_mode`:
+- `engine` — modo por defecto; exige que una herramienta llegue al motor (`engine_invoked=true`);
+- `guard` — para probar deliberadamente el confinamiento; exige un rechazo pre-engine del guard;
+- `state` — para invariantes de workspace/checker; exige `mutation`, `check` o `checkpoint`.
+
+Ejemplo normal:
 
 ```powershell
 Invoke-EngineQA @{
   command='hypothesis'; qa_run='latest'; invariant='<id>';
-  category='<categoria>'; text='<hipotesis>'
+  category='<categoria>'; text='<hipotesis>'; evidence_mode='engine'
 }
 ```
 
-Sólo puede existir una hipótesis pendiente.
+Ejemplo de guard:
+
+```powershell
+Invoke-EngineQA @{
+  command='hypothesis'; qa_run='latest'; invariant='path-confinement';
+  category='guard'; text='una salida fuera del sandbox debe rechazarse'; evidence_mode='guard'
+}
+```
+
+Ejemplo de estado/checker:
+
+```powershell
+Invoke-EngineQA @{
+  command='hypothesis'; qa_run='latest'; invariant='course-json-valid';
+  category='fault-injection'; text='un JSON corrupto debe aparecer en check'; evidence_mode='state'
+}
+```
+
+Sólo puede existir una hipótesis pendiente. `VALID` será rechazado mecánicamente si no existe evidencia del tipo declarado después de la hipótesis.
 
 ### 2. Ejecutar el motor con tokens estructurados
 
@@ -103,7 +128,7 @@ args=@('status','--run','pipeline-run-id')
 
 Se conservan `@course`, `@slug`, `@run`, `@root` y sus formas `@course/...`, `@run/...`, `@root/...`. El guard rechaza `..`, cursos ajenos y rutas absolutas fuera del sandbox/run/outbox antes de lanzar el proceso.
 
-La respuesta de `exec` incluye `engine_invoked`. Si `engine_invoked=false` por un problema inesperado del arnés/transporte, ese intento **no debe contarse como experimento válido** salvo que la propia hipótesis esté probando el guard.
+La respuesta de `exec` incluye `engine_invoked`. En `evidence_mode='engine'`, un `engine_invoked=false` **no puede** terminar como `VALID`. En `evidence_mode='guard'`, en cambio, un rechazo del guard es precisamente la evidencia esperada.
 
 ### 3. Mutaciones adversariales
 
@@ -130,13 +155,13 @@ Nunca uses materias reales como fixture QA.
 
 ### 5. Cerrar el experimento como VALID o INVALID
 
-Si la hipótesis realmente llegó al motor o probó deliberadamente un guard y produjo evidencia útil:
+Si la hipótesis produjo evidencia que coincide con su `evidence_mode`:
 
 ```powershell
 Invoke-EngineQA @{ command='experiment-result'; qa_run='latest'; status='valid'; notes='...' }
 ```
 
-Si el arnés/transport impidió ejecutar la prueba pretendida:
+Si el arnés/transport impidió ejecutar la prueba pretendida o la evidencia esperada no pudo producirse:
 
 ```powershell
 Invoke-EngineQA @{
@@ -145,7 +170,7 @@ Invoke-EngineQA @{
 }
 ```
 
-Un `INVALID` incrementa intentos/ruido pero **no consume el presupuesto**. Reemplazalo con otra hipótesis hasta alcanzar N experimentos válidos. Un retorno no-cero esperado del motor puede seguir siendo `VALID`; lo decisivo es si se probó la hipótesis correcta.
+Un `INVALID` incrementa intentos/ruido pero **no consume el presupuesto**. Reemplazalo con otra hipótesis hasta alcanzar N experimentos válidos. Un retorno no-cero esperado del motor puede seguir siendo `VALID`; lo decisivo es que exista la evidencia mecánica correcta para la hipótesis declarada.
 
 ## Qué atacar
 
@@ -211,7 +236,7 @@ El reporte distingue:
 - `invalid_experiments`;
 - findings e invariantes finales.
 
-Así `100/100` significa cien pruebas válidas, aunque hayan sido necesarios intentos adicionales por ruido del arnés.
+Así `100/100` significa cien hipótesis cerradas con **evidencia mecánica compatible con el modo declarado**, aunque hayan sido necesarios intentos adicionales por ruido del arnés.
 
 ## Publicación del reporte
 
