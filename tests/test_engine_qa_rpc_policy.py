@@ -56,23 +56,35 @@ class EngineQaRpcPolicyTests(unittest.TestCase):
         self.assertTrue(payload["ok"], payload)
         return payload
 
-    def hypothesis(self, env: dict[str, str], qa_root: Path, mode: str = "engine") -> dict:
-        cp, payload = self.invoke(
-            env,
-            qa_root,
-            {
-                "version": 2,
-                "command": "hypothesis",
-                "qa_run": "latest",
-                "invariant": f"evidence-{mode}",
-                "category": f"evidence-{mode}",
-                "text": f"exercise {mode} evidence",
-                "evidence_mode": mode,
-            },
-        )
+    def hypothesis(
+        self,
+        env: dict[str, str],
+        qa_root: Path,
+        mode: str = "engine",
+        *,
+        invariant: str | None = None,
+        category: str | None = None,
+        text: str | None = None,
+        replaces_attempt: int | None = None,
+        replacement_kind: str | None = None,
+    ) -> dict:
+        request = {
+            "version": 2,
+            "command": "hypothesis",
+            "qa_run": "latest",
+            "invariant": invariant or f"evidence-{mode}",
+            "category": category or f"evidence-{mode}",
+            "text": text or f"exercise {mode} evidence",
+            "evidence_mode": mode,
+        }
+        if replaces_attempt is not None:
+            request["replaces_attempt"] = replaces_attempt
+        if replacement_kind is not None:
+            request["replacement_kind"] = replacement_kind
+        cp, payload = self.invoke(env, qa_root, request)
         self.assertEqual(cp.returncode, 0, payload)
-        self.assertTrue(payload["ok"], payload)
-        self.assertEqual(payload["evidence_mode"], mode)
+        if payload.get("ok"):
+            self.assertEqual(payload["evidence_mode"], mode)
         return payload
 
     def complete(self, env: dict[str, str], qa_root: Path, status: str, reason: str = "") -> dict:
@@ -114,9 +126,7 @@ class EngineQaRpcPolicyTests(unittest.TestCase):
             env, qa_root, _sandbox_root = self.make_env(td)
             self.start(env, qa_root, budget=3)
 
-            # ENGINE: a generic check is real work, but it is not evidence that an
-            # intended engine invocation reached the engine.
-            self.hypothesis(env, qa_root, "engine")
+            self.assertTrue(self.hypothesis(env, qa_root, "engine")["ok"])
             cp, checked = self.invoke(env, qa_root, {"version": 2, "command": "check", "qa_run": "latest"})
             self.assertEqual(cp.returncode, 0, checked)
             rejected_valid = self.complete(env, qa_root, "valid")
@@ -127,9 +137,20 @@ class EngineQaRpcPolicyTests(unittest.TestCase):
             self.assertTrue(invalid["ok"], invalid)
             self.assertEqual(invalid["valid_experiments"], 0)
             self.assertEqual(invalid["invalid_experiments"], 1)
+            invalid_attempt = int(invalid["attempt"])
+            self.assertEqual(invalid["replacement_required"]["attempt"], invalid_attempt)
 
-            # GUARD: a pre-engine rejection is exactly the expected evidence.
-            self.hypothesis(env, qa_root, "guard")
+            guard_hyp = self.hypothesis(
+                env,
+                qa_root,
+                "guard",
+                invariant="guard-after-invalid",
+                category="guard-after-invalid",
+                text="distinct guard probe replaces invalid engine attempt",
+                replaces_attempt=invalid_attempt,
+                replacement_kind="distinct",
+            )
+            self.assertTrue(guard_hyp["ok"], guard_hyp)
             cp, guard = self.invoke(
                 env,
                 qa_root,
@@ -149,9 +170,7 @@ class EngineQaRpcPolicyTests(unittest.TestCase):
             self.assertTrue(guard_done["ok"], guard_done)
             self.assertEqual(guard_done["valid_experiments"], 1)
 
-            # STATE: invariant/checker experiments can be valid without spawning a
-            # target engine script, but they must produce state/check evidence.
-            self.hypothesis(env, qa_root, "state")
+            self.assertTrue(self.hypothesis(env, qa_root, "state")["ok"])
             cp, state_check = self.invoke(env, qa_root, {"version": 2, "command": "check", "qa_run": "latest"})
             self.assertEqual(cp.returncode, 0, state_check)
             self.assertTrue(state_check["ok"], state_check)
@@ -159,8 +178,7 @@ class EngineQaRpcPolicyTests(unittest.TestCase):
             self.assertTrue(state_done["ok"], state_done)
             self.assertEqual(state_done["valid_experiments"], 2)
 
-            # ENGINE: actual invocation satisfies the default/declared contract.
-            self.hypothesis(env, qa_root, "engine")
+            self.assertTrue(self.hypothesis(env, qa_root, "engine", invariant="engine-final", category="engine-final")["ok"])
             cp, engine = self.invoke(
                 env,
                 qa_root,
@@ -191,6 +209,66 @@ class EngineQaRpcPolicyTests(unittest.TestCase):
             self.assertEqual(finished["valid_experiments"], 3)
             self.assertEqual(finished["attempted_experiments"], 4)
             self.assertEqual(finished["invalid_experiments"], 1)
+            self.assertTrue(finished["journal_complete"])
+            self.assertEqual(finished["invalid_rows"][0]["attempt"], invalid_attempt)
+
+    def test_duplicate_evidence_on_same_state_is_not_counted_twice(self):
+        with tempfile.TemporaryDirectory() as td:
+            env, qa_root, _sandbox_root = self.make_env(td)
+            self.start(env, qa_root, budget=2)
+
+            self.assertTrue(self.hypothesis(env, qa_root, "engine", invariant="first", category="first")["ok"])
+            cp, first = self.invoke(
+                env,
+                qa_root,
+                {"version": 2, "command": "exec", "qa_run": "latest", "script": "academic_context.py", "args": ["show", "--course", "@course"], "expect_code": 0},
+            )
+            self.assertEqual(cp.returncode, 0, first)
+            self.assertTrue(first["ok"], first)
+            self.assertTrue(self.complete(env, qa_root, "valid")["ok"])
+
+            self.assertTrue(self.hypothesis(env, qa_root, "engine", invariant="duplicate", category="duplicate")["ok"])
+            cp, duplicate = self.invoke(
+                env,
+                qa_root,
+                {"version": 2, "command": "exec", "qa_run": "latest", "script": "academic_context.py", "args": ["show", "--course", "@course"], "expect_code": 0},
+            )
+            self.assertEqual(cp.returncode, 0, duplicate)
+            self.assertTrue(duplicate["ok"], duplicate)
+            rejected = self.complete(env, qa_root, "valid")
+            self.assertFalse(rejected["ok"], rejected)
+            self.assertIn("identical mechanical evidence", rejected["error"])
+            invalid = self.complete(env, qa_root, "invalid", "duplicate evidence rejected")
+            self.assertTrue(invalid["ok"], invalid)
+            attempt = int(invalid["attempt"])
+
+            unlinked = self.hypothesis(env, qa_root, "engine", invariant="unlinked", category="unlinked")
+            self.assertFalse(unlinked["ok"], unlinked)
+            self.assertIn("replaces_attempt", unlinked["error"])
+
+            replacement = self.hypothesis(
+                env,
+                qa_root,
+                "engine",
+                invariant="replacement",
+                category="replacement",
+                text="different validation replaces duplicate evidence",
+                replaces_attempt=attempt,
+                replacement_kind="distinct",
+            )
+            self.assertTrue(replacement["ok"], replacement)
+            cp, validate = self.invoke(
+                env,
+                qa_root,
+                {"version": 2, "command": "exec", "qa_run": "latest", "script": "academic_context.py", "args": ["validate", "--course", "@course"], "expect_code": 0},
+            )
+            self.assertEqual(cp.returncode, 0, validate)
+            self.assertTrue(validate["ok"], validate)
+            done = self.complete(env, qa_root, "valid")
+            self.assertTrue(done["ok"], done)
+            self.assertEqual(done["valid_experiments"], 2)
+            self.assertEqual(done["attempted_experiments"], 3)
+            self.assertEqual(done["invalid_experiments"], 1)
 
 
 if __name__ == "__main__":
