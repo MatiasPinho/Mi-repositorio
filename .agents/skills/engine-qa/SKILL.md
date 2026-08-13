@@ -72,9 +72,9 @@ Si el usuario no indicó cantidad, usá **25 experimentos válidos**. Variá el 
 ### 1. Abrir hipótesis y declarar qué evidencia la valida
 
 Toda hipótesis declara `evidence_mode`:
-- `engine` — modo por defecto; exige que una herramienta llegue al motor (`engine_invoked=true`);
+- `engine` — modo por defecto; exige una invocación real con `engine_invoked=true` **y `ok=true`**, es decir, el retorno debe coincidir con `expect_code`;
 - `guard` — para probar deliberadamente el confinamiento; exige un rechazo pre-engine del guard;
-- `state` — para invariantes de workspace/checker; exige `mutation`, `check` o `checkpoint`.
+- `state` — para invariantes de workspace/checker; si se ejecuta `check`, su `ok` debe coincidir con `expected_check_ok` (por defecto `true`). Una hipótesis state sin `check` puede justificarse por `mutation` o `checkpoint`.
 
 Ejemplo normal:
 
@@ -94,16 +94,19 @@ Invoke-EngineQA @{
 }
 ```
 
-Ejemplo de estado/checker:
+Ejemplo de estado/checker donde se espera detectar corrupción:
 
 ```powershell
 Invoke-EngineQA @{
   command='hypothesis'; qa_run='latest'; invariant='course-json-valid';
-  category='fault-injection'; text='un JSON corrupto debe aparecer en check'; evidence_mode='state'
+  category='fault-injection'; text='un JSON corrupto debe aparecer en check';
+  evidence_mode='state'; expected_check_ok=$false
 }
 ```
 
-Sólo puede existir una hipótesis pendiente. `VALID` será rechazado mecánicamente si no existe evidencia del tipo declarado después de la hipótesis.
+Para un sweep final o una hipótesis que espera un workspace sano, omití `expected_check_ok` o usá `$true`. Un `check ok=false` inesperado **no puede** sumar como `VALID`; confirmalo como finding o clasificá el intento `INVALID` y restaurá el estado según corresponda.
+
+Sólo puede existir una hipótesis pendiente. `VALID` será rechazado mecánicamente si no existe evidencia del tipo y resultado declarados después de la hipótesis.
 
 ### 2. Ejecutar el motor con tokens estructurados
 
@@ -128,7 +131,7 @@ args=@('status','--run','pipeline-run-id')
 
 Se conservan `@course`, `@slug`, `@run`, `@root` y sus formas `@course/...`, `@run/...`, `@root/...`. El guard rechaza `..`, cursos ajenos y rutas absolutas fuera del sandbox/run/outbox antes de lanzar el proceso.
 
-La respuesta de `exec` incluye `engine_invoked`. En `evidence_mode='engine'`, un `engine_invoked=false` **no puede** terminar como `VALID`. En `evidence_mode='guard'`, en cambio, un rechazo del guard es precisamente la evidencia esperada.
+La respuesta de `exec` incluye `engine_invoked` y `ok`. En `evidence_mode='engine'`, sólo `engine_invoked=true` **y** `ok=true` puede terminar como `VALID`. Un retorno no-cero esperado sigue siendo `ok=true` si `expect_code` lo declara correctamente. En `evidence_mode='guard'`, en cambio, un rechazo del guard es precisamente la evidencia esperada.
 
 ### 3. Mutaciones adversariales
 
@@ -155,7 +158,7 @@ Nunca uses materias reales como fixture QA.
 
 ### 5. Cerrar el experimento como VALID o INVALID
 
-Si la hipótesis produjo evidencia que coincide con su `evidence_mode`:
+Si la hipótesis produjo evidencia que coincide con su `evidence_mode` y con el resultado declarado:
 
 ```powershell
 Invoke-EngineQA @{ command='experiment-result'; qa_run='latest'; status='valid'; notes='...' }
@@ -236,7 +239,7 @@ El reporte distingue:
 - `invalid_experiments`;
 - findings e invariantes finales.
 
-Así `100/100` significa cien hipótesis cerradas con **evidencia mecánica compatible con el modo declarado**, aunque hayan sido necesarios intentos adicionales por ruido del arnés.
+Así `100/100` significa cien hipótesis cerradas con **evidencia mecánica compatible con el modo y resultado declarados**, aunque hayan sido necesarios intentos adicionales por ruido del arnés.
 
 ## Publicación del reporte
 
