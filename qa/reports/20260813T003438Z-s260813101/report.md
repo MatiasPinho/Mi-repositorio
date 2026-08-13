@@ -1,0 +1,117 @@
+# Engine QA Report
+
+- Run: `20260813T003438Z-s260813101`
+- Provider: `codex`
+- Seed: `260813101`
+- Experimentos válidos: **100/100**
+- Intentos totales: **100**
+- Inválidos por arnés/transporte: **0**
+- Pasos registrados: **450**
+- Hallazgos confirmados: **1**
+- Invariantes finales: **PASS**
+- Bloqueado: **no**
+
+## Cobertura
+- materials-readonly-course-4
+- materials-readonly-u1-4
+- materials-readonly-u2-4
+- materials-readonly-u3-4
+- academic-context-readonly-4
+- academic-validation-clean-4
+- transcript-file-resolution-4
+- transcript-unit-discovery-4
+- transcript-empty-unit-4
+- figure-preflight-4
+- figure-scan-course-4
+- figure-verify-empty-4
+- artifact-status-empty-4
+- topic-empty-u1-4
+- topic-empty-u2-4
+- material-first-write-4
+- material-idempotence-regression-4
+- material-unicode-fingerprint-4
+- material-unicode-idempotence-4
+- material-whitespace-fingerprint-4
+- material-whitespace-idempotence-4
+- transcript-first-write-4
+- transcript-idempotence-4
+- transcript-unicode-cue-4
+- transcript-unicode-idempotence-4
+- material-transcript-reconcile-4
+- material-transcript-idempotence-4
+- material-u1-postmutation-4
+- material-u2-postmutation-4
+- pdf-scan-postmutation-4
+- concept-upsert-u1-4
+- concept-upsert-u2-4
+- concept-upsert-u3-4
+- concept-course-view-4
+- concept-upsert-idempotence-u1-4
+- concept-upsert-idempotence-u2-4
+- concept-upsert-idempotence-u3-4
+- concept-self-link-4
+- concept-self-link-idempotence-4
+- concept-cross-unit-dependency-4
+- concept-cross-unit-reverse-4
+- concept-cross-unit-idempotence-4
+- concept-relation-validation-4
+- concept-source-u1-4
+- concept-source-u1-idempotence-4
+- concept-source-stale-detection-4
+- concept-source-refresh-4
+- concept-source-fresh-after-refresh-4
+- concept-source-u2-4
+- concept-source-u3-4
+- teaching-signal-u1-4
+- teaching-signal-idempotence-4
+- assessment-relevance-confirmed-4
+- assessment-relevance-likely-4
+- assessment-relevance-excluded-4
+- concept-gaps-high-threshold-4
+- concept-filter-readonly-4
+- tracker-first-sync-4
+- tracker-sync-idempotence-4
+- tracker-rating-high-4
+- tracker-rating-low-4
+- tracker-rating-mid-4
+- tracker-due-current-4
+- tracker-due-future-4
+- tracker-assessment-id-4
+- tracker-assessment-name-4
+- tracker-unit-u1-4
+- tracker-unit-u2-4
+- tracker-status-readonly-4
+- tracker-invalid-date-4
+- tracker-unknown-concept-4
+- tracker-invalid-rating-4
+- tracker-postrecord-sync-4
+- tracker-assessment-scope-regression-4
+- topic-reconcile-u1-4
+- topic-reconcile-u2-4
+- topic-reconcile-u3-4
+- topic-reconcile-idempotence-4
+- topic-validate-u1-4
+- topic-validate-u2-4
+- topic-validate-u3-4
+- topic-progress-u1-4
+- topic-progress-u2-4
+- topic-progress-u3-4
+- topic-unknown-unit-4
+- topic-unit-name-alias-4
+- topic-order-convergence-4
+- claim-scan-u1-readonly-4
+- claim-scan-u1-write-4
+- claim-scan-u1-idempotence-4
+- claim-scan-u2-write-4
+- semantic-claims-readonly-4
+- semantic-claims-write-4
+- semantic-claims-idempotence-4
+- academic-scope-id-4
+- academic-scope-name-4
+- academic-scope-unknown-4
+- academic-duplicate-id-4
+- transport-json-token-4
+- pipeline-unit-boundary-4
+
+## Hallazgos
+- **QA-001 · HIGH** — excluded_assessment_concept_leaks_into_due_results (`assessment-unit-scope`)
