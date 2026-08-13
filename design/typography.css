@@ -62,7 +62,7 @@ p {
   margin: 0;
   max-width: var(--notebook-measure);
   color: var(--study-ink-soft);
-  font-size: .95rem;
+  font-size: var(--study-body-size);
   line-height: var(--notebook-line-pitch);
 }
 strong {

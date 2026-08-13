@@ -46,7 +46,7 @@
 
   /* Compatibility tokens retained for old artifacts/tests; notebook geometry
      uses the notebook-specific tokens below. */
-  --study-body-size: clamp(1rem, .985rem + .12vw, 1.03125rem);
+  --study-body-size: clamp(1.125rem, 1.1rem + .1vw, 1.15625rem);
   --study-body-leading: 1.72;
   --study-small-size: .78rem;
   --study-measure: 42rem;
@@ -172,7 +172,7 @@ p {
   margin: 0;
   max-width: var(--notebook-measure);
   color: var(--study-ink-soft);
-  font-size: .95rem;
+  font-size: var(--study-body-size);
   line-height: var(--notebook-line-pitch);
 }
 strong {
