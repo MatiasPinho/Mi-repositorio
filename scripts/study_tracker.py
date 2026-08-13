@@ -335,6 +335,13 @@ def due(args):
         nr = item.get("next_review")
         g = graph_item(graph, item["name"])
         relevance = scope_relevance(course, g, assessment_id, assessment)
+        # A registered assessment is an explicit scope filter, not merely a
+        # priority hint. Only confirmed/likely concepts may surface. This keeps
+        # overdue or generally-due concepts from leaking across exam boundaries.
+        # Legacy ad-hoc concept relevance remains supported when no assessment
+        # record exists in academic.json.
+        if assessment is not None and relevance not in {"confirmed", "likely"}:
+            continue
         try:
             is_due = not nr or date.fromisoformat(nr) <= target
         except ValueError:

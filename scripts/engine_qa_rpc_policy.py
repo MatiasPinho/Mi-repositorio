@@ -76,7 +76,16 @@ def _qualifying_steps(mode: str, rows: list[dict[str, Any]]) -> list[int]:
         kind = str(row.get("kind", ""))
         qualifies = False
         if mode == "engine":
-            qualifies = kind in {"rpc-exec", "rpc-exec-timeout"} and row.get("engine_invoked") is True
+            # Reaching the process is not enough: the invocation must also match
+            # the expectation declared by the experiment (``rpc-exec.ok``). A
+            # negative-path test still qualifies by setting expect_code to the
+            # intended non-zero code. Unexpected errors/timeouts must be retried
+            # or classified INVALID instead of inflating the valid budget.
+            qualifies = (
+                kind == "rpc-exec"
+                and row.get("engine_invoked") is True
+                and row.get("ok") is True
+            )
         elif mode == "guard":
             qualifies = kind == "rpc-exec-rejected" and row.get("engine_invoked") is False
         elif mode == "state":
@@ -101,7 +110,7 @@ def require_valid_evidence(request: dict[str, Any]) -> dict[str, Any] | None:
     steps = _qualifying_steps(mode, rows)
     if not steps:
         descriptions = {
-            "engine": "an engine invocation (rpc-exec/rpc-exec-timeout with engine_invoked=true)",
+            "engine": "an engine invocation that matched its declared expectation (rpc-exec with engine_invoked=true and ok=true)",
             "guard": "a guard rejection (rpc-exec-rejected with engine_invoked=false)",
             "state": "a state operation (mutation/check/checkpoint)",
         }
