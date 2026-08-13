@@ -255,17 +255,37 @@ def cmd_scan(args: argparse.Namespace) -> None:
     for p, rel, _unit_id in iter_source_files(course, args.unit or ""):
         if "oficiales" in {part.lower() for part in p.parts} and p.suffix.lower() == ".pdf":
             rows.append(scan_pdf(p, rel))
+    note = "Candidate is a deterministic visual-density heuristic, not a judgement of teaching value."
     payload = {
         "version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "files": rows,
-        "note": "Candidate is a deterministic visual-density heuristic, not a judgement of teaching value.",
+        "note": note,
     }
     if args.write:
         out_base = unit_root(course, args.unit) if args.unit and has_unit_layout(course) else course
         out = out_base / ".study" / "figure-pages.json"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        existing: dict[str, Any] = {}
+        if out.is_file():
+            try:
+                loaded = json.loads(out.read_text(encoding="utf-8"))
+                existing = loaded if isinstance(loaded, dict) else {}
+            except (json.JSONDecodeError, OSError, UnicodeError):
+                existing = {}
+        same_scan = (
+            existing.get("version") == payload["version"]
+            and existing.get("files") == rows
+            and existing.get("note") == note
+            and isinstance(existing.get("generated_at"), str)
+            and bool(existing.get("generated_at"))
+        )
+        if same_scan:
+            # Preserve both bytes on disk and the original timestamp when the
+            # deterministic scan result is unchanged.
+            payload["generated_at"] = existing["generated_at"]
+        else:
+            out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
