@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from scripts import engine_qa  # noqa: E402
 from scripts import engine_qa_rpc as rpc  # noqa: E402
+from scripts import engine_qa_rpc_policy as policy  # noqa: E402
 from scripts import engine_qa_safe as safe  # noqa: E402
 
 
@@ -42,6 +43,14 @@ def main() -> int:
     args = rpc.parser().parse_args()
     response_target = args.response_file
 
+    # Phase 0: validate where the response may be written before dispatching any
+    # stateful command. A bad response path must not execute/mutate the QA run.
+    try:
+        if response_target:
+            rpc._protocol_path(response_target, rpc.RESPONSES_SUBDIR)
+    except (rpc.RpcError, OSError, ValueError) as exc:
+        return transport_failure(None, exc)
+
     # Phase 1: protocol input. Failures here are genuine transport failures.
     try:
         request = rpc.read_request(args.request_file)
@@ -52,11 +61,21 @@ def main() -> int:
 
     # Phase 2: workflow dispatch. Rejections are valid structured responses, not
     # broken transport. This includes incomplete campaigns, bad QA operations,
-    # guard rejections and unresolved run ids.
+    # guard rejections, evidence-policy rejections and unresolved run ids.
     try:
+        command = str(request.get("command", ""))
+        if command == "hypothesis":
+            policy.validate_hypothesis_request(request)
+        if command == "experiment-result":
+            policy.require_valid_evidence(request)
+
         result = rpc.dispatch(request)
+
+        if command == "hypothesis":
+            policy.annotate_pending_hypothesis(request, result)
     except (
         rpc.RpcError,
+        policy.EvidenceError,
         engine_qa.QaError,
         OSError,
         ValueError,
