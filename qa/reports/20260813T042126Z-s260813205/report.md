@@ -1,0 +1,118 @@
+# Engine QA Report
+
+- Run: `20260813T042126Z-s260813205`
+- Provider: `codex`
+- Seed: `260813205`
+- Experimentos válidos: **100/100**
+- Intentos totales: **102**
+- Inválidos por arnés/transporte: **2**
+- Pasos registrados: **436**
+- Hallazgos confirmados: **2**
+- Invariantes finales: **PASS**
+- Bloqueado: **no**
+
+## Cobertura
+- guard-course-identity-5
+- guard-course-equals-5
+- guard-absolute-course-5
+- guard-path-traversal-5
+- guard-pdf-path-5
+- guard-render-input-5
+- guard-output-path-5
+- guard-publication-path-5
+- guard-evidence-path-5
+- guard-study-cli-5
+- cli-validation-sync-5
+- cli-validation-academic-5
+- cli-validation-date-5
+- cli-validation-rating-5
+- cli-validation-topic-5
+- cli-validation-figure-5
+- cli-validation-pipeline-5
+- cli-validation-quiz-5
+- cli-validation-concept-5
+- cli-validation-pdf-5
+- academic-readonly-5
+- academic-validation-5
+- assessment-mutation-5
+- assessment-id-alias-5
+- assessment-name-alias-5
+- assessment-parentage-5
+- assessment-child-scope-5
+- assessment-duplicate-guard-5
+- academic-rule-write-5
+- academic-postmutation-validation-5
+- materials-commit-5
+- materials-idempotence-5
+- materials-unit-scope-5
+- transcript-commit-5
+- transcript-idempotence-5
+- source-unicode-5
+- source-convergence-5
+- pdf-course-scan-5
+- pdf-unit-scan-5
+- pdf-single-probe-5
+- figure-source-registry-5
+- figure-scan-idempotence-5
+- figure-page-render-5
+- figure-unit-scope-5
+- figure-hash-integrity-5
+- concept-rich-upsert-5
+- concept-rich-idempotence-5
+- concept-unit2-identity-5
+- concept-unit3-identity-5
+- concept-course-merge-5
+- concept-case-identity-5
+- concept-cross-unit-link-5
+- concept-link-idempotence-5
+- concept-evidence-pages-5
+- concept-transcript-evidence-5
+- teaching-signal-error-5
+- teaching-signal-assessment-5
+- misconception-registry-5
+- assessment-relevance-confirmed-5
+- assessment-relevance-likely-5
+- assessment-relevance-excluded-5
+- tracker-seed-5
+- tracker-idempotence-5
+- mastery-high-5
+- mastery-low-5
+- mastery-mid-5
+- tracker-readonly-5
+- tracker-unit-filter-5
+- tracker-assessment-id-5
+- tracker-assessment-name-5
+- topic-unassigned-5
+- topic-unit-isolation-5
+- topic-proposal-write-5
+- topic-proposal-idempotence-5
+- topic-second-partition-5
+- topic-validation-5
+- topic-progress-5
+- topic-invalid-reference-5
+- claim-candidate-readonly-5
+- claim-candidate-write-5
+- claim-candidate-idempotence-5
+- claim-unit-isolation-5
+- semantic-claims-readonly-5
+- semantic-claims-write-5
+- semantic-claims-idempotence-5
+- artifact-integrity-5
+- artifact-manifest-5
+- artifact-status-5
+- artifact-mark-idempotence-5
+- artifact-clean-present-5
+- artifact-figure-integrity-5
+- artifact-stale-academic-5
+- artifact-refresh-5
+- pipeline-resumen-run-5
+- pipeline-status-readonly-5
+- pipeline-incomplete-validation-5
+- pipeline-repaso-run-5
+- pipeline-run-isolation-5
+- quiz-run-boundary-5
+- quiz-status-readonly-5
+
+## Hallazgos
+- **QA-001 · LOW** — unchanged_figure_scan_rewrites_registry (`figure-scan-idempotent`)
+- **QA-002 · HIGH** — excluded_assessment_concept_leaks_into_due_results (`assessment-unit-scope`)
