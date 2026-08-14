@@ -212,10 +212,21 @@ def concept_fingerprint(course: Path, scope: str) -> tuple[str, str, int]:
 
 
 def design_fingerprint() -> str:
-    theme = Path(__file__).resolve().parents[1] / "assets" / "study-theme.css"
-    if not theme.exists():
+    assets = Path(__file__).resolve().parents[1] / "assets"
+    visual_assets = (
+        assets / "study-theme.css",
+        assets / "notebook-reader.css",
+        assets / "notebook-reader.js",
+    )
+    if any(not path.exists() for path in visual_assets):
         return "missing"
-    return hashlib.sha256(theme.read_bytes()).hexdigest()
+    digest = hashlib.sha256()
+    for path in visual_assets:
+        digest.update(path.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def current_fingerprints(course: Path, scope: str, artifact_type: str = "") -> dict[str, Any]:
