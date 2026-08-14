@@ -78,12 +78,13 @@
     measure.className = 'notebook-measure-host';
     stack.appendChild(measure);
 
-    const rootStyle = getComputedStyle(document.documentElement);
-    const safeBottom = cssLengthPx(rootStyle, '--notebook-page-safe-bottom', 14);
-    const overflows = (page, keepSafeBottom = true) => {
-      const reserve = keepSafeBottom ? safeBottom : 0;
-      return page.scrollHeight > page.clientHeight - reserve + 1;
-    };
+    // notebook-page already has a fixed border-box height. Its scrollHeight is
+    // therefore equal to clientHeight even when it is empty. Subtracting a
+    // synthetic safety reserve from clientHeight made every empty page look as
+    // if it overflowed, which produced one top-level block per physical page.
+    // Now that page-number/turn-corner chrome lives outside the article, the
+    // real scroll overflow is the correct and deterministic packing signal.
+    const overflows = (page) => page.scrollHeight > page.clientHeight + 1;
 
     const pages = [];
     let current = makePage(source, 0);
@@ -100,7 +101,7 @@
 
     for (const node of nodes) {
       current.appendChild(node);
-      if (!overflows(current, true)) continue;
+      if (!overflows(current)) continue;
 
       current.removeChild(node);
 
@@ -118,15 +119,14 @@
       if (carry) current.appendChild(carry);
       current.appendChild(node);
 
-      // A genuinely oversize component falls back to the proven continuous
-      // renderer. The small safe-bottom reserve is not treated as an error for
-      // a component that otherwise fits on an empty physical page.
-      if (overflows(current, false)) {
+      // A component that cannot fit on an empty physical page falls back to the
+      // proven continuous renderer instead of clipping or inner scrolling.
+      if (overflows(current)) {
         return fail(`oversize-block:${node.className || node.tagName.toLowerCase()}`);
       }
     }
 
-    if (pages.some((page) => overflows(page, false))) return fail('post-pagination-overflow');
+    if (pages.some(overflows)) return fail('post-pagination-overflow');
     measure.remove();
     return pages;
   };
