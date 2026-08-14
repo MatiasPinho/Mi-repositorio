@@ -165,6 +165,34 @@ pre code {
   text-decoration: none;
 }
 
+/* Static lexical spans keep study artifacts fully offline. The restrained
+   palette behaves like coloured pencil over graphite: identifiers remain the
+   primary ink while syntax cues add structure without turning code into a UI
+   panel or relying on colour alone. */
+pre code.syntax-highlighted .syntax-keyword {
+  color: var(--notebook-code-keyword);
+  font-weight: 600;
+}
+pre code.syntax-highlighted .syntax-type {
+  color: var(--notebook-code-type);
+  font-weight: 500;
+}
+pre code.syntax-highlighted .syntax-string { color: var(--notebook-code-string); }
+pre code.syntax-highlighted .syntax-number {
+  color: var(--notebook-code-number);
+  font-variant-numeric: tabular-nums;
+}
+pre code.syntax-highlighted .syntax-comment {
+  color: var(--notebook-code-comment);
+  font-style: italic;
+}
+pre code.syntax-highlighted :is(.syntax-builtin, .syntax-function) {
+  color: var(--notebook-code-builtin);
+  font-weight: 500;
+}
+pre code.syntax-highlighted .syntax-operator { color: var(--notebook-code-operator); }
+pre code.syntax-highlighted .syntax-punctuation { color: var(--notebook-code-punctuation); }
+
 /* Baseline-grid subjects. The fallback centers each font's cap box inside the
    line. Modern Chromium trims to the real cap/alphabetic edges, so moving the
    box by pitch - 1cap places its alphabetic baseline exactly on the next rule.

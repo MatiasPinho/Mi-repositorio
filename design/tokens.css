@@ -33,6 +33,18 @@
   --study-concept-soft: #eaeff5;
   --study-example-soft: #edf2eb;
 
+  /* Coloured-pencil syntax ink. Every tone keeps text-level contrast on the
+     paper; colour supplements the lexical structure and is never required to
+     understand or copy the code. */
+  --notebook-code-keyword: #315573;
+  --notebook-code-type: #6a4f78;
+  --notebook-code-string: #526358;
+  --notebook-code-number: #75634a;
+  --notebook-code-comment: #63665d;
+  --notebook-code-builtin: #4e6077;
+  --notebook-code-operator: #805f5a;
+  --notebook-code-punctuation: #63665d;
+
   /* Type */
   --study-font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
   --study-font-display: var(--study-font-body);
@@ -109,6 +121,14 @@ html[data-study-theme="dark"] {
   --study-warning-soft: #2a261e;
   --study-concept-soft: #252931;
   --study-example-soft: #252a24;
+  --notebook-code-keyword: #a8c1d4;
+  --notebook-code-type: #c4afd0;
+  --notebook-code-string: #aebfa8;
+  --notebook-code-number: #d0b88f;
+  --notebook-code-comment: #a8a297;
+  --notebook-code-builtin: #aeb9c8;
+  --notebook-code-operator: #d1aaa5;
+  --notebook-code-punctuation: #a8a297;
   --notebook-shadow: 0 16px 36px rgba(0, 0, 0, .46);
   --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 .5H1000' stroke='%2333363d' stroke-width='1'/%3E%3C/svg%3E");
 }

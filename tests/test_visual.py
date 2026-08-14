@@ -236,6 +236,46 @@ leer dato
             css = (ROOT / "assets" / "study-theme.css").read_text(encoding="utf-8")
             self.assertIn('counter(study-code)', css)
 
+    def test_renderer_adds_static_syntax_markup_to_existing_pseint_text_fences(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "code.md"
+            out = td / "code.html"
+            md.write_text(
+                """# Código
+
+```text
+// suma mínima
+Proceso Suma
+    Definir total Como Real;
+    total = 2 + 3;
+    Escribir "Resultado: ", total;
+FinProceso
+```
+""",
+                encoding="utf-8",
+            )
+            cp = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(out), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            page = out.read_text(encoding="utf-8")
+            self.assertIn('class="language-text syntax-highlighted" data-syntax="pseint"', page)
+            self.assertIn('<span class="syntax-comment">// suma mínima</span>', page)
+            self.assertIn('<span class="syntax-keyword">Proceso</span>', page)
+            self.assertIn('<span class="syntax-function">Suma</span>', page)
+            self.assertIn('<span class="syntax-type">Real</span>', page)
+            self.assertIn('<span class="syntax-number">2</span>', page)
+            self.assertIn('<span class="syntax-operator">=</span>', page)
+            self.assertIn('<span class="syntax-builtin">Escribir</span>', page)
+            self.assertIn('<span class="syntax-string">"Resultado: "</span>', page)
+            css = (ROOT / "assets" / "study-theme.css").read_text(encoding="utf-8")
+            self.assertIn("--notebook-code-keyword", css)
+            self.assertIn("pre code.syntax-highlighted .syntax-keyword", css)
+
     def test_renderer_rejects_broken_local_image_in_check_mode(self):
         with tempfile.TemporaryDirectory() as td:
             td = Path(td)

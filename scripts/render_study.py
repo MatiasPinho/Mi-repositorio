@@ -32,6 +32,232 @@ CALLOUT = {
 }
 
 
+def _word_set(value: str) -> frozenset[str]:
+    return frozenset(value.split())
+
+
+# Small, dependency-free lexical profiles for the languages most likely to
+# appear in study artifacts. The renderer emits semantic spans; visual colour
+# stays entirely in the shared design system.
+SYNTAX_PROFILES = {
+    "pseint": {
+        "casefold": True,
+        "keywords": _word_set(
+            "algoritmo finalgoritmo proceso finproceso definir como si entonces sino finsi "
+            "mientras hacer finmientras para hasta con paso finpara repetir que segun de "
+            "otro modo finsegun subproceso finsubproceso funcion finfuncion retornar y o no mod"
+        ),
+        "types": _word_set("entero enteros real reales logico logicos caracter caracteres cadena cadenas"),
+        "builtins": _word_set("leer escribir mostrar dimension trunc redon abs raiz sen cos tan azar longitud subcadena"),
+        "declarations": _word_set("algoritmo proceso subproceso funcion"),
+        "line_comments": ("//",),
+        "block_comments": False,
+    },
+    "python": {
+        "casefold": False,
+        "keywords": _word_set(
+            "and as assert async await break class continue def del elif else except False finally "
+            "for from global if import in is lambda None nonlocal not or pass raise return True try while with yield"
+        ),
+        "types": _word_set("bool bytes dict float frozenset int list object set str tuple"),
+        "builtins": _word_set("enumerate input len max min open print range reversed sorted sum zip"),
+        "declarations": _word_set("class def"),
+        "line_comments": ("#",),
+        "block_comments": False,
+    },
+    "cpp": {
+        "casefold": False,
+        "keywords": _word_set(
+            "alignas alignof auto break case catch class const constexpr continue default delete do else enum explicit "
+            "extern false for friend goto if inline namespace new noexcept nullptr operator private protected public "
+            "return sizeof static struct switch template this throw true try typedef typename union using virtual while"
+        ),
+        "types": _word_set("bool char double float int long short signed string unsigned void wchar_t"),
+        "builtins": _word_set("cin cerr clog cout endl main printf scanf size strlen vector"),
+        "declarations": _word_set("class enum namespace struct"),
+        "line_comments": ("//",),
+        "block_comments": True,
+    },
+    "javascript": {
+        "casefold": False,
+        "keywords": _word_set(
+            "async await break case catch class const continue debugger default delete do else export extends false "
+            "finally for from function if import in instanceof let new null of return static super switch this throw "
+            "true try typeof undefined var void while with yield"
+        ),
+        "types": _word_set("Array BigInt Boolean Map Number Object Promise Set String Symbol"),
+        "builtins": _word_set("console document fetch JSON Math parseFloat parseInt window"),
+        "declarations": _word_set("class function"),
+        "line_comments": ("//",),
+        "block_comments": True,
+    },
+    "sql": {
+        "casefold": True,
+        "keywords": _word_set(
+            "add alter and as asc begin between by case create delete desc distinct drop else end exists from full "
+            "group having in inner insert into is join left like limit not null on or order outer right select set "
+            "table then union unique update values when where with"
+        ),
+        "types": _word_set("bigint boolean char date decimal float int integer numeric real text timestamp varchar"),
+        "builtins": _word_set("avg coalesce count lower max min now round sum upper"),
+        "declarations": _word_set("table"),
+        "line_comments": ("--",),
+        "block_comments": True,
+    },
+}
+
+LANGUAGE_ALIASES = {
+    "c": "cpp",
+    "c++": "cpp",
+    "cc": "cpp",
+    "cxx": "cpp",
+    "js": "javascript",
+    "jsx": "javascript",
+    "py": "python",
+    "pseudo": "pseint",
+    "pseudocode": "pseint",
+    "pseudocodigo": "pseint",
+    "pseudocódigo": "pseint",
+}
+
+_NUMBER_RE = re.compile(r"(?:0[xX][0-9a-fA-F]+|\d+(?:\.\d+)?)")
+_IDENT_RE = re.compile(r"[^\W\d]\w*", re.UNICODE)
+_SPACE_RE = re.compile(r"\s+")
+_OPERATORS = tuple(sorted((
+    "===", "!==", "<<=", ">>=", "==", "!=", "<=", ">=", "<-", "->", "++", "--",
+    "+=", "-=", "*=", "/=", "%=", "&&", "||", "**", "//", "::", ":=", "<<", ">>",
+    "+", "-", "*", "/", "%", "=", "<", ">", "!", "&", "|", "^", "~",
+), key=len, reverse=True))
+
+
+def _resolve_syntax_language(source: str, declared: str) -> str | None:
+    language = LANGUAGE_ALIASES.get(declared.strip().lower(), declared.strip().lower())
+    if language in SYNTAX_PROFILES:
+        return language
+    if language not in {"", "text", "txt", "plaintext"}:
+        return None
+
+    # Backward-compatible recognition for existing semantic Markdown that used
+    # text fences for PSeInt. Distinctive commands are enough; assignment-only
+    # snippets need at least two code-shaped lines to avoid colouring prose.
+    if re.search(
+        r"(?im)^\s*(?:algoritmo|finalgoritmo|proceso|finproceso|definir|leer|escribir|mostrar)\b",
+        source,
+    ):
+        return "pseint"
+    assignments = sum(
+        bool(re.match(r"^\s*[^\W\d]\w*\s*=\s*.+;?\s*$", line, re.UNICODE))
+        for line in source.splitlines()
+        if line.strip()
+    )
+    return "pseint" if assignments >= 2 else None
+
+
+def _syntax_span(kind: str | None, value: str) -> str:
+    escaped = html.escape(value, quote=False)
+    return f'<span class="syntax-{kind}">{escaped}</span>' if kind else escaped
+
+
+def highlight_code(source: str, declared: str) -> tuple[str, str | None]:
+    """Return static, escaped syntax markup and the resolved language."""
+    language = _resolve_syntax_language(source, declared)
+    if language is None:
+        return html.escape(source), None
+
+    profile = SYNTAX_PROFILES[language]
+    out: list[str] = []
+    i = 0
+    previous_word = ""
+    while i < len(source):
+        space = _SPACE_RE.match(source, i)
+        if space:
+            out.append(space.group(0))
+            i = space.end()
+            continue
+
+        comment_marker = next(
+            (marker for marker in profile["line_comments"] if source.startswith(marker, i)),
+            None,
+        )
+        if comment_marker:
+            end = source.find("\n", i)
+            end = len(source) if end < 0 else end
+            out.append(_syntax_span("comment", source[i:end]))
+            i = end
+            previous_word = ""
+            continue
+        if profile["block_comments"] and source.startswith("/*", i):
+            end = source.find("*/", i + 2)
+            end = len(source) if end < 0 else end + 2
+            out.append(_syntax_span("comment", source[i:end]))
+            i = end
+            previous_word = ""
+            continue
+
+        if source[i] in {'"', "'", "`"}:
+            quote = source[i]
+            end = i + 1
+            while end < len(source):
+                if source[end] == "\\" and end + 1 < len(source):
+                    end += 2
+                    continue
+                end += 1
+                if source[end - 1] == quote:
+                    break
+            out.append(_syntax_span("string", source[i:end]))
+            i = end
+            previous_word = ""
+            continue
+
+        number = _NUMBER_RE.match(source, i)
+        if number:
+            out.append(_syntax_span("number", number.group(0)))
+            i = number.end()
+            previous_word = ""
+            continue
+
+        identifier = _IDENT_RE.match(source, i)
+        if identifier:
+            value = identifier.group(0)
+            lookup = value.casefold() if profile["casefold"] else value
+            if lookup in profile["keywords"]:
+                kind = "keyword"
+            elif lookup in profile["types"]:
+                kind = "type"
+            elif lookup in profile["builtins"]:
+                kind = "builtin"
+            else:
+                lookahead = identifier.end()
+                while lookahead < len(source) and source[lookahead] in " \t":
+                    lookahead += 1
+                kind = (
+                    "function"
+                    if previous_word in profile["declarations"]
+                    or (lookahead < len(source) and source[lookahead] == "(")
+                    else None
+                )
+            out.append(_syntax_span(kind, value))
+            previous_word = lookup
+            i = identifier.end()
+            continue
+
+        operator = next((op for op in _OPERATORS if source.startswith(op, i)), None)
+        if operator:
+            out.append(_syntax_span("operator", operator))
+            i += len(operator)
+            previous_word = ""
+            continue
+
+        if source[i] in "()[]{}.,;:":
+            out.append(_syntax_span("punctuation", source[i]))
+        else:
+            out.append(html.escape(source[i], quote=False))
+        i += 1
+        previous_word = ""
+
+    return "".join(out), language
+
+
 def slugify(text: str) -> str:
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]+", "-", text.lower()).strip("-")
@@ -177,8 +403,18 @@ def render_markdown(
                 buf.append(lines[i])
                 i += 1
             i += 1 if i < len(lines) else 0
-            cls = f' class="language-{html.escape(lang, quote=True)}"' if lang else ""
-            code_html = f"<pre><code{cls}>{html.escape(chr(10).join(buf))}</code></pre>"
+            source = chr(10).join(buf)
+            highlighted, syntax_language = highlight_code(source, lang)
+            classes = []
+            if lang:
+                safe_lang = re.sub(r"[^a-zA-Z0-9_-]+", "-", lang).strip("-")
+                if safe_lang:
+                    classes.append(f"language-{safe_lang}")
+            if syntax_language:
+                classes.append("syntax-highlighted")
+            cls = f' class="{" ".join(classes)}"' if classes else ""
+            syntax_attr = f' data-syntax="{syntax_language}"' if syntax_language else ""
+            code_html = f"<pre><code{cls}{syntax_attr}>{highlighted}</code></pre>"
             cap, new_i = consume_caption(lines, i)
             if cap:
                 code_html += f'<div class="code-caption"><span>{inline(cap)}</span></div>'

@@ -43,7 +43,7 @@ def contrast(a: str, b: str) -> float:
 
 def token_contrast_checks() -> dict[str, float]:
     css = (ROOT / "design" / "tokens.css").read_text(encoding="utf-8")
-    light = css.split("@media", 1)[0]
+    light = css.split('html[data-study-theme="dark"]', 1)[0]
     tokens = dict(re.findall(r"(--[\w-]+)\s*:\s*(#[0-9a-fA-F]{6})\s*;", light))
     pairs = {
         "body": ("--study-ink", "--study-paper"),
@@ -54,6 +54,13 @@ def token_contrast_checks() -> dict[str, float]:
         "warning": ("--study-warning", "--study-paper"),
         "danger": ("--study-danger", "--study-paper"),
         "connection": ("--study-connection", "--study-paper"),
+        "code_keyword": ("--notebook-code-keyword", "--study-paper"),
+        "code_type": ("--notebook-code-type", "--study-paper"),
+        "code_string": ("--notebook-code-string", "--study-paper"),
+        "code_number": ("--notebook-code-number", "--study-paper"),
+        "code_comment": ("--notebook-code-comment", "--study-paper"),
+        "code_builtin": ("--notebook-code-builtin", "--study-paper"),
+        "code_operator": ("--notebook-code-operator", "--study-paper"),
     }
     return {name: round(contrast(tokens[a], tokens[b]), 2) for name, (a, b) in pairs.items()}
 
