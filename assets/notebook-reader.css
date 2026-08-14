@@ -31,6 +31,72 @@ article::after {
       center 86% / 1.45rem 1.45rem no-repeat;
 }
 
+/* Reading mode is presentation state, not document content. Keep the control
+   outside the paper so switching modes never changes pagination measurements. */
+.notebook-view-switch {
+  position: fixed;
+  z-index: 120;
+  top: .8rem;
+  right: .8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .18rem;
+  padding: .28rem;
+  border: 1px solid color-mix(in srgb, var(--study-paper) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--study-canvas) 88%, #111 12%);
+  box-shadow: 0 7px 18px rgba(0, 0, 0, .18);
+  color: var(--study-paper);
+  font-family: var(--study-font-utility);
+  font-size: .66rem;
+  line-height: 1;
+  letter-spacing: .035em;
+  opacity: .9;
+  transition: opacity .18s ease, box-shadow .18s ease;
+}
+
+.notebook-view-switch:hover,
+.notebook-view-switch:focus-within {
+  opacity: 1;
+  box-shadow: 0 9px 24px rgba(0, 0, 0, .24);
+}
+
+.notebook-view-switch-label {
+  padding: 0 .45rem 0 .35rem;
+  color: color-mix(in srgb, var(--study-paper) 72%, var(--study-canvas));
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.notebook-view-switch button {
+  min-height: 1.85rem;
+  padding: 0 .68rem;
+  border: 0;
+  border-radius: 999px;
+  appearance: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--study-paper) 76%, var(--study-canvas));
+  font: inherit;
+  letter-spacing: .02em;
+  cursor: pointer;
+}
+
+.notebook-view-switch button:hover:not(:disabled) {
+  color: var(--study-paper);
+  background: color-mix(in srgb, var(--study-paper) 10%, transparent);
+}
+
+.notebook-view-switch button[aria-pressed="true"] {
+  background: var(--study-paper);
+  color: var(--study-ink-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
+}
+
+.notebook-view-switch button:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
 .notebook-reader {
   width: 100%;
   max-width: 100%;
@@ -272,19 +338,24 @@ article.notebook-page.notebook-back::after {
     --notebook-leaf-peek: clamp(1.35rem, 3vw, 2rem);
     --notebook-leaf-scale: .98;
   }
+
+  .notebook-view-switch-label { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .notebook-leaf { transition: none; }
-  .notebook-turn-corner::after { transition: none; }
+  .notebook-turn-corner::after,
+  .notebook-view-switch { transition: none; }
 }
 
 @media (max-width: 48rem) {
+  .notebook-view-switch { display: none; }
   .notebook-reader { display: block; }
   .notebook-stack { width: 100%; height: auto; perspective: none; }
 }
 
 @media print {
+  .notebook-view-switch,
   .notebook-reader-status,
   .notebook-turn-corner { display: none !important; }
 }
