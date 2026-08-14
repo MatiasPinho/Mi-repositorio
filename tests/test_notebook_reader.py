@@ -77,14 +77,16 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("translateX(0) scale(var(--notebook-leaf-scale)) rotateY(0deg)", js)
         self.assertIn("visibility:hidden still has geometry", js)
 
-    def test_pagination_measures_inside_final_stack_and_keeps_chrome_outside_article(self):
+    def test_pagination_measures_inside_final_stack_and_uses_real_overflow(self):
         js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
         css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
         self.assertIn("stack.appendChild(measure)", js)
         self.assertIn("frontFace.appendChild(numberFront)", js)
         self.assertIn("backFace.appendChild(numberBack)", js)
         self.assertIn("makeTurnCorner(frontFace, 'front'", js)
-        self.assertIn("--notebook-page-safe-bottom: .875rem", css)
+        self.assertIn("const overflows = (page) => page.scrollHeight > page.clientHeight + 1", js)
+        self.assertNotIn("page.clientHeight - reserve", js)
+        self.assertIn("fixed border-box height", js)
         self.assertIn(".notebook-measure-host {", css)
         self.assertIn("inset: 0", css)
 
@@ -118,13 +120,18 @@ class NotebookReaderTests(unittest.TestCase):
             self.assertEqual(audited.returncode, 0, audited.stdout + audited.stderr)
             report = json.loads((audit_dir / "audit.json").read_text(encoding="utf-8"))
             tablet = report["viewports"]["tablet"]
+            reader = tablet["notebook_reader"]
             self.assertNotIn("tablet:horizontal-overflow", report["issues"])
             self.assertFalse(any(issue.startswith("tablet:reader-page-overflow") for issue in report["issues"]))
             self.assertLessEqual(tablet["scrollWidth"], tablet["clientWidth"] + 2)
-            self.assertEqual(tablet["notebook_reader"]["state"], "ready")
-            self.assertGreaterEqual(tablet["notebook_reader"]["visibleNeighbours"], 1)
-            self.assertGreaterEqual(tablet["notebook_reader"]["leaves"], 4)
-            self.assertEqual(tablet["notebook_reader"]["overflowingPages"], [])
+            self.assertEqual(reader["state"], "ready")
+            self.assertGreaterEqual(reader["visibleNeighbours"], 1)
+            self.assertGreaterEqual(reader["leaves"], 4)
+            self.assertEqual(reader["overflowingPages"], [])
+            # Regression guard: an empty fixed-height page must not count as an
+            # overflow. The old safety-reserve bug produced roughly one page per
+            # top-level paragraph, so this long fixture exploded past 100 pages.
+            self.assertLess(reader["pages"], 80)
 
     def test_reader_assets_participate_in_visual_artifact_fingerprint(self):
         artifact_state = (ROOT / "scripts" / "artifact_state.py").read_text(encoding="utf-8")
