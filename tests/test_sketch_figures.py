@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts import sketch_figure
+from scripts import artifact_integrity, sketch_figure, visual_plan
 
 STUDY = ROOT / "study.py"
 FIGURES = ROOT / "scripts" / "figure_assets.py"
@@ -197,10 +197,151 @@ class SketchFigureTests(unittest.TestCase):
         pipeline = (ROOT / "pipelines" / "resumen.md").read_text(encoding="utf-8")
         self.assertIn("02-sketches", pipeline)
         self.assertIn("figures generate-sketch", pipeline)
+        self.assertIn("scripts/visual_plan.py", pipeline)
+        self.assertLess(pipeline.index("**VISUAL BUILD**"), pipeline.index("**DRAFT**"))
+        self.assertIn("--plan <run-dir>/02-plan.json", pipeline)
         self.assertIn("never create normal diagrams with an image-generation model", pipeline)
         documentation = (ROOT / "docs" / "sketch-figures.md").read_text(encoding="utf-8")
         self.assertIn("scripts/sketch_figure.py", documentation)
         self.assertIn("preserve+derived_sketch", documentation)
+
+    def test_visual_plan_materializes_registered_svg_before_draft_and_is_retry_stable(self):
+        run = self.course / ".study" / "runs" / "materialize"
+        sketches = run / "02-sketches"
+        sketches.mkdir(parents=True)
+        spec = flow_spec("planned-flow")
+        (sketches / "planned-flow.json").write_text(
+            json.dumps(spec, ensure_ascii=False), encoding="utf-8"
+        )
+        plan_path = run / "02-plan.json"
+        plan_path.write_text(json.dumps({
+            "visuals": [{
+                "concept_id": "flow",
+                "need": "visual_required",
+                "visual_treatment": "reinterpret",
+                "derived_figure_id": "derived:planned-flow",
+                "sketch_spec": "02-sketches/planned-flow.json",
+                "based_on": spec["based_on"],
+                "reason": "El flujo se reconstruye sin perder relaciones.",
+            }]
+        }, ensure_ascii=False), encoding="utf-8")
+
+        first = visual_plan.materialize_plan(self.course, "U1", plan_path)
+        second = visual_plan.materialize_plan(self.course, "Unidad 1", plan_path)
+        self.assertEqual(first, second)
+        self.assertEqual(first["entries"][0]["asset"], "assets/figures/planned-flow.svg")
+        self.assertTrue((self.course / first["entries"][0]["asset"]).is_file())
+        registry = json.loads((self.course / "conocimiento" / "figures.json").read_text(encoding="utf-8"))
+        self.assertIn("derived:planned-flow", registry["figures"])
+
+    def test_preserve_requires_an_explicit_fidelity_reason(self):
+        source = self.course / "assets" / "figures" / "source-flow.png"
+        source.write_bytes(b"source")
+        registry_path = self.course / "conocimiento" / "figures.json"
+        registry_path.write_text(json.dumps({
+            "version": 2,
+            "figures": {
+                "source-flow": {
+                    "id": "source-flow",
+                    "unit": "U1",
+                    "unit_id": "unidad-1",
+                    "origin": "source",
+                    "kind": "flow",
+                    "source_file": "oficiales/source.pdf",
+                    "asset": "assets/figures/source-flow.png",
+                    "asset_sha256": hashlib.sha256(b"source").hexdigest(),
+                }
+            },
+        }), encoding="utf-8")
+        run = self.course / ".study" / "runs" / "preserve-reason"
+        run.mkdir(parents=True)
+        plan = run / "02-plan.json"
+        plan.write_text(json.dumps({
+            "visuals": [{
+                "concept_id": "flow",
+                "need": "visual_helpful",
+                "visual_treatment": "preserve",
+                "source_figure_id": "source-flow",
+                "figure_kind": "flow",
+                "reason": "La figura ayuda a seguir el proceso.",
+            }]
+        }), encoding="utf-8")
+        with self.assertRaisesRegex(visual_plan.VisualPlanError, "fidelity_reason"):
+            visual_plan.inspect_plan(self.course, "U1", plan)
+
+    def test_integrity_gate_rejects_source_png_when_plan_says_reinterpret(self):
+        source_bytes = b"source-png"
+        source = self.course / "assets" / "figures" / "source-flow.png"
+        source.write_bytes(source_bytes)
+        registry_path = self.course / "conocimiento" / "figures.json"
+        registry_path.write_text(json.dumps({
+            "version": 2,
+            "figures": {
+                "source-flow": {
+                    "id": "source-flow",
+                    "unit": "U1",
+                    "unit_id": "unidad-1",
+                    "origin": "source",
+                    "kind": "flow",
+                    "source_file": "oficiales/source.pdf",
+                    "asset": "assets/figures/source-flow.png",
+                    "asset_sha256": hashlib.sha256(source_bytes).hexdigest(),
+                }
+            },
+        }), encoding="utf-8")
+        run = self.course / ".study" / "runs" / "artifact-gate"
+        sketches = run / "02-sketches"
+        sketches.mkdir(parents=True)
+        spec = flow_spec("source-reinterpretation")
+        spec["based_on"].append("figure:source-flow")
+        (sketches / "source-reinterpretation.json").write_text(
+            json.dumps(spec, ensure_ascii=False), encoding="utf-8"
+        )
+        plan = run / "02-plan.json"
+        plan.write_text(json.dumps({
+            "visuals": [{
+                "concept_id": "flow",
+                "need": "visual_required",
+                "visual_treatment": "reinterpret",
+                "derived_figure_id": "derived:source-reinterpretation",
+                "sketch_spec": "02-sketches/source-reinterpretation.json",
+                "based_on": spec["based_on"],
+                "reason": "Todas las relaciones se pueden reconstruir.",
+            }]
+        }, ensure_ascii=False), encoding="utf-8")
+        visual_plan.materialize_plan(self.course, "U1", plan)
+
+        md = run / "06-final.md"
+        html = run / "09-rendered.html"
+        md.write_text(
+            '# Flujo\n\n![Flujo](../../../assets/figures/source-flow.png "Flujo")\n',
+            encoding="utf-8",
+        )
+        subprocess.run([
+            sys.executable, str(ROOT / "scripts" / "render_study.py"), str(md), str(html),
+            "--kind", "summary", "--course", "Sketch Test", "--scope", "Unidad 1", "--check",
+        ], cwd=ROOT, text=True, capture_output=True, check=True)
+        failed = artifact_integrity.check(self.course, md, html, "U1", "summary", plan)
+        self.assertFalse(failed["ok"], failed)
+        self.assertIn(
+            "planned-reinterpret-derived-not-used:flow:derived:source-reinterpretation",
+            failed["issues"],
+        )
+        self.assertIn(
+            "planned-reinterpret-uses-source-asset:flow:source-flow",
+            failed["issues"],
+        )
+
+        md.write_text(
+            '# Flujo\n\n![Flujo](../../../assets/figures/source-reinterpretation.svg "Flujo")\n',
+            encoding="utf-8",
+        )
+        subprocess.run([
+            sys.executable, str(ROOT / "scripts" / "render_study.py"), str(md), str(html),
+            "--kind", "summary", "--course", "Sketch Test", "--scope", "Unidad 1", "--check",
+        ], cwd=ROOT, text=True, capture_output=True, check=True)
+        passed = artifact_integrity.check(self.course, md, html, "U1", "summary", plan)
+        self.assertTrue(passed["ok"], passed)
 
     def test_validation_rejects_unsafe_or_unauditable_specs(self):
         cases = []

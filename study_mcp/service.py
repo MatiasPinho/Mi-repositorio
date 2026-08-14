@@ -291,14 +291,16 @@ def validate_artifact(
     html: str,
     scope: str,
     artifact_type: str,
+    plan: str = "",
 ) -> dict[str, Any]:
     course = _course(course_name)
     if artifact_type not in {"summary", "guide", "rapid-review"}:
         raise StudyMCPError(f"Unsupported artifact type for integrity gate: {artifact_type}")
     md_path = _artifact_file(course, markdown)
     html_path = _artifact_file(course, html)
+    plan_path = _artifact_file(course, plan) if plan else None
     try:
-        return artifact_integrity.check(course, md_path, html_path, scope, artifact_type)
+        return artifact_integrity.check(course, md_path, html_path, scope, artifact_type, plan_path)
     except (ValueError, SystemExit, OSError, json.JSONDecodeError) as exc:
         raise StudyMCPError(str(exc)) from exc
 

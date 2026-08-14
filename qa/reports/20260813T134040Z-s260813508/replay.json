@@ -1,0 +1,877 @@
+{
+  "version": 1,
+  "run_id": "20260813T134040Z-s260813508",
+  "seed": 260813508,
+  "course_slug": "qa-engine-20260813t134040z-s260813508",
+  "journal": [
+    {
+      "step": 402,
+      "time": "2026-08-13T14:02:42.140592+00:00",
+      "kind": "experiment-result",
+      "attempt": 104,
+      "experiment": 88,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-4-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 403,
+      "time": "2026-08-13T14:02:43.488064+00:00",
+      "kind": "hypothesis",
+      "attempt": 105,
+      "experiment_candidate": 89,
+      "invariant": "fallback-readonly-5-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 404,
+      "time": "2026-08-13T14:02:46.390004+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 405,
+      "time": "2026-08-13T14:02:46.409965+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 406,
+      "time": "2026-08-13T14:02:47.826178+00:00",
+      "kind": "experiment-result",
+      "attempt": 105,
+      "experiment": 89,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-5-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 407,
+      "time": "2026-08-13T14:02:49.158537+00:00",
+      "kind": "hypothesis",
+      "attempt": 106,
+      "experiment_candidate": 90,
+      "invariant": "fallback-readonly-6-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 408,
+      "time": "2026-08-13T14:02:51.865542+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 409,
+      "time": "2026-08-13T14:02:51.883227+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 410,
+      "time": "2026-08-13T14:02:53.280580+00:00",
+      "kind": "experiment-result",
+      "attempt": 106,
+      "experiment": 90,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-6-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 411,
+      "time": "2026-08-13T14:02:54.658873+00:00",
+      "kind": "hypothesis",
+      "attempt": 107,
+      "experiment_candidate": 91,
+      "invariant": "fallback-readonly-7-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 412,
+      "time": "2026-08-13T14:02:57.340773+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 413,
+      "time": "2026-08-13T14:02:57.357764+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 414,
+      "time": "2026-08-13T14:02:58.790939+00:00",
+      "kind": "experiment-result",
+      "attempt": 107,
+      "experiment": 91,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-7-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 415,
+      "time": "2026-08-13T14:03:00.097189+00:00",
+      "kind": "hypothesis",
+      "attempt": 108,
+      "experiment_candidate": 92,
+      "invariant": "fallback-readonly-8-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 416,
+      "time": "2026-08-13T14:03:02.899900+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 417,
+      "time": "2026-08-13T14:03:02.919341+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 418,
+      "time": "2026-08-13T14:03:04.489245+00:00",
+      "kind": "experiment-result",
+      "attempt": 108,
+      "experiment": 92,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-8-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 419,
+      "time": "2026-08-13T14:03:05.875294+00:00",
+      "kind": "hypothesis",
+      "attempt": 109,
+      "experiment_candidate": 93,
+      "invariant": "fallback-readonly-9-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 420,
+      "time": "2026-08-13T14:03:08.527258+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 421,
+      "time": "2026-08-13T14:03:08.549180+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 422,
+      "time": "2026-08-13T14:03:09.960208+00:00",
+      "kind": "experiment-result",
+      "attempt": 109,
+      "experiment": 93,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-9-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 423,
+      "time": "2026-08-13T14:03:11.273544+00:00",
+      "kind": "hypothesis",
+      "attempt": 110,
+      "experiment_candidate": 94,
+      "invariant": "fallback-readonly-10-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 424,
+      "time": "2026-08-13T14:03:13.966851+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 425,
+      "time": "2026-08-13T14:03:13.987872+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 426,
+      "time": "2026-08-13T14:03:15.442973+00:00",
+      "kind": "experiment-result",
+      "attempt": 110,
+      "experiment": 94,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-10-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 427,
+      "time": "2026-08-13T14:03:16.740257+00:00",
+      "kind": "hypothesis",
+      "attempt": 111,
+      "experiment_candidate": 95,
+      "invariant": "fallback-readonly-11-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 428,
+      "time": "2026-08-13T14:03:19.385536+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 429,
+      "time": "2026-08-13T14:03:19.408007+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 430,
+      "time": "2026-08-13T14:03:20.834241+00:00",
+      "kind": "experiment-result",
+      "attempt": 111,
+      "experiment": 95,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-11-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 431,
+      "time": "2026-08-13T14:03:22.074740+00:00",
+      "kind": "hypothesis",
+      "attempt": 112,
+      "experiment_candidate": 96,
+      "invariant": "fallback-readonly-12-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 432,
+      "time": "2026-08-13T14:03:24.772533+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 433,
+      "time": "2026-08-13T14:03:24.789965+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 434,
+      "time": "2026-08-13T14:03:26.220681+00:00",
+      "kind": "experiment-result",
+      "attempt": 112,
+      "experiment": 96,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-12-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 435,
+      "time": "2026-08-13T14:03:27.539731+00:00",
+      "kind": "hypothesis",
+      "attempt": 113,
+      "experiment_candidate": 97,
+      "invariant": "fallback-readonly-13-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 436,
+      "time": "2026-08-13T14:03:30.172026+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 437,
+      "time": "2026-08-13T14:03:30.192391+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 438,
+      "time": "2026-08-13T14:03:31.629589+00:00",
+      "kind": "experiment-result",
+      "attempt": 113,
+      "experiment": 97,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-13-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 439,
+      "time": "2026-08-13T14:03:32.911765+00:00",
+      "kind": "hypothesis",
+      "attempt": 114,
+      "experiment_candidate": 98,
+      "invariant": "fallback-readonly-14-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 440,
+      "time": "2026-08-13T14:03:35.634405+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 441,
+      "time": "2026-08-13T14:03:35.654762+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 442,
+      "time": "2026-08-13T14:03:37.456428+00:00",
+      "kind": "experiment-result",
+      "attempt": 114,
+      "experiment": 98,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-14-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 443,
+      "time": "2026-08-13T14:03:38.811265+00:00",
+      "kind": "hypothesis",
+      "attempt": 115,
+      "experiment_candidate": 99,
+      "invariant": "fallback-readonly-15-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 444,
+      "time": "2026-08-13T14:03:41.524078+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 445,
+      "time": "2026-08-13T14:03:41.541415+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 446,
+      "time": "2026-08-13T14:03:42.982120+00:00",
+      "kind": "experiment-result",
+      "attempt": 115,
+      "experiment": 99,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-15-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 447,
+      "time": "2026-08-13T14:03:44.452762+00:00",
+      "kind": "hypothesis",
+      "attempt": 116,
+      "experiment_candidate": 100,
+      "invariant": "fallback-readonly-16-v7",
+      "category": "harness-recovery-7",
+      "text": "a deterministic read-only engine invocation replaces an invalid planned attempt"
+    },
+    {
+      "step": 448,
+      "time": "2026-08-13T14:03:47.336020+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-4\",\n      \"name\": \"Memoria y recursión 🧠\",\n      \"topics\": [\n        \"Pilas de llamadas\",\n        \"Complejidad espacial\"\n      ],\n      \"source\": \"Programa QA v7\",\n      \"status\": \"in-progress\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    },\n    {\n      \"id\": \"final-integrador\",\n      \"type\": \"final\",\n      \"name\": \"Final Integrador QA\",\n      \"date\": \"2026-11-15\",\n      \"parent_assessment_id\": \"\",\n      \"format\": \"Escrito y código\",\n      \"status\": \"planned\",\n      \"scope\": [\n        {\n          \"kind\": \"unit\",\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        },\n        {\n          \"kind\": \"topic\",\n          \"ref\": \"Algoritmos\",\n          \"status\": \"confirmed\",\n          \"evidence\": \"Programa QA v7\"\n        }\n      ],\n      \"source\": \"Programa QA v7\",\n      \"result\": {\n        \"status\": \"unknown\",\n        \"grade\": null,\n        \"notes\": \"\"\n      }\n    }\n  ],\n  \"rules\": [\n    {\n      \"kind\": \"grading\",\n      \"text\": \"Claridad 40%; pruebas límite β 60%.\",\n      \"source\": \"Reglamento QA v7\",\n      \"status\": \"confirmed\"\n    }\n  ],\n  \"claims\": [],\n  \"claim_candidates\": [\n    {\n      \"id\": \"cand-2e930824d6efa2c1\",\n      \"origin\": \"automatic-claim-extraction-v1\",\n      \"review_status\": \"pending\",\n      \"kind\": \"assessment-scope\",\n      \"semantic_ready\": false,\n      \"source_type_suggestion\": \"teacher_transcript\",\n      \"source\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt\",\n      \"evidence_ref\": \"unidades/unidad-2/fuentes/transcripciones/clase β 2.srt#00:00:04\",\n      \"locator\": {\n        \"segment\": 2,\n        \"timestamp\": \"00:00:04\"\n      },\n      \"excerpt\": \"Esto entra en el final β.\",\n      \"hints\": {\n        \"domain\": \"assessment\",\n        \"subject\": \"final\",\n        \"predicate\": \"includes\",\n        \"object\": \"\",\n        \"value\": true\n      }\n    }\n  ],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_after": "2fec5c0cc2b87faeab0413d7a688c0ba5efcd56394ce7c58a3923c0af8921996",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 449,
+      "time": "2026-08-13T14:03:47.353105+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-573a26586bd3\\materias\\qa-engine-20260813t134040z-s260813508"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 450,
+      "time": "2026-08-13T14:03:49.086230+00:00",
+      "kind": "experiment-result",
+      "attempt": 116,
+      "experiment": 100,
+      "status": "valid",
+      "reason": null,
+      "notes": "mechanical evidence matched declared mode",
+      "invariant": "fallback-readonly-16-v7",
+      "category": "harness-recovery-7"
+    },
+    {
+      "step": 451,
+      "time": "2026-08-13T14:04:32.874659+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    }
+  ],
+  "note": "Compact replay context; minimize each bug to deterministic engine operations before fixing.",
+  "valid_experiments": 100,
+  "attempted_experiments": 116,
+  "invalid_experiments": 16,
+  "transport_protocol": "json-request-file-v1",
+  "protocol_version": 2
+}

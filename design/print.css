@@ -47,8 +47,10 @@
   }
   .study-grid { display: block; }
   article {
+    --notebook-paper-padding-start: 11mm;
+    --notebook-paper-padding-end: 0mm;
     max-width: none;
-    padding: 0 0 0 11mm;
+    padding: 0 var(--notebook-paper-padding-end) 0 var(--notebook-paper-padding-start);
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -59,7 +61,6 @@
   article::before {
     display: block;
     left: 7mm;
-    background: var(--study-margin-rule);
   }
   article::after { display: none; }
 
@@ -73,7 +74,9 @@
     margin: var(--notebook-line-pitch) 0;
     break-after: avoid;
   }
-  .study-header { margin: var(--notebook-line-pitch) 0; }
+  .study-header {
+    margin: var(--notebook-line-pitch) 0 calc(var(--notebook-line-pitch) * 2);
+  }
   p, li {
     orphans: 3;
     widows: 3;

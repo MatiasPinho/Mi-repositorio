@@ -16,6 +16,8 @@ Lower the score when:
 - raw source screenshots are dumped without interpretation.
 - a pedagogical derived diagram ignores the planned notebook-sketch treatment
   without a fidelity reason;
+- `source-first` is used as an automatic reason to preserve a reconstructible
+  flow, tree, concept map, relation map or technical schematic;
 - a pencil-like treatment is applied mechanically to a screenshot, dense
   chart, visual table, formula, code or other precision-sensitive content;
 - `preserve+derived_sketch` duplicates the source without adding a simpler,
@@ -30,6 +32,10 @@ Hard fail:
   scale or other meaningful feature;
 - a deterministic sketch omits element-level provenance, does not match its
   registered spec hash, or contains a node/edge not present in that spec;
+- `02-plan.json` says `reinterpret` but the final Markdown omits the planned
+  derived SVG or uses its source asset instead;
+- a `preserve` decision has no explicit `fidelity_reason`, or a
+  `preserve+derived_sketch` decision omits either member of the pair;
 - a reinterpreted sketch carries an opaque canvas, internal notebook paper,
   outer frame or pasted-card plate instead of revealing the real document
   rules behind it;

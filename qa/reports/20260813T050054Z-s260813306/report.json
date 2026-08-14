@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "run_id": "20260813T050054Z-s260813306",
+  "provider": "codex",
+  "seed": 260813306,
+  "budget": 100,
+  "experiments": 100,
+  "steps": 763,
+  "findings": 0,
+  "blocked": false,
+  "coverage": [
+    "baseline-6",
+    "transport-metaphoric-6",
+    "materials-line-endings-6",
+    "materials-unicode-6",
+    "transcript-unicode-6",
+    "pdf-transcript-boundary-6",
+    "evidence-stale-6",
+    "topics-structured-input-6",
+    "long-sequence-validation-6",
+    "harness-recovery-6"
+  ],
+  "final_invariants_ok": true,
+  "final_issues": [],
+  "finding_rows": [],
+  "finished_at": "2026-08-13T05:21:42.117865+00:00",
+  "valid_experiments": 100,
+  "attempted_experiments": 191,
+  "invalid_experiments": 91,
+  "transport_protocol": "json-request-file-v1",
+  "protocol_version": 2
+}

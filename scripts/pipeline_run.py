@@ -35,6 +35,7 @@ else:
 from scripts.academic_eval import evaluate_review  # noqa: E402
 
 STAGED = {"resumen", "guia", "repaso"}
+SUMMARY_STAGED = {"resumen", "guia"}
 REQUIRED_STAGES = ["02-plan.json", "03-draft.md", "04-humanized.md", "05-review.json"]
 SCRIPT_EXTENSIONS = {".py", ".js", ".ts", ".sh", ".ps1", ".bat", ".cmd"}
 ENGINE_PROTECTED_DIRS = (
@@ -168,7 +169,7 @@ def _resolve_repo_path(value: Any) -> Path:
 
 
 def _validate_canonical_snapshot(run: Path, errors: list[str]) -> None:
-    """Reject a staged run if any canonical input changed after 01-input.json."""
+    """Reject input drift, except append-only derived figures declared by the visual plan."""
     try:
         inp = load(run / "01-input.json", {})
     except (json.JSONDecodeError, OSError):
@@ -185,7 +186,119 @@ def _validate_canonical_snapshot(run: Path, errors: list[str]) -> None:
         expected = inp.get(hash_key)
         actual = sha(_resolve_repo_path(raw_path))
         if expected != actual:
-            errors.append(f"canonical-changed:{label}")
+            if label == "figures":
+                _validate_planned_figure_changes(run, _resolve_repo_path(raw_path), errors)
+            else:
+                errors.append(f"canonical-changed:{label}")
+
+
+def _plan_visuals(run: Path) -> list[dict[str, Any]]:
+    plan = load(run / "02-plan.json", {})
+    raw = plan.get("visuals", []) if isinstance(plan, dict) else []
+    if isinstance(raw, list):
+        return [item for item in raw if isinstance(item, dict)]
+    if isinstance(raw, dict):
+        return [item for item in raw.values() if isinstance(item, dict)]
+    return []
+
+
+def _planned_derived_treatments(run: Path) -> dict[str, str]:
+    rows: dict[str, str] = {}
+    for item in _plan_visuals(run):
+        treatment = str(item.get("visual_treatment", "")).strip()
+        if treatment not in {"reinterpret", "preserve+derived_sketch"}:
+            continue
+        figure_id = str(item.get("derived_figure_id", "")).strip()
+        if figure_id and not figure_id.startswith("derived:"):
+            figure_id = f"derived:{figure_id}"
+        if figure_id:
+            rows[figure_id] = treatment
+    return rows
+
+
+def _validate_visual_build_report(run: Path, errors: list[str]) -> dict[str, Any] | None:
+    path = run / "02-visual-build.json"
+    if not path.is_file():
+        errors.append("missing-02-visual-build.json")
+        return None
+    try:
+        report = load(path, {})
+    except (json.JSONDecodeError, OSError):
+        errors.append("visual-build-invalid-json")
+        return None
+    if not isinstance(report, dict) or report.get("ok") is not True:
+        errors.append("visual-build-failed")
+        return None
+    plan_path = run / "02-plan.json"
+    if not plan_path.is_file() or report.get("plan_sha256") != sha(plan_path):
+        errors.append("visual-build-plan-mismatch")
+    entries = report.get("entries")
+    if not isinstance(entries, list):
+        errors.append("visual-build-entries-missing")
+        return report
+    reported = {
+        str(item.get("derived_figure_id", "")).strip(): str(item.get("visual_treatment", "")).strip()
+        for item in entries
+        if isinstance(item, dict) and item.get("derived_figure_id")
+    }
+    planned = _planned_derived_treatments(run)
+    if reported != planned:
+        errors.append("visual-build-derived-set-mismatch")
+    return report
+
+
+def _validate_planned_figure_changes(run: Path, current_path: Path, errors: list[str]) -> None:
+    snapshot_path = run / "01-figures.json"
+    if not snapshot_path.is_file():
+        errors.append("canonical-changed:figures")
+        errors.append("missing-01-figures.json")
+        return
+    run_input = load(run / "01-input.json", {})
+    expected_snapshot = run_input.get("figures_sha256") if isinstance(run_input, dict) else None
+    if sha(snapshot_path) != expected_snapshot:
+        errors.append("figure-snapshot-hash-mismatch")
+    try:
+        before = load(snapshot_path, {})
+        after = load(current_path, {})
+    except (json.JSONDecodeError, OSError):
+        errors.append("figure-snapshot-invalid-json")
+        return
+    if not isinstance(before, dict) or not isinstance(after, dict):
+        errors.append("figure-snapshot-invalid")
+        return
+    before_rows = before.get("figures", {})
+    after_rows = after.get("figures", {})
+    if not isinstance(before_rows, dict) or not isinstance(after_rows, dict):
+        errors.append("figure-snapshot-rows-invalid")
+        return
+
+    before_meta = {key: value for key, value in before.items() if key not in {"version", "figures"}}
+    after_meta = {key: value for key, value in after.items() if key not in {"version", "figures"}}
+    if before_meta != after_meta:
+        errors.append("canonical-changed:figures-metadata")
+    try:
+        if int(after.get("version", 1) or 1) < int(before.get("version", 1) or 1):
+            errors.append("canonical-changed:figures-version-regressed")
+    except (TypeError, ValueError):
+        errors.append("canonical-changed:figures-version-invalid")
+
+    removed = set(before_rows) - set(after_rows)
+    if removed:
+        errors.extend(f"canonical-figure-removed:{key}" for key in sorted(removed))
+    for key in sorted(set(before_rows) & set(after_rows)):
+        if before_rows[key] != after_rows[key]:
+            errors.append(f"canonical-figure-modified:{key}")
+
+    planned = _planned_derived_treatments(run)
+    for key in sorted(set(after_rows) - set(before_rows)):
+        row = after_rows[key]
+        if key not in planned:
+            errors.append(f"unplanned-derived-figure:{key}")
+            continue
+        if not isinstance(row, dict) or row.get("origin") != "derived":
+            errors.append(f"planned-figure-origin-invalid:{key}")
+        elif row.get("visual_treatment") != planned[key]:
+            errors.append(f"planned-figure-treatment-mismatch:{key}")
 
 
 def cmd_start(args: argparse.Namespace) -> None:
@@ -236,7 +349,13 @@ def cmd_start(args: argparse.Namespace) -> None:
         "created_at": now(),
     }
     save(candidate / "01-input.json", inp)
+    figures_snapshot = candidate / "01-figures.json"
+    if figures_path.is_file():
+        figures_snapshot.write_bytes(figures_path.read_bytes())
+    else:
+        save(figures_snapshot, {"version": 2, "figures": {}})
     manifest["stages"]["01-input.json"] = "created"
+    manifest["stages"]["01-figures.json"] = "created"
     save(candidate / "manifest.json", manifest)
     print(json.dumps({"run_dir": candidate.relative_to(ROOT).as_posix(), "input": "01-input.json"}, ensure_ascii=False, indent=2))
 
@@ -372,6 +491,8 @@ def validate_run(run: Path) -> dict[str, Any]:
             if not (run / name).is_file():
                 errors.append(f"missing-{name}")
         first_review = run / "05-review.json"
+        if pipeline in SUMMARY_STAGED:
+            _validate_visual_build_report(run, errors)
         if first_review.is_file():
             first_issues = review_gate(first_review)
             if not first_issues:

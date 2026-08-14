@@ -78,7 +78,15 @@ class PipelineRunTests(unittest.TestCase):
         return ROOT / data["run_dir"]
 
     def write_base_stages(self, run):
-        (run / "02-plan.json").write_text(json.dumps({"central_idea": "x"}), encoding="utf-8")
+        plan = run / "02-plan.json"
+        plan.write_text(json.dumps({"central_idea": "x", "visuals": []}), encoding="utf-8")
+        (run / "02-visual-build.json").write_text(json.dumps({
+            "version": 1,
+            "ok": True,
+            "unit_id": "unidad-1",
+            "plan_sha256": file_sha(plan),
+            "entries": [],
+        }), encoding="utf-8")
         (run / "03-draft.md").write_text("draft", encoding="utf-8")
         (run / "04-humanized.md").write_text("human", encoding="utf-8")
 
@@ -156,6 +164,7 @@ class PipelineRunTests(unittest.TestCase):
         self.assertTrue(inp["concepts_sha256"])
         self.assertTrue(inp["topics_sha256"])
         self.assertTrue(inp["figures_sha256"])
+        self.assertTrue((run / "01-figures.json").is_file())
 
     def test_first_review_pass_path_finishes(self):
         run = self.start()

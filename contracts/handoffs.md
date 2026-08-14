@@ -12,6 +12,7 @@ Only genuinely course-wide runs may live under
 - `01-input.json`: resolved course/scope, relevant canonical paths/fingerprints, requested mode.
 - `02-plan.json`: pedagogical/content plan. No polished prose.
 - `02-sketches/<id>.json`: optional structured specs for deterministic derived SVGs selected by the plan.
+- `02-visual-build.json`: deterministic materialization report binding the plan to registered figure assets before drafting.
 - `03-draft.md`: first student-facing draft.
 - `04-humanized.md`: Humanizer output.
 - `05-review.json`: independent fidelity + pedagogy review.
@@ -69,6 +70,17 @@ Handoff files are working state and are not automatically student artifacts.
 ## Plan visual contract
 `02-plan.json` should include a `visuals` section for student-facing content. Each major concept receives one of `visual_required`, `visual_helpful`, `visual_not_needed`. Every required/helpful entry also records `visual_treatment` as exactly `reinterpret`, `preserve` or `preserve+derived_sketch`, following `rules/visual/figures.md`. Selected source visuals reference ids from `unidades/<unit-id>/conocimiento/figures.json`; derived diagrams must be explicitly marked derived.
 
+For the reconstructible kinds `flow`, `tree`, `concept-map`, `relations` and
+`technical-schematic`, `reinterpret` is the default even when the canonical
+source registry already contains a PNG. `source-first` selects evidence and
+provenance; it never selects `preserve` by itself. A `preserve` or
+`preserve+derived_sketch` entry must include a separate non-empty
+`fidelity_reason` naming the exact pixel-, scale-, notation-, geometry- or
+layout-sensitive information that requires the original. This keeps preserve
+available for screenshots, dense charts, formulas, geometry, circuits, exact
+plots and other precision-sensitive content without turning source reuse into
+an automatic fallback.
+
 Minimum shape for a selected visual:
 
 ```json
@@ -80,7 +92,8 @@ Minimum shape for a selected visual:
   "derived_figure_id": "derived:u2-process-overview",
   "sketch_spec": "02-sketches/u2-process-overview.json",
   "based_on": ["concept:stable-concept-id", "figure:u2-source-process"],
-  "reason": "The source preserves exact detail; the sketch exposes the high-level flow."
+  "reason": "The pair connects the exact evidence to a simpler mental model.",
+  "fidelity_reason": "The source contains scale-dependent measurements that the sketch intentionally omits."
 }
 ```
 
@@ -88,7 +101,8 @@ Minimum shape for a selected visual:
 `preserve+derived_sketch`; `derived_figure_id` and non-empty `based_on` are
 required whenever a derived asset will be created. `preserve+derived_sketch`
 means two distinct figures are retained, never one source image overwritten by
-an artistic derivative.
+an artistic derivative. `fidelity_reason` is required whenever source pixels
+are retained; the general pedagogical `reason` does not substitute for it.
 
 For `reinterpret` and `preserve+derived_sketch`, the visual entry also includes
 `sketch_spec`, a run-relative path under `02-sketches/`. The referenced JSON
@@ -110,6 +124,26 @@ Example:
   "reason": "The process can be reconstructed without losing any relation."
 }
 ```
+
+After PLAN, run the deterministic materializer before DRAFT:
+
+```powershell
+python scripts/venv_exec.py scripts/visual_plan.py `
+  --course <course> --unit <unit-id> `
+  --plan <run-dir>/02-plan.json `
+  --write <run-dir>/02-visual-build.json
+```
+
+`02-visual-build.json` contains `plan_sha256` plus one entry per selected
+visual and records the exact registered `asset`; derived entries also record
+the derived id and generator/spec hashes. The report is stable across exact
+retries. DRAFT must use these assets rather than a planned placeholder or the
+source companion of a `reinterpret` entry.
+
+The final integrity gate must receive this same `02-plan.json`. It fails when a
+planned `reinterpret` does not use its registered derived SVG, when a source
+asset named as reinterpret provenance appears in its place, or when a planned
+`preserve+derived_sketch` does not use both figures.
 
 ## Plan topic coverage contract
 For unit-scoped summaries, `02-plan.json` should record which observed topic ids
@@ -144,3 +178,9 @@ same spec hash. Registry verification and the artifact integrity gate reject a
 modified spec, modified SVG, mismatched ID, missing generator marker or asset
 outside `assets/figures/`. Exact retries are idempotent; an existing ID/path
 with different bytes is never overwritten.
+
+`pipeline_run.py start` stores an immutable `01-figures.json` snapshot. Finish
+still rejects any source-figure edit/removal or unplanned registry mutation,
+but permits append-only derived records whose ids and treatments match the
+plan and `02-visual-build.json`. This is the only canonical-input mutation a
+summary run may introduce.

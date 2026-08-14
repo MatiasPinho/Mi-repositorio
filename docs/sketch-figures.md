@@ -28,19 +28,36 @@ dónde salió cada afirmación visual.
 
 ## Flujo de un resumen
 
-1. El planner selecciona `visual_treatment: reinterpret` solo cuando la figura
-   puede reconstruirse sin pérdida.
+1. El planner selecciona `visual_treatment: reinterpret` por defecto para
+   `flow`, `tree`, `concept-map`, `relations` y `technical-schematic` cuando la
+   figura puede reconstruirse sin pérdida. Que exista un PNG fuente no cambia
+   ese tratamiento: el PNG puede aportar procedencia sin ser el asset final.
 2. Escribe `02-sketches/<id>.json` y registra esa ruta en la entrada visual de
    `02-plan.json`.
-3. El core valida la spec y genera dos archivos junto al asset:
+3. `scripts/visual_plan.py` valida el plan completo antes del draft. Todo
+   `preserve` exige `fidelity_reason`, mientras que una reinterpretación no
+   puede seleccionar el PNG mediante `source_figure_id`.
+4. El core valida cada spec y genera dos archivos junto al asset:
    `<id>.svg` y `<id>.sketch.json`.
-4. El mismo comando registra `derived:<id>` con hashes del SVG y la spec.
-5. El Markdown utiliza el SVG local como cualquier otra figura.
-6. `artifact_integrity.py` vuelve a verificar asset, spec, hashes, identidad del
-   generador y metadatos embebidos; `visual_audit.py` comprueba el resultado en
-   navegador, móvil e impresión.
+5. El mismo comando registra `derived:<id>` con hashes del SVG y la spec y deja
+   `02-visual-build.json` como enlace determinista entre plan y asset.
+6. Recién entonces el Markdown utiliza el SVG local como cualquier otra figura.
+7. `artifact_integrity.py` recibe `02-plan.json` y vuelve a verificar asset,
+   tratamiento, spec, hashes, identidad del generador y metadatos embebidos. Si
+   el plan dice `reinterpret` pero el Markdown usa el PNG fuente, el gate falla.
+   `visual_audit.py` comprueba el resultado en navegador, móvil e impresión.
 
-El comando recomendado es idempotente:
+El comando recomendado para el pipeline completo es idempotente:
+
+```powershell
+python scripts/venv_exec.py scripts/visual_plan.py `
+  --course <course> `
+  --unit <unit-id> `
+  --plan <run-dir>/02-plan.json `
+  --write <run-dir>/02-visual-build.json
+```
+
+La operación subyacente para una sola spec sigue disponible:
 
 ```powershell
 python scripts/venv_exec.py study.py figures generate-sketch <course> `

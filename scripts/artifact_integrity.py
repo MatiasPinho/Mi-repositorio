@@ -16,6 +16,7 @@ from scripts.figure_assets import load_registry, registry_issues  # noqa: E402
 from scripts.course_layout import has_unit_layout, unit_root  # noqa: E402
 from scripts.render_study import validate_caption_comments, validate_images  # noqa: E402
 from scripts.unit_identity import record_unit_id, resolve_unit  # noqa: E402
+from scripts.visual_plan import artifact_usage_issues  # noqa: E402
 
 
 def safe_file(value: str, *, must_exist: bool = True) -> Path:
@@ -51,7 +52,14 @@ def html_image_issues(html_path: Path, text: str) -> list[str]:
     return issues
 
 
-def check(course: Path, md_path: Path, html_path: Path, scope: str, artifact_type: str) -> dict[str, Any]:
+def check(
+    course: Path,
+    md_path: Path,
+    html_path: Path,
+    scope: str,
+    artifact_type: str,
+    plan_path: Path | None = None,
+) -> dict[str, Any]:
     issues: list[str] = []
     md_text = md_path.read_text(encoding="utf-8")
     html_text = html_path.read_text(encoding="utf-8")
@@ -111,6 +119,21 @@ def check(course: Path, md_path: Path, html_path: Path, scope: str, artifact_typ
     if len(used_registered) > len(scoped):
         issues.append(f"scope-figure-count-too-small:{len(scoped)}<{len(used_registered)}")
 
+    visual_plan_count = 0
+    if plan_path is None:
+        adjacent_plan = md_path.parent / "02-plan.json"
+        if adjacent_plan.is_file():
+            plan_path = adjacent_plan
+    if plan_path is not None:
+        plan_path = plan_path.resolve()
+        if not plan_path.is_file():
+            issues.append(f"visual-plan-missing:{plan_path}")
+        else:
+            plan_issues, visual_plan_count = artifact_usage_issues(
+                course, scope, plan_path, used_registered
+            )
+            issues.extend(plan_issues)
+
     result = {
         "ok": not issues,
         "artifact_type": artifact_type,
@@ -118,6 +141,8 @@ def check(course: Path, md_path: Path, html_path: Path, scope: str, artifact_typ
         "unit_id": unit_id,
         "used_figure_count": len(used_registered),
         "scoped_figure_count": len(scoped),
+        "visual_plan_checked": plan_path is not None,
+        "planned_visual_count": visual_plan_count,
         "issues": issues,
     }
     return result
@@ -130,12 +155,14 @@ def main() -> None:
     ap.add_argument("--html", required=True)
     ap.add_argument("--scope", default="")
     ap.add_argument("--type", default="summary", choices=["summary", "guide", "rapid-review"])
+    ap.add_argument("--plan")
     ap.add_argument("--write")
     args = ap.parse_args()
     course = resolve_course(args.course)
     md = safe_file(args.markdown)
     html = safe_file(args.html)
-    result = check(course, md, html, args.scope, args.type)
+    plan = safe_file(args.plan) if args.plan else None
+    result = check(course, md, html, args.scope, args.type, plan)
     if args.write:
         out = Path(args.write)
         if not out.is_absolute():

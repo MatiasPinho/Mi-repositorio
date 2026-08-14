@@ -1,0 +1,406 @@
+{
+  "version": 1,
+  "id": "QA-003",
+  "run_id": "20260813T052216Z-s260813407",
+  "created_at": "2026-08-13T05:32:03.908152+00:00",
+  "title": "equivalent_unit_aliases_rewrite_concept_registry",
+  "severity": "low",
+  "invariant": "concept-unit-alias-idempotence",
+  "expected": "Stable unit id and display-name aliases resolve to one canonical stored representation, so alternating equivalent aliases does not rewrite concept state.",
+  "actual": "concept_graph.py stores the raw --unit token in concept.unit while separately resolving unit_id; alternating Algoritmos y datos and unidad-1 rewrites concepts.json in both directions with the same unit_id.",
+  "notes": "Confirmed with two consecutive upserts in the frozen run; each changed the workspace digest while unit_id remained unidad-1. This can create unnecessary state churn and downstream stale fingerprints.",
+  "confirmed": true,
+  "seed": 260813407,
+  "course_slug": "qa-engine-20260813t052216z-s260813407",
+  "evidence_steps": [
+    414,
+    415,
+    416,
+    417,
+    418,
+    419,
+    420,
+    421,
+    422,
+    423,
+    424,
+    425,
+    426,
+    427
+  ],
+  "evidence": [
+    {
+      "step": 414,
+      "time": "2026-08-13T05:28:39.349042+00:00",
+      "kind": "experiment-result",
+      "attempt": 105,
+      "experiment": 100,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-5-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 415,
+      "time": "2026-08-13T05:31:14.624014+00:00",
+      "kind": "exec",
+      "script": "concept_graph.py",
+      "args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "unidad-1"
+      ],
+      "expanded_args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "unidad-1"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"id\": \"arbol\",\n  \"name\": \"Árbol β\",\n  \"unit\": \"unidad-1\",\n  \"unit_id\": \"unidad-1\",\n  \"summary\": \"\",\n  \"precise_definition\": \"\",\n  \"prerequisites\": [],\n  \"relations\": [],\n  \"sources\": [],\n  \"examples\": [],\n  \"traps\": [],\n  \"recurring_errors\": [],\n  \"assessment_relevance\": {\n    \"by_assessment\": {}\n  },\n  \"teaching_signals\": [],\n  \"last_updated\": \"2026-08-13\"\n}\n",
+      "stderr": "",
+      "workspace_before": "15033fc4aded0cc74686ea1fb0ab3d9a4e0d13eca25e85659298e12d8e8a2e9b",
+      "workspace_after": "15033fc4aded0cc74686ea1fb0ab3d9a4e0d13eca25e85659298e12d8e8a2e9b",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 416,
+      "time": "2026-08-13T05:31:14.634515+00:00",
+      "kind": "rpc-exec",
+      "script": "concept_graph.py",
+      "request_args": [
+        "upsert",
+        "--course",
+        "@course",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "unidad-1"
+      ],
+      "expanded_args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "unidad-1"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 417,
+      "time": "2026-08-13T05:31:17.224040+00:00",
+      "kind": "exec",
+      "script": "topic_catalog.py",
+      "args": [
+        "validate",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--unit",
+        "unidad-1"
+      ],
+      "expanded_args": [
+        "validate",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--unit",
+        "unidad-1"
+      ],
+      "returncode": 1,
+      "expected_returncode": 1,
+      "stdout": "{\n  \"ok\": false,\n  \"error\": \"Id de concepto duplicado en la unidad: arbol\"\n}\n",
+      "stderr": "",
+      "workspace_before": "15033fc4aded0cc74686ea1fb0ab3d9a4e0d13eca25e85659298e12d8e8a2e9b",
+      "workspace_after": "15033fc4aded0cc74686ea1fb0ab3d9a4e0d13eca25e85659298e12d8e8a2e9b",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 418,
+      "time": "2026-08-13T05:31:17.234035+00:00",
+      "kind": "rpc-exec",
+      "script": "topic_catalog.py",
+      "request_args": [
+        "validate",
+        "--course",
+        "@course",
+        "--unit",
+        "unidad-1"
+      ],
+      "expanded_args": [
+        "validate",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--unit",
+        "unidad-1"
+      ],
+      "returncode": 1,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 419,
+      "time": "2026-08-13T05:31:19.656186+00:00",
+      "kind": "exec",
+      "script": "study_tracker.py",
+      "args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407"
+      ],
+      "expanded_args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"added\": [],\n  \"updated_units\": [],\n  \"tracked\": 4\n}\n",
+      "stderr": "",
+      "workspace_before": "15033fc4aded0cc74686ea1fb0ab3d9a4e0d13eca25e85659298e12d8e8a2e9b",
+      "workspace_after": "15033fc4aded0cc74686ea1fb0ab3d9a4e0d13eca25e85659298e12d8e8a2e9b",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 420,
+      "time": "2026-08-13T05:31:19.664600+00:00",
+      "kind": "rpc-exec",
+      "script": "study_tracker.py",
+      "request_args": [
+        "sync",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 421,
+      "time": "2026-08-13T05:31:21.434203+00:00",
+      "kind": "check",
+      "ok": false,
+      "issues": [
+        {
+          "invariant": "topic-coverage-explicit",
+          "severity": "high",
+          "message": "Conceptos sin topic ni unassigned: ['arbol']",
+          "path": "unidades/unidad-1/conocimiento/topics.json"
+        },
+        {
+          "invariant": "progress-concept-exists",
+          "severity": "high",
+          "message": "Progress desconocido: ['árbol β', 'árbol β']",
+          "path": "unidades/unidad-1/progreso/progress.json"
+        },
+        {
+          "invariant": "progress-concept-exists",
+          "severity": "high",
+          "message": "Progress desconocido: ['bucle λ']",
+          "path": "unidades/unidad-2/progreso/progress.json"
+        },
+        {
+          "invariant": "progress-concept-exists",
+          "severity": "high",
+          "message": "Progress desconocido: ['parámetro ñ']",
+          "path": "unidades/unidad-3/progreso/progress.json"
+        }
+      ],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 422,
+      "time": "2026-08-13T05:31:22.691736+00:00",
+      "kind": "finding",
+      "id": "QA-001",
+      "severity": "high",
+      "invariant": "concept-unicode-canonical-identity",
+      "title": "unicode_equivalent_concept_names_create_duplicate_stable_id"
+    },
+    {
+      "step": 423,
+      "time": "2026-08-13T05:31:24.134417+00:00",
+      "kind": "finding",
+      "id": "QA-002",
+      "severity": "medium",
+      "invariant": "progress-concept-stable-identity",
+      "title": "tracker_progress_name_keys_fail_stable_id_checker"
+    },
+    {
+      "step": 424,
+      "time": "2026-08-13T05:32:01.515902+00:00",
+      "kind": "exec",
+      "script": "concept_graph.py",
+      "args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "Algoritmos y datos"
+      ],
+      "expanded_args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "Algoritmos y datos"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"id\": \"arbol\",\n  \"name\": \"Árbol β\",\n  \"unit\": \"Algoritmos y datos\",\n  \"unit_id\": \"unidad-1\",\n  \"summary\": \"Estructura jerárquica β\",\n  \"precise_definition\": \"Nodo raíz y subárboles.\",\n  \"prerequisites\": [\n    \"Bucle λ\"\n  ],\n  \"relations\": [\n    {\n      \"type\": \"related-to\",\n      \"target\": \"Árbol β\"\n    },\n    {\n      \"type\": \"depends-on\",\n      \"target\": \"Bucle λ\"\n    }\n  ],\n  \"sources\": [\n    {\n      \"file\": \"oficiales/fundamentos.txt\",\n      \"section\": \"Caso límite CRLF β\",\n      \"kind\": \"official\",\n      \"sha256\": \"51262334c74db4e17118516f910cf3521c2915e358bd0c48c106996425063a65\"\n    }\n  ],\n  \"examples\": [\n    \"Árbol de llamadas\"\n  ],\n  \"traps\": [\n    \"Confundir altura con cantidad de nodos\"\n  ],\n  \"recurring_errors\": [\n    {\n      \"text\": \"Confundir raíz con primera hoja β\",\n      \"count\": 2,\n      \"last_seen\": \"2026-08-13\"\n    },\n    {\n      \"text\": \"Olvidó el caso vacío β\",\n      \"count\": 1,\n      \"last_seen\": \"2026-08-13\"\n    }\n  ],\n  \"assessment_relevance\": {\n    \"by_assessment\": {\n      \"recuperatorio-β\": {\n        \"assessment_id\": \"recuperatorio-β\",\n        \"status\": \"confirmed\",\n        \"evidence\": \"Acta QA v6\"\n      }\n    }\n  },\n  \"teaching_signals\": [\n    {\n      \"type\": \"exam-cue\",\n      \"text\": \"Comparar altura ≥ 2; atención β.\",\n      \"file\": \"transcripciones/clase-1.srt\",\n      \"confidence\": \"explicit\",\n      \"timestamp\": \"00:00:04,000-00:00:07,000\",\n      \"speaker\": \"Docente QA\",\n      \"assessment_id\": \"recuperatorio-β\"\n    }\n  ],\n  \"last_updated\": \"2026-08-13\"\n}\n",
+      "stderr": "",
+      "workspace_before": "15033fc4aded0cc74686ea1fb0ab3d9a4e0d13eca25e85659298e12d8e8a2e9b",
+      "workspace_after": "bf8902e5b24affa4ccd0d9dc22ba7982c74d904c310176a1674f52d13dc99317",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-1/conocimiento/concepts.json"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 425,
+      "time": "2026-08-13T05:32:01.527902+00:00",
+      "kind": "rpc-exec",
+      "script": "concept_graph.py",
+      "request_args": [
+        "upsert",
+        "--course",
+        "@course",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "Algoritmos y datos"
+      ],
+      "expanded_args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "Algoritmos y datos"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 426,
+      "time": "2026-08-13T05:32:03.051498+00:00",
+      "kind": "exec",
+      "script": "concept_graph.py",
+      "args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "unidad-1"
+      ],
+      "expanded_args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "unidad-1"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"id\": \"arbol\",\n  \"name\": \"Árbol β\",\n  \"unit\": \"unidad-1\",\n  \"unit_id\": \"unidad-1\",\n  \"summary\": \"Estructura jerárquica β\",\n  \"precise_definition\": \"Nodo raíz y subárboles.\",\n  \"prerequisites\": [\n    \"Bucle λ\"\n  ],\n  \"relations\": [\n    {\n      \"type\": \"related-to\",\n      \"target\": \"Árbol β\"\n    },\n    {\n      \"type\": \"depends-on\",\n      \"target\": \"Bucle λ\"\n    }\n  ],\n  \"sources\": [\n    {\n      \"file\": \"oficiales/fundamentos.txt\",\n      \"section\": \"Caso límite CRLF β\",\n      \"kind\": \"official\",\n      \"sha256\": \"51262334c74db4e17118516f910cf3521c2915e358bd0c48c106996425063a65\"\n    }\n  ],\n  \"examples\": [\n    \"Árbol de llamadas\"\n  ],\n  \"traps\": [\n    \"Confundir altura con cantidad de nodos\"\n  ],\n  \"recurring_errors\": [\n    {\n      \"text\": \"Confundir raíz con primera hoja β\",\n      \"count\": 2,\n      \"last_seen\": \"2026-08-13\"\n    },\n    {\n      \"text\": \"Olvidó el caso vacío β\",\n      \"count\": 1,\n      \"last_seen\": \"2026-08-13\"\n    }\n  ],\n  \"assessment_relevance\": {\n    \"by_assessment\": {\n      \"recuperatorio-β\": {\n        \"assessment_id\": \"recuperatorio-β\",\n        \"status\": \"confirmed\",\n        \"evidence\": \"Acta QA v6\"\n      }\n    }\n  },\n  \"teaching_signals\": [\n    {\n      \"type\": \"exam-cue\",\n      \"text\": \"Comparar altura ≥ 2; atención β.\",\n      \"file\": \"transcripciones/clase-1.srt\",\n      \"confidence\": \"explicit\",\n      \"timestamp\": \"00:00:04,000-00:00:07,000\",\n      \"speaker\": \"Docente QA\",\n      \"assessment_id\": \"recuperatorio-β\"\n    }\n  ],\n  \"last_updated\": \"2026-08-13\"\n}\n",
+      "stderr": "",
+      "workspace_before": "bf8902e5b24affa4ccd0d9dc22ba7982c74d904c310176a1674f52d13dc99317",
+      "workspace_after": "15033fc4aded0cc74686ea1fb0ab3d9a4e0d13eca25e85659298e12d8e8a2e9b",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          "unidades/unidad-1/conocimiento/concepts.json"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 427,
+      "time": "2026-08-13T05:32:03.059005+00:00",
+      "kind": "rpc-exec",
+      "script": "concept_graph.py",
+      "request_args": [
+        "upsert",
+        "--course",
+        "@course",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "unidad-1"
+      ],
+      "expanded_args": [
+        "upsert",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-5e297ac00dc9\\materias\\qa-engine-20260813t052216z-s260813407",
+        "--concept",
+        "Árbol β",
+        "--unit",
+        "unidad-1"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    }
+  ]
+}

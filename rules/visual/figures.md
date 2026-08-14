@@ -35,27 +35,37 @@ After deciding that a visual is required or helpful, record exactly one
 `visual_treatment` in the plan:
 
 - `reinterpret`: the visual is a pedagogical derivation whose meaning can be
-  reconstructed without loss. Prefer this for flowcharts, trees, concept maps,
-  concept relationships, process schematics and other explanatory diagrams.
+  reconstructed without loss. This is the default for `flow`, `tree`,
+  `concept-map`, `relations` and `technical-schematic`, including when a source
+  PNG of that diagram already exists. Source availability supplies provenance;
+  it does not select the final pixels. Prefer this for flowcharts, trees,
+  concept maps, concept relationships, process schematics and other
+  explanatory diagrams.
   Use slightly imperfect but crisp pencil-like strokes, manual-looking arrows,
   boxes and annotations, and the current notebook grammar. Labels, direction,
   grouping, order and every academically meaningful relationship must remain
   unambiguous.
 - `preserve`: use the precise original/representation because restyling could
   lose information. This is the normal choice for screenshots, dense charts,
-  visual tables, original source images, exact plots, geometry, circuits,
+  precision-sensitive visual tables, exact plots, formulas, geometry, circuits,
   notation-heavy figures and any visual whose pixels, scale or layout are part
-  of the evidence. Integrate it through placement, plate, caption and nearby
-  handwritten accents; never alter the source pixels merely to make them look
-  like pencil.
+  of the evidence. Every `preserve` decision records a non-empty
+  `fidelity_reason` that names the detail that reconstruction could lose.
+  Integrate it through placement, plate, caption and nearby handwritten
+  accents; never alter the source pixels merely to make them look like pencil.
 - `preserve+derived_sketch`: keep the precise source figure and add a separate,
   clearly labelled simplified notebook sketch only when the pair has more
   teaching value than either figure alone. The sketch explains a supported
   mental model; it does not replace, correct or impersonate the source.
 
-When uncertain, choose `preserve`. Visual character has lower priority than
-academic fidelity and legibility. Do not use `preserve+derived_sketch` merely to
-decorate a preserved figure or to satisfy a figure count.
+When there is a concrete uncertainty about losing exact information, choose
+`preserve` and state that uncertainty in `fidelity_reason`. The mere existence
+of a source asset is not such a reason. For the five reconstructible sketch
+kinds, first test whether all meaningful labels, relations, directions,
+groupings and order can be declared in the structured spec; if they can,
+`reinterpret` remains the default. Visual character still has lower priority
+than academic fidelity and legibility. Do not use `preserve+derived_sketch`
+merely to decorate a preserved figure or to satisfy a figure count.
 
 Code, formulas and tables are not literal pencil drawings. Keep their content
 exact and integrate them through the shared renderer's borders, captions,
@@ -64,6 +74,11 @@ is allowed only as a separate pedagogical figure with explicit provenance.
 
 ## Source-first policy
 Prefer a relevant figure from the unit sources when it faithfully represents what the chair teaches. Preserve provenance internally in `unidades/<unit-id>/conocimiento/figures.json`.
+
+`source-first` governs evidence selection, not treatment selection. It must not
+automatically override a lossless `reinterpret` decision. A reconstructible
+source diagram may be the `figure:<id>` provenance of a new sketch while the
+final artifact uses the registered derived SVG rather than the source PNG.
 
 If a source figure is too dense but the concept would benefit from a simpler schematic, a simplified diagram may be created only if every relationship shown is supported by canonical knowledge. Mark its origin as `derived` internally; never imply that a derived diagram came from the chair.
 
@@ -80,6 +95,8 @@ For every `visual_required` or `visual_helpful` decision, also record the
 For `preserve+derived_sketch`, identify both the preserved source figure and the
 separate derived asset/record. A decision to `reinterpret` must list the
 canonical concepts or source figure on which the new visual is based.
+`preserve` and `preserve+derived_sketch` also require `fidelity_reason`; a
+generic preference for the original or a source-first shortcut is invalid.
 
 ## Deterministic sketch generation
 
@@ -97,9 +114,12 @@ technical schematics. For each selected derived figure:
    references included in the spec's global provenance;
 3. use semantic shapes, rank/order and direction only—never colors, fonts,
    pixels or arbitrary SVG;
-4. run `study.py figures generate-sketch <course> --unit <unit-id> --spec <path>`
-   (or `study_generate_sketch_figure` through MCP);
-5. reference the registered local SVG from the candidate Markdown.
+4. materialize the whole plan with `scripts/visual_plan.py`, which validates the
+   decisions and calls the collision-safe sketch generator for every derived
+   entry;
+5. persist `02-visual-build.json` and verify every planned SVG is registered;
+6. only then draft Markdown, referencing the exact `asset` returned by the
+   build report.
 
 The command validates, renders and registers in one retry-safe operation. It
 stores the normalized spec next to the SVG, records both SHA-256 fingerprints
@@ -120,6 +140,12 @@ source figure to remain in the artifact and the spec to name the same
 dense charts, visual tables, code, formulas, geometry, circuits, exact plots
 and any pixel/scale-sensitive representation remain source assets unless a
 separate supported sketch adds genuine learning value.
+
+The integrity gate receives `02-plan.json` and fails closed when a planned
+`reinterpret` is absent from the final Markdown, when its source asset is used
+instead, or when the referenced derived record was not produced by the
+deterministic SVG generator. `preserve+derived_sketch` must reference both
+registered assets.
 
 ## Placement
 Corresponding words and images belong together. Put the figure immediately after the paragraph that introduces it, followed by a short **How to read this figure** explanation when needed.

@@ -297,11 +297,13 @@ hr {
 article {
   position: relative;
   isolation: isolate;
+  --notebook-paper-padding-start: clamp(5.4rem, 10vw, 7.2rem);
+  --notebook-paper-padding-end: clamp(1.25rem, 4vw, 2.5rem);
   flex: 1 1 34rem;
   width: min(100%, var(--notebook-paper-width));
   max-width: var(--notebook-paper-width);
   margin: 0 auto;
-  padding: calc(var(--notebook-line-pitch) * 2) clamp(1.25rem, 4vw, 2.5rem) 4rem clamp(5.4rem, 10vw, 7.2rem);
+  padding: calc(var(--notebook-line-pitch) * 2) var(--notebook-paper-padding-end) 4rem var(--notebook-paper-padding-start);
   overflow: hidden;
   color: var(--study-ink);
   background-color: var(--study-paper);
@@ -343,8 +345,8 @@ article::before {
   top: 0;
   bottom: 0;
   left: clamp(4.05rem, 7.2vw, 5.35rem);
-  width: 1px;
-  background: var(--study-margin-rule);
+  width: 4px;
+  border-inline: 1px solid var(--study-margin-rule);
   opacity: .9;
   pointer-events: none;
 }
@@ -416,8 +418,20 @@ article::after {
 .book-kind { white-space: nowrap; }
 
 .study-header {
+  position: relative;
   display: block;
-  margin: var(--notebook-line-pitch) 0;
+  margin: var(--notebook-line-pitch) 0 calc(var(--notebook-line-pitch) * 2);
+}
+.study-header::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: calc(-1 * var(--notebook-paper-padding-start));
+  inset-inline-end: calc(-1 * var(--notebook-paper-padding-end));
+  bottom: calc(-1 * var(--notebook-line-pitch));
+  height: 4px;
+  border-block: 1px solid var(--study-margin-rule);
+  opacity: .9;
+  pointer-events: none;
 }
 .study-header > .mark,
 .book-chapter-label { display: none; }
@@ -539,6 +553,8 @@ article::after {
   .study-grid,
   .study-grid.with-toc { display: block; }
   article {
+    --notebook-paper-padding-start: 3.45rem;
+    --notebook-paper-padding-end: 1.2rem;
     width: 100%;
     max-width: none;
     border: 0;
@@ -561,7 +577,10 @@ article::after {
 }
 
 @media (max-width: 34rem) {
-  article { padding-left: 1.2rem; }
+  article {
+    --notebook-paper-padding-start: 1.2rem;
+    padding-left: var(--notebook-paper-padding-start);
+  }
   article::before { display: none; }
   .section-head { gap: .3rem; }
   .section-head > .num { min-width: 1.65rem; }
@@ -803,6 +822,12 @@ figure .plate {
   background: color-mix(in srgb, var(--study-paper) 96%, white 4%);
   padding: 1rem;
 }
+/* Generated sketches are transparent ink overlays, not pasted image plates. */
+figure.study-sketch .plate {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
 figure img {
   display: block;
   width: auto;
@@ -810,6 +835,20 @@ figure img {
   max-height: min(74vh, 760px);
   height: auto;
   margin: 0 auto;
+}
+figure.study-sketch img {
+  max-height: none;
+  margin-inline: 0;
+}
+@media print {
+  /* Keep tall overlays together and legible on paper without turning them
+     back into a framed plate. */
+  figure.study-sketch img {
+    width: auto;
+    max-width: 100%;
+    max-height: 170mm;
+    margin-inline: auto;
+  }
 }
 figcaption {
   display: flex;
@@ -886,8 +925,10 @@ figure.wide { max-width: none; }
   }
   .study-grid { display: block; }
   article {
+    --notebook-paper-padding-start: 11mm;
+    --notebook-paper-padding-end: 0mm;
     max-width: none;
-    padding: 0 0 0 11mm;
+    padding: 0 var(--notebook-paper-padding-end) 0 var(--notebook-paper-padding-start);
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -898,7 +939,6 @@ figure.wide { max-width: none; }
   article::before {
     display: block;
     left: 7mm;
-    background: var(--study-margin-rule);
   }
   article::after { display: none; }
 
@@ -912,7 +952,9 @@ figure.wide { max-width: none; }
     margin: var(--notebook-line-pitch) 0;
     break-after: avoid;
   }
-  .study-header { margin: var(--notebook-line-pitch) 0; }
+  .study-header {
+    margin: var(--notebook-line-pitch) 0 calc(var(--notebook-line-pitch) * 2);
+  }
   p, li {
     orphans: 3;
     widows: 3;

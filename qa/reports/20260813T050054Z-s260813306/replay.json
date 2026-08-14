@@ -1,0 +1,877 @@
+{
+  "version": 1,
+  "run_id": "20260813T050054Z-s260813306",
+  "seed": 260813306,
+  "course_slug": "qa-engine-20260813t050054z-s260813306",
+  "journal": [
+    {
+      "step": 714,
+      "time": "2026-08-13T05:20:01.062509+00:00",
+      "kind": "experiment-result",
+      "attempt": 179,
+      "experiment": 88,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-79-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 715,
+      "time": "2026-08-13T05:20:02.793725+00:00",
+      "kind": "hypothesis",
+      "attempt": 180,
+      "experiment_candidate": 89,
+      "invariant": "fallback-readonly-80-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 716,
+      "time": "2026-08-13T05:20:04.241570+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 717,
+      "time": "2026-08-13T05:20:04.249574+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 718,
+      "time": "2026-08-13T05:20:05.058345+00:00",
+      "kind": "experiment-result",
+      "attempt": 180,
+      "experiment": 89,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-80-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 719,
+      "time": "2026-08-13T05:20:06.662337+00:00",
+      "kind": "hypothesis",
+      "attempt": 181,
+      "experiment_candidate": 90,
+      "invariant": "fallback-readonly-81-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 720,
+      "time": "2026-08-13T05:20:08.091537+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 721,
+      "time": "2026-08-13T05:20:08.101522+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 722,
+      "time": "2026-08-13T05:20:08.930688+00:00",
+      "kind": "experiment-result",
+      "attempt": 181,
+      "experiment": 90,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-81-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 723,
+      "time": "2026-08-13T05:20:10.524882+00:00",
+      "kind": "hypothesis",
+      "attempt": 182,
+      "experiment_candidate": 91,
+      "invariant": "fallback-readonly-82-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 724,
+      "time": "2026-08-13T05:20:11.912798+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 725,
+      "time": "2026-08-13T05:20:11.924337+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 726,
+      "time": "2026-08-13T05:20:12.752422+00:00",
+      "kind": "experiment-result",
+      "attempt": 182,
+      "experiment": 91,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-82-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 727,
+      "time": "2026-08-13T05:20:14.341661+00:00",
+      "kind": "hypothesis",
+      "attempt": 183,
+      "experiment_candidate": 92,
+      "invariant": "fallback-readonly-83-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 728,
+      "time": "2026-08-13T05:20:15.763324+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 729,
+      "time": "2026-08-13T05:20:15.775325+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 730,
+      "time": "2026-08-13T05:20:16.615172+00:00",
+      "kind": "experiment-result",
+      "attempt": 183,
+      "experiment": 92,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-83-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 731,
+      "time": "2026-08-13T05:20:18.184140+00:00",
+      "kind": "hypothesis",
+      "attempt": 184,
+      "experiment_candidate": 93,
+      "invariant": "fallback-readonly-84-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 732,
+      "time": "2026-08-13T05:20:19.588266+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 733,
+      "time": "2026-08-13T05:20:19.601248+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 734,
+      "time": "2026-08-13T05:20:20.411385+00:00",
+      "kind": "experiment-result",
+      "attempt": 184,
+      "experiment": 93,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-84-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 735,
+      "time": "2026-08-13T05:20:22.027266+00:00",
+      "kind": "hypothesis",
+      "attempt": 185,
+      "experiment_candidate": 94,
+      "invariant": "fallback-readonly-85-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 736,
+      "time": "2026-08-13T05:20:23.400287+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 737,
+      "time": "2026-08-13T05:20:23.410369+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 738,
+      "time": "2026-08-13T05:20:24.214205+00:00",
+      "kind": "experiment-result",
+      "attempt": 185,
+      "experiment": 94,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-85-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 739,
+      "time": "2026-08-13T05:20:25.766612+00:00",
+      "kind": "hypothesis",
+      "attempt": 186,
+      "experiment_candidate": 95,
+      "invariant": "fallback-readonly-86-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 740,
+      "time": "2026-08-13T05:20:27.138699+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 741,
+      "time": "2026-08-13T05:20:27.149791+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 742,
+      "time": "2026-08-13T05:20:27.980261+00:00",
+      "kind": "experiment-result",
+      "attempt": 186,
+      "experiment": 95,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-86-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 743,
+      "time": "2026-08-13T05:20:29.597841+00:00",
+      "kind": "hypothesis",
+      "attempt": 187,
+      "experiment_candidate": 96,
+      "invariant": "fallback-readonly-87-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 744,
+      "time": "2026-08-13T05:20:30.952620+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 745,
+      "time": "2026-08-13T05:20:30.961642+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 746,
+      "time": "2026-08-13T05:20:31.774148+00:00",
+      "kind": "experiment-result",
+      "attempt": 187,
+      "experiment": 96,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-87-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 747,
+      "time": "2026-08-13T05:20:33.398971+00:00",
+      "kind": "hypothesis",
+      "attempt": 188,
+      "experiment_candidate": 97,
+      "invariant": "fallback-readonly-88-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 748,
+      "time": "2026-08-13T05:20:34.743247+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 749,
+      "time": "2026-08-13T05:20:34.754246+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 750,
+      "time": "2026-08-13T05:20:35.572387+00:00",
+      "kind": "experiment-result",
+      "attempt": 188,
+      "experiment": 97,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-88-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 751,
+      "time": "2026-08-13T05:20:37.186587+00:00",
+      "kind": "hypothesis",
+      "attempt": 189,
+      "experiment_candidate": 98,
+      "invariant": "fallback-readonly-89-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 752,
+      "time": "2026-08-13T05:20:38.638400+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 753,
+      "time": "2026-08-13T05:20:38.649395+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 754,
+      "time": "2026-08-13T05:20:39.487519+00:00",
+      "kind": "experiment-result",
+      "attempt": 189,
+      "experiment": 98,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-89-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 755,
+      "time": "2026-08-13T05:20:41.157503+00:00",
+      "kind": "hypothesis",
+      "attempt": 190,
+      "experiment_candidate": 99,
+      "invariant": "fallback-readonly-90-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 756,
+      "time": "2026-08-13T05:20:42.526100+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 757,
+      "time": "2026-08-13T05:20:42.539023+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 758,
+      "time": "2026-08-13T05:20:43.400770+00:00",
+      "kind": "experiment-result",
+      "attempt": 190,
+      "experiment": 99,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-90-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 759,
+      "time": "2026-08-13T05:20:45.624790+00:00",
+      "kind": "hypothesis",
+      "attempt": 191,
+      "experiment_candidate": 100,
+      "invariant": "fallback-readonly-91-v6",
+      "category": "harness-recovery-6",
+      "text": "a fallback read-only call replaces an invalid harness attempt"
+    },
+    {
+      "step": 760,
+      "time": "2026-08-13T05:20:47.021442+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"version\": 1,\n  \"identity\": {\n    \"subject\": \"QA Sintética de Programación\",\n    \"institution\": \"University Study Engine QA\"\n  },\n  \"units\": [\n    {\n      \"id\": \"unidad-1\",\n      \"name\": \"Algoritmos y datos\",\n      \"topics\": [\n        \"Algoritmos\",\n        \"Variables\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-2\",\n      \"name\": \"Control\",\n      \"topics\": [\n        \"Condicionales\",\n        \"Iteraciones\"\n      ],\n      \"status\": \"active\"\n    },\n    {\n      \"id\": \"unidad-3\",\n      \"name\": \"Funciones\",\n      \"topics\": [\n        \"Funciones\",\n        \"Parámetros\"\n      ],\n      \"status\": \"active\"\n    }\n  ],\n  \"assessments\": [\n    {\n      \"id\": \"parcial-1\",\n      \"type\": \"parcial\",\n      \"name\": \"Parcial 1\",\n      \"status\": \"scheduled\",\n      \"scope\": [\n        {\n          \"ref\": \"unidad-1\",\n          \"status\": \"confirmed\",\n          \"evidence\": [\n            \"qa:programa\"\n          ],\n          \"kind\": \"unit\"\n        },\n        {\n          \"ref\": \"unidad-2\",\n          \"status\": \"likely\",\n          \"evidence\": [\n            \"qa:clase\"\n          ],\n          \"kind\": \"unit\"\n        }\n      ]\n    }\n  ],\n  \"rules\": [],\n  \"claims\": [],\n  \"claim_candidates\": [],\n  \"official_status\": {}\n}\n",
+      "stderr": "",
+      "workspace_before": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_after": "a990f87ed0eb9ce089a633029ca0e4f580295008f43381fc566f745f9da75ac8",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 761,
+      "time": "2026-08-13T05:20:47.033449+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-62269377574f\\materias\\qa-engine-20260813t050054z-s260813306"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 762,
+      "time": "2026-08-13T05:20:47.839672+00:00",
+      "kind": "experiment-result",
+      "attempt": 191,
+      "experiment": 100,
+      "status": "valid",
+      "reason": null,
+      "notes": "fallback replacement for invalid attempt",
+      "invariant": "fallback-readonly-91-v6",
+      "category": "harness-recovery-6"
+    },
+    {
+      "step": 763,
+      "time": "2026-08-13T05:21:42.105745+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    }
+  ],
+  "note": "Compact replay context; minimize each bug to deterministic engine operations before fixing.",
+  "valid_experiments": 100,
+  "attempted_experiments": 191,
+  "invalid_experiments": 91,
+  "transport_protocol": "json-request-file-v1",
+  "protocol_version": 2
+}

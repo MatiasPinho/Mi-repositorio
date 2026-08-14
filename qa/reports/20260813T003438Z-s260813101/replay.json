@@ -1,0 +1,1220 @@
+{
+  "version": 1,
+  "run_id": "20260813T003438Z-s260813101",
+  "seed": 260813101,
+  "course_slug": "qa-engine-20260813t003438z-s260813101",
+  "journal": [
+    {
+      "step": 401,
+      "time": "2026-08-13T00:40:17.678727+00:00",
+      "kind": "hypothesis",
+      "attempt": 97,
+      "experiment_candidate": 97,
+      "invariant": "academic-scope-unknown-100a",
+      "category": "academic-scope-unknown-4",
+      "text": "unknown assessment scope is rejected without mutation"
+    },
+    {
+      "step": 402,
+      "time": "2026-08-13T00:40:19.191142+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "scope",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--assessment",
+        "fantasma"
+      ],
+      "expanded_args": [
+        "scope",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--assessment",
+        "fantasma"
+      ],
+      "returncode": 1,
+      "expected_returncode": 1,
+      "stdout": "",
+      "stderr": "Assessment not found: fantasma\n",
+      "workspace_before": "bcb2954ceea2aa879c9e6af251784c74c034bc8b23bc7c4b171b24be0b8bec82",
+      "workspace_after": "bcb2954ceea2aa879c9e6af251784c74c034bc8b23bc7c4b171b24be0b8bec82",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 403,
+      "time": "2026-08-13T00:40:19.199137+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "scope",
+        "--course",
+        "@course",
+        "--assessment",
+        "fantasma"
+      ],
+      "expanded_args": [
+        "scope",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--assessment",
+        "fantasma"
+      ],
+      "returncode": 1,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 404,
+      "time": "2026-08-13T00:40:20.022394+00:00",
+      "kind": "experiment-result",
+      "attempt": 97,
+      "experiment": 97,
+      "status": "valid",
+      "reason": null,
+      "notes": null,
+      "invariant": "academic-scope-unknown-100a",
+      "category": "academic-scope-unknown-4"
+    },
+    {
+      "step": 405,
+      "time": "2026-08-13T00:40:20.821903+00:00",
+      "kind": "hypothesis",
+      "attempt": 98,
+      "experiment_candidate": 98,
+      "invariant": "academic-duplicate-id-100a",
+      "category": "academic-duplicate-id-4",
+      "text": "duplicate assessment id is rejected before write"
+    },
+    {
+      "step": 406,
+      "time": "2026-08-13T00:40:22.296575+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "add-assessment",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--id",
+        "parcial-1",
+        "--type",
+        "parcial",
+        "--name",
+        "Duplicado"
+      ],
+      "expanded_args": [
+        "add-assessment",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--id",
+        "parcial-1",
+        "--type",
+        "parcial",
+        "--name",
+        "Duplicado"
+      ],
+      "returncode": 1,
+      "expected_returncode": 1,
+      "stdout": "",
+      "stderr": "Assessment id already exists: parcial-1\n",
+      "workspace_before": "bcb2954ceea2aa879c9e6af251784c74c034bc8b23bc7c4b171b24be0b8bec82",
+      "workspace_after": "bcb2954ceea2aa879c9e6af251784c74c034bc8b23bc7c4b171b24be0b8bec82",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 407,
+      "time": "2026-08-13T00:40:22.304108+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "add-assessment",
+        "--course",
+        "@course",
+        "--id",
+        "parcial-1",
+        "--type",
+        "parcial",
+        "--name",
+        "Duplicado"
+      ],
+      "expanded_args": [
+        "add-assessment",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--id",
+        "parcial-1",
+        "--type",
+        "parcial",
+        "--name",
+        "Duplicado"
+      ],
+      "returncode": 1,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 408,
+      "time": "2026-08-13T00:40:23.226260+00:00",
+      "kind": "experiment-result",
+      "attempt": 98,
+      "experiment": 98,
+      "status": "valid",
+      "reason": null,
+      "notes": null,
+      "invariant": "academic-duplicate-id-100a",
+      "category": "academic-duplicate-id-4"
+    },
+    {
+      "step": 409,
+      "time": "2026-08-13T00:40:24.084902+00:00",
+      "kind": "hypothesis",
+      "attempt": 99,
+      "experiment_candidate": 99,
+      "invariant": "transport-json-token-100a",
+      "category": "transport-json-token-4",
+      "text": "embedded JSON with spaces and unicode remains one argv token"
+    },
+    {
+      "step": 410,
+      "time": "2026-08-13T00:40:25.621370+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--probe",
+        "{\"name\":\"Parcial 1\",\"unicode\":\"βλ漢字\"}"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--probe",
+        "{\"name\":\"Parcial 1\",\"unicode\":\"βλ漢字\"}"
+      ],
+      "returncode": 2,
+      "expected_returncode": 2,
+      "stdout": "",
+      "stderr": "usage: academic_context.py [-h]\n                           {show,add-unit,add-assessment,set-rule,scope,validate}\n                           ...\nacademic_context.py: error: unrecognized arguments: --probe {\"name\":\"Parcial 1\",\"unicode\":\"βλ漢字\"}\n",
+      "workspace_before": "bcb2954ceea2aa879c9e6af251784c74c034bc8b23bc7c4b171b24be0b8bec82",
+      "workspace_after": "bcb2954ceea2aa879c9e6af251784c74c034bc8b23bc7c4b171b24be0b8bec82",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 411,
+      "time": "2026-08-13T00:40:25.630802+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "show",
+        "--course",
+        "@course",
+        "--probe",
+        "{\"name\":\"Parcial 1\",\"unicode\":\"βλ漢字\"}"
+      ],
+      "expanded_args": [
+        "show",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--probe",
+        "{\"name\":\"Parcial 1\",\"unicode\":\"βλ漢字\"}"
+      ],
+      "returncode": 2,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 412,
+      "time": "2026-08-13T00:40:26.485917+00:00",
+      "kind": "experiment-result",
+      "attempt": 99,
+      "experiment": 99,
+      "status": "valid",
+      "reason": null,
+      "notes": null,
+      "invariant": "transport-json-token-100a",
+      "category": "transport-json-token-4"
+    },
+    {
+      "step": 413,
+      "time": "2026-08-13T00:40:27.346319+00:00",
+      "kind": "hypothesis",
+      "attempt": 100,
+      "experiment_candidate": 100,
+      "invariant": "pipeline-start-unit-100a",
+      "category": "pipeline-unit-boundary-4",
+      "text": "unit resumen run starts under unit1 run boundary"
+    },
+    {
+      "step": 414,
+      "time": "2026-08-13T00:40:28.949007+00:00",
+      "kind": "exec",
+      "script": "pipeline_run.py",
+      "args": [
+        "start",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--pipeline",
+        "resumen",
+        "--scope",
+        "unidad-1",
+        "--executor",
+        "codex"
+      ],
+      "expanded_args": [
+        "start",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--pipeline",
+        "resumen",
+        "--scope",
+        "unidad-1",
+        "--executor",
+        "codex"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"run_dir\": \"materias/qa-engine-20260813t003438z-s260813101/unidades/unidad-1/.study/runs/20260813T004028Z-resumen\",\n  \"input\": \"01-input.json\"\n}\n",
+      "stderr": "",
+      "workspace_before": "bcb2954ceea2aa879c9e6af251784c74c034bc8b23bc7c4b171b24be0b8bec82",
+      "workspace_after": "630faf7be70a76747d0309899788427636a706b7e56a393fe0fbc180c6162e7d",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-1/.study/runs/20260813T004028Z-resumen/01-input.json",
+          "unidades/unidad-1/.study/runs/20260813T004028Z-resumen/manifest.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 415,
+      "time": "2026-08-13T00:40:28.957077+00:00",
+      "kind": "rpc-exec",
+      "script": "pipeline_run.py",
+      "request_args": [
+        "start",
+        "--course",
+        "@course",
+        "--pipeline",
+        "resumen",
+        "--scope",
+        "unidad-1",
+        "--executor",
+        "codex"
+      ],
+      "expanded_args": [
+        "start",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--pipeline",
+        "resumen",
+        "--scope",
+        "unidad-1",
+        "--executor",
+        "codex"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 416,
+      "time": "2026-08-13T00:40:29.777671+00:00",
+      "kind": "experiment-result",
+      "attempt": 100,
+      "experiment": 100,
+      "status": "valid",
+      "reason": null,
+      "notes": null,
+      "invariant": "pipeline-start-unit-100a",
+      "category": "pipeline-unit-boundary-4"
+    },
+    {
+      "step": 417,
+      "time": "2026-08-13T00:40:30.804761+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 418,
+      "time": "2026-08-13T00:40:31.693625+00:00",
+      "kind": "checkpoint",
+      "label": "valid-100",
+      "workspace_sha256": "630faf7be70a76747d0309899788427636a706b7e56a393fe0fbc180c6162e7d",
+      "diff": {
+        "added": [
+          ".study/claim-candidates.json",
+          ".study/semantic-claims.json",
+          "unidades/unidad-1/.study/runs/20260813T004028Z-resumen/01-input.json",
+          "unidades/unidad-1/.study/runs/20260813T004028Z-resumen/manifest.json"
+        ],
+        "removed": [],
+        "changed": []
+      }
+    },
+    {
+      "step": 419,
+      "time": "2026-08-13T00:40:33.479730+00:00",
+      "kind": "rpc-exec-rejected",
+      "script": "sync_materials.py",
+      "request_args": [
+        "--course",
+        "@root"
+      ],
+      "engine_invoked": false,
+      "error": "QaError: --course debe apuntar a la materia QA del run."
+    },
+    {
+      "step": 420,
+      "time": "2026-08-13T00:40:36.849180+00:00",
+      "kind": "exec",
+      "script": "pipeline_run.py",
+      "args": [
+        "status",
+        "--run",
+        "latest"
+      ],
+      "expanded_args": [
+        "status",
+        "--run",
+        "latest"
+      ],
+      "returncode": 1,
+      "expected_returncode": null,
+      "stdout": "",
+      "stderr": "Invalid run directory: latest\n",
+      "workspace_before": "630faf7be70a76747d0309899788427636a706b7e56a393fe0fbc180c6162e7d",
+      "workspace_after": "630faf7be70a76747d0309899788427636a706b7e56a393fe0fbc180c6162e7d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 421,
+      "time": "2026-08-13T00:40:36.859922+00:00",
+      "kind": "rpc-exec",
+      "script": "pipeline_run.py",
+      "request_args": [
+        "status",
+        "--run",
+        "latest"
+      ],
+      "expanded_args": [
+        "status",
+        "--run",
+        "latest"
+      ],
+      "returncode": 1,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 422,
+      "time": "2026-08-13T00:40:38.353409+00:00",
+      "kind": "exec",
+      "script": "pipeline_run.py",
+      "args": [
+        "validate",
+        "--run",
+        "latest"
+      ],
+      "expanded_args": [
+        "validate",
+        "--run",
+        "latest"
+      ],
+      "returncode": 1,
+      "expected_returncode": null,
+      "stdout": "",
+      "stderr": "Invalid run directory: latest\n",
+      "workspace_before": "630faf7be70a76747d0309899788427636a706b7e56a393fe0fbc180c6162e7d",
+      "workspace_after": "630faf7be70a76747d0309899788427636a706b7e56a393fe0fbc180c6162e7d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 423,
+      "time": "2026-08-13T00:40:38.367281+00:00",
+      "kind": "rpc-exec",
+      "script": "pipeline_run.py",
+      "request_args": [
+        "validate",
+        "--run",
+        "latest"
+      ],
+      "expanded_args": [
+        "validate",
+        "--run",
+        "latest"
+      ],
+      "returncode": 1,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 424,
+      "time": "2026-08-13T00:40:40.034826+00:00",
+      "kind": "exec",
+      "script": "quiz_run.py",
+      "args": [
+        "start",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-2",
+        "--executor",
+        "codex"
+      ],
+      "expanded_args": [
+        "start",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-2",
+        "--executor",
+        "codex"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"run_dir\": \"materias/qa-engine-20260813t003438z-s260813101/unidades/unidad-2/.study/runs/20260813T004039Z-quiz\",\n  \"input\": \"01-input.json\"\n}\n",
+      "stderr": "",
+      "workspace_before": "630faf7be70a76747d0309899788427636a706b7e56a393fe0fbc180c6162e7d",
+      "workspace_after": "e2dda6a70f0bb0e9586c5726c013d40a6e9e15945dd64e2815c3dc365108aa5d",
+      "workspace_diff": {
+        "added": [
+          "unidades/unidad-2/.study/runs/20260813T004039Z-quiz/01-input.json",
+          "unidades/unidad-2/.study/runs/20260813T004039Z-quiz/manifest.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 425,
+      "time": "2026-08-13T00:40:40.043796+00:00",
+      "kind": "rpc-exec",
+      "script": "quiz_run.py",
+      "request_args": [
+        "start",
+        "--course",
+        "@course",
+        "--unit",
+        "unidad-2",
+        "--executor",
+        "codex"
+      ],
+      "expanded_args": [
+        "start",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-2",
+        "--executor",
+        "codex"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 426,
+      "time": "2026-08-13T00:40:41.704757+00:00",
+      "kind": "exec",
+      "script": "quiz_run.py",
+      "args": [
+        "validate",
+        "--run",
+        "latest"
+      ],
+      "expanded_args": [
+        "validate",
+        "--run",
+        "latest"
+      ],
+      "returncode": 1,
+      "expected_returncode": null,
+      "stdout": "",
+      "stderr": "Invalid run directory: latest\n",
+      "workspace_before": "e2dda6a70f0bb0e9586c5726c013d40a6e9e15945dd64e2815c3dc365108aa5d",
+      "workspace_after": "e2dda6a70f0bb0e9586c5726c013d40a6e9e15945dd64e2815c3dc365108aa5d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 427,
+      "time": "2026-08-13T00:40:41.713797+00:00",
+      "kind": "rpc-exec",
+      "script": "quiz_run.py",
+      "request_args": [
+        "validate",
+        "--run",
+        "latest"
+      ],
+      "expanded_args": [
+        "validate",
+        "--run",
+        "latest"
+      ],
+      "returncode": 1,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 428,
+      "time": "2026-08-13T00:40:43.307428+00:00",
+      "kind": "exec",
+      "script": "study_tracker.py",
+      "args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "expanded_args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"added\": [],\n  \"updated_units\": [],\n  \"tracked\": 3\n}\n",
+      "stderr": "",
+      "workspace_before": "e2dda6a70f0bb0e9586c5726c013d40a6e9e15945dd64e2815c3dc365108aa5d",
+      "workspace_after": "e2dda6a70f0bb0e9586c5726c013d40a6e9e15945dd64e2815c3dc365108aa5d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 429,
+      "time": "2026-08-13T00:40:43.316780+00:00",
+      "kind": "rpc-exec",
+      "script": "study_tracker.py",
+      "request_args": [
+        "sync",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "sync",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 430,
+      "time": "2026-08-13T00:40:45.003994+00:00",
+      "kind": "exec",
+      "script": "topic_catalog.py",
+      "args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "expanded_args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"written\": true,\n  \"unit_id\": \"unidad-1\",\n  \"created_topic_ids\": [],\n  \"reused_topic_ids\": [],\n  \"newly_unassigned_concept_ids\": [],\n  \"removed_missing_concept_ids\": [],\n  \"catalog\": {\n    \"version\": 1,\n    \"unit_id\": \"unidad-1\",\n    \"topics\": {},\n    \"unassigned_concept_ids\": [\n      \"algoritmo\"\n    ]\n  },\n  \"validation\": {\n    \"ok\": true,\n    \"unit_id\": \"unidad-1\",\n    \"topic_count\": 0,\n    \"concept_count\": 1,\n    \"unassigned_concept_ids\": [\n      \"algoritmo\"\n    ],\n    \"missing_assignment_concept_ids\": [],\n    \"issues\": []\n  }\n}\n",
+      "stderr": "",
+      "workspace_before": "e2dda6a70f0bb0e9586c5726c013d40a6e9e15945dd64e2815c3dc365108aa5d",
+      "workspace_after": "e2dda6a70f0bb0e9586c5726c013d40a6e9e15945dd64e2815c3dc365108aa5d",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 431,
+      "time": "2026-08-13T00:40:45.011519+00:00",
+      "kind": "rpc-exec",
+      "script": "topic_catalog.py",
+      "request_args": [
+        "reconcile",
+        "--course",
+        "@course",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "expanded_args": [
+        "reconcile",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 432,
+      "time": "2026-08-13T00:40:46.717337+00:00",
+      "kind": "exec",
+      "script": "claim_candidates.py",
+      "args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "expanded_args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\n{\n  \"version\": 1,\n  \"origin\": \"automatic-claim-extraction-v1\",\n  \"course\": \"qa-engine-20260813t003438z-s260813101\",\n  \"full_scan\": true,\n  \"sources\": [\n    {\n      \"source\": \"unidades/unidad-1/fuentes/oficiales/apunte.pdf\",\n      \"candidates\": 0,\n      \"error\": null\n    },\n    {\n      \"source\": \"unidades/unidad-1/fuentes/oficiales/fundamentos.txt\",\n      \"candidates\": 0,\n      \"error\": null\n    },\n    {\n      \"source\": \"unidades/unidad-1/fuentes/transcripciones/clase-1.srt\",\n      \"candidates\": 0,\n      \"error\": null\n    }\n  ],\n  \"candidates\": [],\n  \"total\": 0,\n  \"semantic_ready\": 0,\n  \"needs_semantic_review\": 0,\n  \"errors\": [],\n  \"written\": 0,\n  \"retained\": 0\n}\n",
+      "stderr": "",
+      "workspace_before": "e2dda6a70f0bb0e9586c5726c013d40a6e9e15945dd64e2815c3dc365108aa5d",
+      "workspace_after": "cb4bdb3237480ae76c0d7b3e84699e70aa0e8b29ced2e0330055e6f94df84e8b",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": [
+          ".study/claim-candidates.json"
+        ]
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 433,
+      "time": "2026-08-13T00:40:46.727382+00:00",
+      "kind": "rpc-exec",
+      "script": "claim_candidates.py",
+      "request_args": [
+        "scan",
+        "--course",
+        "@course",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "expanded_args": [
+        "scan",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--unit",
+        "unidad-1",
+        "--write"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 434,
+      "time": "2026-08-13T00:40:48.240421+00:00",
+      "kind": "exec",
+      "script": "semantic_claims.py",
+      "args": [
+        "course",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--write"
+      ],
+      "expanded_args": [
+        "course",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--write"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"policy_version\": 1,\n  \"claims\": 0,\n  \"active_claims\": 0,\n  \"superseded_claim_ids\": [],\n  \"contradictions\": 0,\n  \"split_view\": 0,\n  \"unresolved\": 0,\n  \"groups\": []\n}\n",
+      "stderr": "",
+      "workspace_before": "cb4bdb3237480ae76c0d7b3e84699e70aa0e8b29ced2e0330055e6f94df84e8b",
+      "workspace_after": "cb4bdb3237480ae76c0d7b3e84699e70aa0e8b29ced2e0330055e6f94df84e8b",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 435,
+      "time": "2026-08-13T00:40:48.248925+00:00",
+      "kind": "rpc-exec",
+      "script": "semantic_claims.py",
+      "request_args": [
+        "course",
+        "--course",
+        "@course",
+        "--write"
+      ],
+      "expanded_args": [
+        "course",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--write"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 436,
+      "time": "2026-08-13T00:40:49.721262+00:00",
+      "kind": "exec",
+      "script": "artifact_state.py",
+      "args": [
+        "clean-missing",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "expanded_args": [
+        "clean-missing",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"removed\": []\n}\n",
+      "stderr": "",
+      "workspace_before": "cb4bdb3237480ae76c0d7b3e84699e70aa0e8b29ced2e0330055e6f94df84e8b",
+      "workspace_after": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_diff": {
+        "added": [
+          ".study/artifacts.json"
+        ],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 437,
+      "time": "2026-08-13T00:40:49.728459+00:00",
+      "kind": "rpc-exec",
+      "script": "artifact_state.py",
+      "request_args": [
+        "clean-missing",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "clean-missing",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 438,
+      "time": "2026-08-13T00:40:51.281325+00:00",
+      "kind": "exec",
+      "script": "figure_assets.py",
+      "args": [
+        "verify",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "expanded_args": [
+        "verify",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"issues\": [],\n  \"figures\": 0\n}\n",
+      "stderr": "",
+      "workspace_before": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_after": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 439,
+      "time": "2026-08-13T00:40:51.294369+00:00",
+      "kind": "rpc-exec",
+      "script": "figure_assets.py",
+      "request_args": [
+        "verify",
+        "--course",
+        "@course"
+      ],
+      "expanded_args": [
+        "verify",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 440,
+      "time": "2026-08-13T00:40:52.332102+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 441,
+      "time": "2026-08-13T00:40:54.179372+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 442,
+      "time": "2026-08-13T00:42:13.057002+00:00",
+      "kind": "exec",
+      "script": "academic_context.py",
+      "args": [
+        "scope",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--assessment",
+        "parcial-1"
+      ],
+      "expanded_args": [
+        "scope",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--assessment",
+        "parcial-1"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "{\n  \"assessment\": {\n    \"id\": \"parcial-1\",\n    \"type\": \"parcial\",\n    \"name\": \"Parcial 1\",\n    \"date\": null,\n    \"parent_assessment_id\": null,\n    \"format\": null,\n    \"status\": \"scheduled\"\n  },\n  \"confirmed\": [\n    {\n      \"kind\": \"unit\",\n      \"ref\": \"unidad-1\",\n      \"evidence\": [\n        \"qa:programa\"\n      ]\n    }\n  ],\n  \"likely\": [\n    {\n      \"kind\": \"unit\",\n      \"ref\": \"unidad-2\",\n      \"evidence\": [\n        \"qa:clase\"\n      ]\n    }\n  ],\n  \"unknown\": [],\n  \"excluded\": [],\n  \"source\": \"\"\n}\n",
+      "stderr": "",
+      "workspace_before": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_after": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 443,
+      "time": "2026-08-13T00:42:13.065462+00:00",
+      "kind": "rpc-exec",
+      "script": "academic_context.py",
+      "request_args": [
+        "scope",
+        "--course",
+        "@course",
+        "--assessment",
+        "parcial-1"
+      ],
+      "expanded_args": [
+        "scope",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--assessment",
+        "parcial-1"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 444,
+      "time": "2026-08-13T00:42:14.578396+00:00",
+      "kind": "exec",
+      "script": "study_tracker.py",
+      "args": [
+        "due",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--on",
+        "2030-01-01",
+        "--assessment",
+        "parcial-1",
+        "--include-not-due"
+      ],
+      "expanded_args": [
+        "due",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--on",
+        "2030-01-01",
+        "--assessment",
+        "parcial-1",
+        "--include-not-due"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "[\n  {\n    \"name\": \"Condicional\",\n    \"unit\": \"unidad-2\",\n    \"mastery\": 0.2,\n    \"attempts\": 1,\n    \"last_rating\": 1,\n    \"streak\": 0,\n    \"ease\": 2.3,\n    \"interval_days\": 1,\n    \"last_review\": \"2026-08-12\",\n    \"next_review\": \"2026-08-13\",\n    \"notes\": [],\n    \"study_priority\": 2485.8,\n    \"priority_reasons\": [\n      \"overdue:1237d\",\n      \"low-mastery\",\n      \"recent-failure\",\n      \"prerequisite-for:1\",\n      \"assessment-likely:parcial-1\"\n    ],\n    \"prerequisite_for_count\": 1,\n    \"recurring_errors\": [],\n    \"assessment_relevance\": \"likely\",\n    \"assessment\": \"parcial-1\",\n    \"prerequisites\": []\n  },\n  {\n    \"name\": \"Algoritmo\",\n    \"unit\": \"unidad-1\",\n    \"mastery\": 1.0,\n    \"attempts\": 1,\n    \"last_rating\": 5,\n    \"streak\": 1,\n    \"ease\": 2.6,\n    \"interval_days\": 1,\n    \"last_review\": \"2026-08-12\",\n    \"next_review\": \"2026-08-13\",\n    \"notes\": [],\n    \"study_priority\": 2477.6,\n    \"priority_reasons\": [\n      \"overdue:1237d\",\n      \"teacher-emphasis:exam-cue\",\n      \"assessment-confirmed:parcial-1\"\n    ],\n    \"prerequisite_for_count\": 0,\n    \"recurring_errors\": [],\n    \"assessment_relevance\": \"confirmed\",\n    \"assessment\": \"parcial-1\",\n    \"prerequisites\": [\n      \"Condicional\"\n    ]\n  },\n  {\n    \"name\": \"Funcion\",\n    \"unit\": \"unidad-3\",\n    \"mastery\": 0.6,\n    \"attempts\": 1,\n    \"last_rating\": 3,\n    \"streak\": 1,\n    \"ease\": 2.36,\n    \"interval_days\": 1,\n    \"last_review\": \"2026-08-12\",\n    \"next_review\": \"2026-08-13\",\n    \"notes\": [],\n    \"study_priority\": 2475.0,\n    \"priority_reasons\": [\n      \"overdue:1237d\",\n      \"assessment-excluded:parcial-1\"\n    ],\n    \"prerequisite_for_count\": 0,\n    \"recurring_errors\": [],\n    \"assessment_relevance\": \"excluded\",\n    \"assessment\": \"parcial-1\",\n    \"prerequisites\": []\n  }\n]\n",
+      "stderr": "",
+      "workspace_before": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_after": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 445,
+      "time": "2026-08-13T00:42:14.588944+00:00",
+      "kind": "rpc-exec",
+      "script": "study_tracker.py",
+      "request_args": [
+        "due",
+        "--course",
+        "@course",
+        "--on",
+        "2030-01-01",
+        "--assessment",
+        "parcial-1",
+        "--include-not-due"
+      ],
+      "expanded_args": [
+        "due",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--on",
+        "2030-01-01",
+        "--assessment",
+        "parcial-1",
+        "--include-not-due"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 446,
+      "time": "2026-08-13T00:42:16.036939+00:00",
+      "kind": "exec",
+      "script": "study_tracker.py",
+      "args": [
+        "due",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--on",
+        "2030-01-01",
+        "--assessment",
+        "Parcial 1",
+        "--include-not-due"
+      ],
+      "expanded_args": [
+        "due",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--on",
+        "2030-01-01",
+        "--assessment",
+        "Parcial 1",
+        "--include-not-due"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "stdout": "[\n  {\n    \"name\": \"Condicional\",\n    \"unit\": \"unidad-2\",\n    \"mastery\": 0.2,\n    \"attempts\": 1,\n    \"last_rating\": 1,\n    \"streak\": 0,\n    \"ease\": 2.3,\n    \"interval_days\": 1,\n    \"last_review\": \"2026-08-12\",\n    \"next_review\": \"2026-08-13\",\n    \"notes\": [],\n    \"study_priority\": 2485.8,\n    \"priority_reasons\": [\n      \"overdue:1237d\",\n      \"low-mastery\",\n      \"recent-failure\",\n      \"prerequisite-for:1\",\n      \"assessment-likely:parcial-1\"\n    ],\n    \"prerequisite_for_count\": 1,\n    \"recurring_errors\": [],\n    \"assessment_relevance\": \"likely\",\n    \"assessment\": \"parcial-1\",\n    \"prerequisites\": []\n  },\n  {\n    \"name\": \"Algoritmo\",\n    \"unit\": \"unidad-1\",\n    \"mastery\": 1.0,\n    \"attempts\": 1,\n    \"last_rating\": 5,\n    \"streak\": 1,\n    \"ease\": 2.6,\n    \"interval_days\": 1,\n    \"last_review\": \"2026-08-12\",\n    \"next_review\": \"2026-08-13\",\n    \"notes\": [],\n    \"study_priority\": 2477.6,\n    \"priority_reasons\": [\n      \"overdue:1237d\",\n      \"teacher-emphasis:exam-cue\",\n      \"assessment-confirmed:parcial-1\"\n    ],\n    \"prerequisite_for_count\": 0,\n    \"recurring_errors\": [],\n    \"assessment_relevance\": \"confirmed\",\n    \"assessment\": \"parcial-1\",\n    \"prerequisites\": [\n      \"Condicional\"\n    ]\n  },\n  {\n    \"name\": \"Funcion\",\n    \"unit\": \"unidad-3\",\n    \"mastery\": 0.6,\n    \"attempts\": 1,\n    \"last_rating\": 3,\n    \"streak\": 1,\n    \"ease\": 2.36,\n    \"interval_days\": 1,\n    \"last_review\": \"2026-08-12\",\n    \"next_review\": \"2026-08-13\",\n    \"notes\": [],\n    \"study_priority\": 2475.0,\n    \"priority_reasons\": [\n      \"overdue:1237d\",\n      \"assessment-excluded:parcial-1\"\n    ],\n    \"prerequisite_for_count\": 0,\n    \"recurring_errors\": [],\n    \"assessment_relevance\": \"excluded\",\n    \"assessment\": \"parcial-1\",\n    \"prerequisites\": []\n  }\n]\n",
+      "stderr": "",
+      "workspace_before": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_after": "221630a63f6ccf0a0d8029383fa0ef51750660b129515846103ff8f5a6ebd1a2",
+      "workspace_diff": {
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "engine_unchanged": true
+    },
+    {
+      "step": 447,
+      "time": "2026-08-13T00:42:16.047973+00:00",
+      "kind": "rpc-exec",
+      "script": "study_tracker.py",
+      "request_args": [
+        "due",
+        "--course",
+        "@course",
+        "--on",
+        "2030-01-01",
+        "--assessment",
+        "Parcial 1",
+        "--include-not-due"
+      ],
+      "expanded_args": [
+        "due",
+        "--course",
+        "C:\\Users\\mnpinho\\Desktop\\university\\university-resume\\.study\\engine-qa\\sandboxes\\engine-4ebb00232396\\materias\\qa-engine-20260813t003438z-s260813101",
+        "--on",
+        "2030-01-01",
+        "--assessment",
+        "Parcial 1",
+        "--include-not-due"
+      ],
+      "returncode": 0,
+      "ok": true,
+      "engine_invoked": true
+    },
+    {
+      "step": 448,
+      "time": "2026-08-13T00:42:17.041153+00:00",
+      "kind": "finding",
+      "id": "QA-001",
+      "severity": "high",
+      "invariant": "assessment-unit-scope",
+      "title": "excluded_assessment_concept_leaks_into_due_results"
+    },
+    {
+      "step": 449,
+      "time": "2026-08-13T00:42:18.114538+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    },
+    {
+      "step": 450,
+      "time": "2026-08-13T00:42:19.882045+00:00",
+      "kind": "check",
+      "ok": true,
+      "issues": [],
+      "invariants_checked": [
+        "engine-immutable",
+        "academic-json-valid",
+        "layout-matches-academic",
+        "course-json-valid",
+        "registry-present",
+        "concept-unit-local",
+        "topic-document-unit",
+        "topic-concept-exists",
+        "one-primary-topic",
+        "topic-assignment-exclusive",
+        "unassigned-concept-exists",
+        "topic-coverage-explicit",
+        "progress-concept-exists",
+        "figure-unit-local"
+      ]
+    }
+  ],
+  "note": "Compact replay context; minimize each bug to deterministic engine operations before fixing.",
+  "valid_experiments": 100,
+  "attempted_experiments": 100,
+  "invalid_experiments": 0,
+  "transport_protocol": "json-request-file-v1",
+  "protocol_version": 2
+}

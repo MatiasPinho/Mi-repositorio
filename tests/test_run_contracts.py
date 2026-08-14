@@ -48,7 +48,11 @@ class RunContractTests(unittest.TestCase):
                 path.write_text(json.dumps({"kind": label, "version": 2}), encoding="utf-8")
                 errors = []
                 _validate_canonical_snapshot(run, errors)
-                self.assertEqual(errors, [f"canonical-changed:{label}"])
+                if label == "figures":
+                    self.assertIn("canonical-changed:figures", errors)
+                    self.assertIn("missing-01-figures.json", errors)
+                else:
+                    self.assertEqual(errors, [f"canonical-changed:{label}"])
                 path.write_bytes(original)
 
     def test_publication_v3_binds_immutable_source_to_transformed_destination(self):
@@ -89,6 +93,75 @@ class RunContractTests(unittest.TestCase):
             self.assertIn("publication-source-mutated:markdown", errors)
         finally:
             shutil.rmtree(course, ignore_errors=True)
+
+    def test_figure_snapshot_allows_only_append_only_planned_derived_records(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as td:
+            root = Path(td)
+            run = root / "run"
+            run.mkdir()
+            academic = root / "academic.json"
+            concepts = root / "concepts.json"
+            topics = root / "topics.json"
+            figures = root / "figures.json"
+            for path in (academic, concepts, topics):
+                path.write_text(json.dumps({"version": 1}), encoding="utf-8")
+            initial = {
+                "version": 2,
+                "figures": {
+                    "source-flow": {
+                        "id": "source-flow",
+                        "origin": "source",
+                        "asset": "assets/figures/source-flow.png",
+                    }
+                },
+            }
+            figures.write_text(json.dumps(initial), encoding="utf-8")
+            (run / "01-figures.json").write_bytes(figures.read_bytes())
+            (run / "01-input.json").write_text(json.dumps({
+                "academic_file": academic.relative_to(ROOT).as_posix(),
+                "academic_sha256": sha(academic),
+                "concepts_file": concepts.relative_to(ROOT).as_posix(),
+                "concepts_sha256": sha(concepts),
+                "topics_file": topics.relative_to(ROOT).as_posix(),
+                "topics_sha256": sha(topics),
+                "figures_file": figures.relative_to(ROOT).as_posix(),
+                "figures_sha256": sha(figures),
+            }), encoding="utf-8")
+            plan = run / "02-plan.json"
+            plan.write_text(json.dumps({
+                "visuals": [{
+                    "concept_id": "flow",
+                    "need": "visual_required",
+                    "visual_treatment": "reinterpret",
+                    "derived_figure_id": "derived:flow",
+                }]
+            }), encoding="utf-8")
+            (run / "02-visual-build.json").write_text(json.dumps({
+                "ok": True,
+                "plan_sha256": sha(plan),
+                "entries": [{
+                    "visual_treatment": "reinterpret",
+                    "derived_figure_id": "derived:flow",
+                }],
+            }), encoding="utf-8")
+
+            after = json.loads(json.dumps(initial))
+            after["figures"]["derived:flow"] = {
+                "id": "derived:flow",
+                "origin": "derived",
+                "visual_treatment": "reinterpret",
+                "asset": "assets/figures/flow.svg",
+            }
+            figures.write_text(json.dumps(after), encoding="utf-8")
+            errors: list[str] = []
+            _validate_canonical_snapshot(run, errors)
+            self.assertEqual(errors, [])
+
+            after["figures"]["source-flow"]["asset"] = "assets/figures/changed.png"
+            figures.write_text(json.dumps(after), encoding="utf-8")
+            errors = []
+            _validate_canonical_snapshot(run, errors)
+            self.assertIn("canonical-figure-modified:source-flow", errors)
 
 
 if __name__ == "__main__":

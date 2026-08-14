@@ -13,6 +13,8 @@ A student-facing artifact passes only if:
 - every required fidelity check is `pass` or genuinely `not_applicable`;
 - every recorded high-risk claim check is `supported`;
 - `academic_issues`, `pedagogy_issues` and `visual_issues` are empty.
+- the final Markdown figure ids/assets agree with every selected treatment in
+  `02-plan.json`; in particular, `reinterpret` never resolves to a source asset.
 
 A score cannot override a concrete issue. If the reviewer finds a taxonomy mismatch, unsupported claim, certainty drift or internal contradiction, the review fails even when the prose is otherwise excellent.
 

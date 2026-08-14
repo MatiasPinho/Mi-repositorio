@@ -122,9 +122,16 @@ def study_list_artifacts(course: str) -> dict:
 
 
 @mcp.tool(annotations=READ)
-def study_validate_artifact(course: str, markdown: str, html: str, scope: str, artifact_type: str) -> dict:
+def study_validate_artifact(
+    course: str,
+    markdown: str,
+    html: str,
+    scope: str,
+    artifact_type: str,
+    plan: str = "",
+) -> dict:
     """Ejecutar el gate determinístico de integridad sobre un candidato ya renderizado."""
-    return service.validate_artifact(course, markdown, html, scope, artifact_type)
+    return service.validate_artifact(course, markdown, html, scope, artifact_type, plan)
 
 
 @mcp.tool(annotations=WRITE_IDEMPOTENT)
