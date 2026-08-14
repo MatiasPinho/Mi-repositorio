@@ -10,6 +10,7 @@
   let reader = null;
   let readerCleanup = null;
   let viewSwitch = null;
+  let toastTimer = null;
 
   const readStoredMode = () => {
     try {
@@ -98,6 +99,8 @@
     });
   };
 
+  // The old visual switch is kept as hidden semantic state for compatibility;
+  // the user-facing interaction is now the V keyboard shortcut.
   const createViewSwitch = () => {
     if (viewSwitch) return viewSwitch;
     const control = document.createElement('div');
@@ -109,15 +112,25 @@
       <button type="button" data-reader-mode="continuous" aria-pressed="false">Continua</button>
       <button type="button" data-reader-mode="pages" aria-pressed="false">Hojas</button>
     `;
-    control.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-reader-mode]');
-      if (!button || button.disabled) return;
-      setViewMode(button.dataset.readerMode);
-    });
     document.body.appendChild(control);
     viewSwitch = control;
     syncViewSwitch();
     return control;
+  };
+
+  const showModeToast = (mode) => {
+    let toast = document.querySelector('.notebook-mode-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'notebook-mode-toast';
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      document.body.appendChild(toast);
+    }
+    toast.textContent = mode === 'pages' ? 'Vista Hojas · V' : 'Vista Continua · V';
+    toast.classList.add('is-visible');
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1200);
   };
 
   const createReaderShell = () => {
@@ -336,7 +349,7 @@
       const numberBack = document.createElement('div');
       numberBack.className = 'notebook-page-number';
       numberBack.textContent = `— ${index * 2 + 2} —`;
-      backFace.appendChild(numberBack);
+      backFace.appendChild(back);
 
       const setRotation = (value, dragging = false) => {
         rotations[index] = value;
@@ -455,6 +468,27 @@
     syncViewSwitch();
   };
 
+  const toggleViewMode = () => {
+    if (!desktop.matches || print.matches) return;
+    const next = mounted || mounting ? 'continuous' : 'pages';
+    setViewMode(next);
+    showModeToast(next);
+  };
+
+  const isEditableTarget = (target) => {
+    const tag = target?.tagName?.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
+  };
+
+  const onViewShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target)) return;
+    if (event.key?.toLowerCase() !== 'v') return;
+    if (!desktop.matches || print.matches) return;
+    event.preventDefault();
+    toggleViewMode();
+  };
+
   const restoreForPrint = () => {
     if (mounted) restoreContinuous('print-continuous');
   };
@@ -464,6 +498,7 @@
     if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
     originalTemplate = source.cloneNode(true);
     createViewSwitch();
+    document.addEventListener('keydown', onViewShortcut);
     if (effectiveMode() === 'pages') mount();
     else {
       document.documentElement.dataset.notebookReader = 'continuous';
