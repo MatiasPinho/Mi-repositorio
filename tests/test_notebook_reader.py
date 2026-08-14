@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import tempfile
@@ -6,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RENDER = ROOT / "scripts" / "render_study.py"
+VISUAL_AUDIT = ROOT / "scripts" / "visual_audit.py"
 
 
 class NotebookReaderTests(unittest.TestCase):
@@ -68,6 +70,41 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("--notebook-leaf-peek: clamp(1.35rem, 3vw, 2rem)", css)
         self.assertIn("const hoverExtra = cssLengthPx", js)
         self.assertIn("peek + hoverBoost", js)
+
+    def test_tablet_browser_audit_has_no_horizontal_overflow(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            html = td / "summary.html"
+            audit_dir = td / "audit"
+            md.write_text(
+                "# Unidad 3\n\nIntroducción del resumen.\n\n## Algoritmos\n\n" + "\n\n".join(
+                    f"Párrafo {i} con una explicación breve que debe distribuirse entre varias hojas sin desbordar el carrusel."
+                    for i in range(1, 70)
+                ),
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--course", "Programación I", "--scope", "Unidad 3", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+
+            audited = subprocess.run(
+                [sys.executable, str(VISUAL_AUDIT), str(html), "--out", str(audit_dir), "--viewports", "tablet"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(audited.returncode, 0, audited.stdout + audited.stderr)
+            report = json.loads((audit_dir / "audit.json").read_text(encoding="utf-8"))
+            tablet = report["viewports"]["tablet"]
+            self.assertNotIn("tablet:horizontal-overflow", report["issues"])
+            self.assertLessEqual(tablet["scrollWidth"], tablet["clientWidth"] + 2)
+            self.assertEqual(tablet["notebook_reader"]["state"], "ready")
+            self.assertGreaterEqual(tablet["notebook_reader"]["visibleNeighbours"], 1)
 
     def test_reader_assets_participate_in_visual_artifact_fingerprint(self):
         artifact_state = (ROOT / "scripts" / "artifact_state.py").read_text(encoding="utf-8")
