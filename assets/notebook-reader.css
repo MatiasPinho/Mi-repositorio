@@ -139,8 +139,8 @@ article.notebook-page.notebook-back::after {
 }
 
 /* Reader chrome belongs to the 3D face, not to the article itself. Keeping it
-   outside the content scroller means page numbers/corners cannot change the
-   page's measured scrollHeight after pagination. */
+   outside the content scroller means page numbers/turn controls cannot change
+   the page's measured scrollHeight after pagination. */
 .notebook-page-number {
   position: absolute;
   z-index: 40;
@@ -159,28 +159,46 @@ article.notebook-page.notebook-back::after {
   left: clamp(1.25rem, 4vw, 2.5rem);
 }
 
+/* The whole outer paper edge is the page-turn handle. This keeps the centre of
+   the sheet free for text selection and future annotations, while making the
+   gesture reachable without scrolling to the bottom of a tall page. The small
+   folded corner remains only as a visual affordance. */
 .notebook-turn-corner {
   position: absolute;
   z-index: 45;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2.5rem;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0 6px 6px 0;
+  appearance: none;
+  cursor: grab;
+  touch-action: none;
+  background: transparent;
+}
+
+.notebook-turn-corner::after {
+  content: "";
+  position: absolute;
   right: 0;
   bottom: 0;
   width: 3.25rem;
   height: 3.25rem;
-  padding: 0;
-  border: 0;
   border-radius: 0 0 6px 0;
-  appearance: none;
-  cursor: grab;
-  touch-action: none;
   background:
     linear-gradient(315deg,
       color-mix(in srgb, var(--study-paper) 84%, var(--study-rule) 16%) 0 44%,
       transparent 44%);
   opacity: .72;
+  pointer-events: none;
+  transition: opacity .18s ease, background .18s ease;
 }
 
-.notebook-turn-corner:hover,
-.notebook-turn-corner:focus-visible {
+.notebook-turn-corner:hover::after,
+.notebook-turn-corner:focus-visible::after {
   opacity: 1;
   background:
     linear-gradient(315deg,
@@ -189,6 +207,13 @@ article.notebook-page.notebook-back::after {
 }
 
 .notebook-back-face .notebook-turn-corner {
+  right: auto;
+  left: 0;
+  border-radius: 6px 0 0 6px;
+  transform: none;
+}
+
+.notebook-back-face .notebook-turn-corner::after {
   right: auto;
   left: 0;
   border-radius: 0 0 0 6px;
@@ -236,6 +261,7 @@ article.notebook-page.notebook-back::after {
 
 @media (prefers-reduced-motion: reduce) {
   .notebook-leaf { transition: none; }
+  .notebook-turn-corner::after { transition: none; }
 }
 
 @media (max-width: 48rem) {
