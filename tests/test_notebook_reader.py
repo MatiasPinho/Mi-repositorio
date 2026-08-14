@@ -1,0 +1,63 @@
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+RENDER = ROOT / "scripts" / "render_study.py"
+
+
+class NotebookReaderTests(unittest.TestCase):
+    def test_renderer_embeds_reader_without_replacing_semantic_content(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            out = td / "summary.html"
+            md.write_text(
+                "# Unidad 1\n\nUna introducción.\n\n## Tema\n\n" + "\n\n".join(
+                    f"Párrafo {i} con contenido suficiente para formar varias hojas físicas."
+                    for i in range(1, 45)
+                ),
+                encoding="utf-8",
+            )
+            cp = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(out), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            page = out.read_text(encoding="utf-8")
+            self.assertIn('<article data-kind="summary">', page)
+            self.assertIn("Párrafo 44", page)
+            self.assertIn(".notebook-stack", page)
+            self.assertIn(".notebook-leaf.is-neighbor", page)
+            self.assertIn("notebook-turn-corner", page)
+            self.assertIn("PAGED_KINDS", page)
+            self.assertIn("continuous-fallback", page)
+
+    def test_reader_navigation_is_page_stack_and_flip_is_corner_only(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+        self.assertIn("is-neighbor", js)
+        self.assertIn("go(index)", js)
+        self.assertIn("notebook-turn-corner", js)
+        self.assertIn("event.target.closest('.notebook-turn-corner')", js)
+        self.assertIn("rotateY", css)
+        self.assertIn("backface-visibility: hidden", css)
+        self.assertIn("cursor: pointer", css)
+
+    def test_reader_keeps_safe_fallback_and_three_hole_binding(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+        self.assertIn("oversize-block", js)
+        self.assertIn("post-pagination-overflow", js)
+        self.assertIn("14%", css)
+        self.assertIn("50%", css)
+        self.assertIn("86%", css)
+        self.assertNotIn("repeat-y;\n}", css.split("article::after", 1)[1].split("}", 1)[0])
+
+
+if __name__ == "__main__":
+    unittest.main()
