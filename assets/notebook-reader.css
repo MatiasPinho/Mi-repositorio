@@ -1,0 +1,214 @@
+/* Physical-page reader layered on top of the existing notebook design. */
+:root {
+  --notebook-page-lines: 48;
+  --notebook-page-height: calc(var(--notebook-line-pitch) * var(--notebook-page-lines));
+  --notebook-leaf-peek: 2.85rem;
+  --notebook-leaf-scale: .972;
+}
+
+/* Three binder holes are enough to communicate paper without creating a visual rail. */
+article::after {
+  top: 0;
+  bottom: 0;
+  width: 1.45rem;
+  background:
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 14% / 1.45rem 1.45rem no-repeat,
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 50% / 1.45rem 1.45rem no-repeat,
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 86% / 1.45rem 1.45rem no-repeat;
+}
+
+.notebook-reader {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: .8rem;
+}
+
+.notebook-stack {
+  position: relative;
+  width: min(calc(100vw - 6.25rem), var(--notebook-paper-width));
+  height: var(--notebook-page-height);
+  perspective: 2200px;
+  perspective-origin: 50% 46%;
+  overflow: visible;
+}
+
+.notebook-leaf {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  transition:
+    transform .52s cubic-bezier(.22, 1.06, .36, 1),
+    filter .28s ease,
+    opacity .28s ease;
+  will-change: transform;
+}
+
+.notebook-leaf.is-hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.notebook-leaf.is-active {
+  z-index: 20;
+  filter: none;
+}
+
+.notebook-leaf.is-neighbor {
+  z-index: 10;
+  cursor: pointer;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .18));
+}
+
+.notebook-leaf.is-neighbor:hover {
+  filter: drop-shadow(0 16px 25px rgba(0, 0, 0, .28));
+}
+
+.notebook-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.notebook-face.notebook-back-face { transform: rotateY(180deg); }
+
+article.notebook-page {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  flex: none;
+  overflow: hidden;
+}
+
+/* The reverse keeps its own physical face while preserving the current content system. */
+article.notebook-page.notebook-back {
+  --notebook-paper-padding-start: clamp(1.25rem, 4vw, 2.5rem);
+  --notebook-paper-padding-end: clamp(5.4rem, 10vw, 7.2rem);
+  border-radius: 7px 1px 1px 7px;
+}
+
+article.notebook-page.notebook-back::before {
+  left: auto;
+  right: clamp(4.05rem, 7.2vw, 5.35rem);
+}
+
+article.notebook-page.notebook-back::after {
+  left: auto;
+  right: clamp(.8rem, 1.7vw, 1.35rem);
+}
+
+.notebook-page-number {
+  position: absolute;
+  z-index: 4;
+  right: var(--notebook-paper-padding-end);
+  bottom: calc(var(--notebook-line-pitch) * .45);
+  font-family: var(--study-font-utility);
+  font-size: .66rem;
+  line-height: 1;
+  letter-spacing: .08em;
+  color: var(--study-ink-muted);
+  pointer-events: none;
+}
+
+.notebook-back .notebook-page-number {
+  right: auto;
+  left: var(--notebook-paper-padding-start);
+}
+
+.notebook-turn-corner {
+  position: absolute;
+  z-index: 30;
+  right: 0;
+  bottom: 0;
+  width: 3.25rem;
+  height: 3.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0 0 6px 0;
+  appearance: none;
+  cursor: grab;
+  touch-action: none;
+  background:
+    linear-gradient(315deg,
+      color-mix(in srgb, var(--study-paper) 84%, var(--study-rule) 16%) 0 44%,
+      transparent 44%);
+  opacity: .72;
+}
+
+.notebook-turn-corner:hover,
+.notebook-turn-corner:focus-visible {
+  opacity: 1;
+  background:
+    linear-gradient(315deg,
+      color-mix(in srgb, var(--study-paper) 72%, var(--study-rule) 28%) 0 53%,
+      transparent 53%);
+}
+
+.notebook-back .notebook-turn-corner {
+  right: auto;
+  left: 0;
+  border-radius: 0 0 0 6px;
+  transform: scaleX(-1);
+}
+
+.notebook-turn-corner.is-dragging { cursor: grabbing; }
+
+.notebook-reader-status {
+  min-height: 1rem;
+  font-family: var(--study-font-utility);
+  font-size: .68rem;
+  letter-spacing: .055em;
+  color: color-mix(in srgb, var(--study-paper) 76%, var(--study-canvas));
+  text-align: center;
+}
+
+.notebook-measure-host {
+  position: absolute;
+  left: -200vw;
+  top: 0;
+  width: min(calc(100vw - 6.25rem), var(--notebook-paper-width));
+  height: var(--notebook-page-height);
+  visibility: hidden;
+  pointer-events: none;
+  contain: layout style;
+}
+
+.notebook-measure-host article.notebook-page {
+  position: relative;
+  inset: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notebook-leaf { transition: none; }
+}
+
+@media (max-width: 48rem) {
+  .notebook-reader { display: block; }
+  .notebook-stack { width: 100%; height: auto; perspective: none; }
+}
+
+@media print {
+  .notebook-reader-status,
+  .notebook-turn-corner { display: none !important; }
+}
