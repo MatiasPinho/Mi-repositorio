@@ -58,6 +58,13 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("86%", css)
         self.assertNotIn("repeat-y;\n}", css.split("article::after", 1)[1].split("}", 1)[0])
 
+    def test_reader_assets_participate_in_visual_artifact_fingerprint(self):
+        artifact_state = (ROOT / "scripts" / "artifact_state.py").read_text(encoding="utf-8")
+        self.assertIn('assets / "study-theme.css"', artifact_state)
+        self.assertIn('assets / "notebook-reader.css"', artifact_state)
+        self.assertIn('assets / "notebook-reader.js"', artifact_state)
+        self.assertIn("digest.update(path.read_bytes())", artifact_state)
+
 
 if __name__ == "__main__":
     unittest.main()
