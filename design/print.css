@@ -54,6 +54,12 @@
     border-radius: 0;
     box-shadow: none;
     overflow: visible;
+    background-color: #fff;
+    background-image: var(--notebook-rule-image);
+    background-origin: content-box;
+    background-size: calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch);
+    background-position: calc(-1 * var(--notebook-paper-padding-start)) 0;
+    background-repeat: repeat-y;
   }
   article::before {
     display: block;
