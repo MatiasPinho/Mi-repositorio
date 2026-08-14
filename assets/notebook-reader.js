@@ -1,10 +1,37 @@
 (() => {
   const PAGED_KINDS = new Set(['summary', 'rapid-review', 'learn', 'explain']);
+  const STORAGE_KEY = 'university-study:reader-mode';
   const desktop = window.matchMedia('(min-width: 48.01rem)');
   const print = window.matchMedia('print');
+
   let mounted = false;
+  let mounting = false;
   let originalTemplate = null;
   let reader = null;
+  let readerCleanup = null;
+  let viewSwitch = null;
+
+  const readStoredMode = () => {
+    try {
+      const value = window.localStorage?.getItem(STORAGE_KEY);
+      return value === 'continuous' || value === 'pages' ? value : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const writeStoredMode = (value) => {
+    try { window.localStorage?.setItem(STORAGE_KEY, value); } catch (_) {}
+  };
+
+  // Pages remain the desktop/tablet default so existing artifacts keep the
+  // experience they already had. Mobile keeps the continuous renderer until a
+  // dedicated small-screen physical reader exists.
+  let preferredMode = readStoredMode() || 'pages';
+
+  const effectiveMode = () => (
+    preferredMode === 'pages' && desktop.matches && !print.matches ? 'pages' : 'continuous'
+  );
 
   const waitForAssets = async (root) => {
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -55,6 +82,44 @@
     }
   };
 
+  const syncViewSwitch = () => {
+    if (!viewSwitch) return;
+    const actualMode = mounted ? 'pages' : 'continuous';
+    viewSwitch.dataset.mode = actualMode;
+    viewSwitch.querySelectorAll('[data-reader-mode]').forEach((button) => {
+      const mode = button.dataset.readerMode;
+      button.setAttribute('aria-pressed', mode === actualMode ? 'true' : 'false');
+      if (mode === 'pages') {
+        button.disabled = !desktop.matches;
+        button.title = desktop.matches
+          ? 'Leer como hojas físicas'
+          : 'La vista por hojas está disponible en tablet y escritorio';
+      }
+    });
+  };
+
+  const createViewSwitch = () => {
+    if (viewSwitch) return viewSwitch;
+    const control = document.createElement('div');
+    control.className = 'notebook-view-switch';
+    control.setAttribute('role', 'group');
+    control.setAttribute('aria-label', 'Modo de lectura');
+    control.innerHTML = `
+      <span class="notebook-view-switch-label">Vista</span>
+      <button type="button" data-reader-mode="continuous" aria-pressed="false">Continua</button>
+      <button type="button" data-reader-mode="pages" aria-pressed="false">Hojas</button>
+    `;
+    control.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-reader-mode]');
+      if (!button || button.disabled) return;
+      setViewMode(button.dataset.readerMode);
+    });
+    document.body.appendChild(control);
+    viewSwitch = control;
+    syncViewSwitch();
+    return control;
+  };
+
   const createReaderShell = () => {
     const shell = document.createElement('section');
     shell.className = 'notebook-reader is-measuring';
@@ -79,11 +144,8 @@
     stack.appendChild(measure);
 
     // notebook-page already has a fixed border-box height. Its scrollHeight is
-    // therefore equal to clientHeight even when it is empty. Subtracting a
-    // synthetic safety reserve from clientHeight made every empty page look as
-    // if it overflowed, which produced one top-level block per physical page.
-    // Now that page-number/turn-corner chrome lives outside the article, the
-    // real scroll overflow is the correct and deterministic packing signal.
+    // therefore equal to clientHeight even when it is empty. The real scroll
+    // overflow is the deterministic packing signal.
     const overflows = (page) => page.scrollHeight > page.clientHeight + 1;
 
     const pages = [];
@@ -133,9 +195,6 @@
 
   // `edge` is the handle's position inside its own face. The reverse face is
   // mirrored by rotateY(180deg), so its start edge is drawn on the screen right.
-  // `screenSign` resolves that mirroring into the direction the sheet must spin
-  // when the handle is clicked: grabbing the screen-right edge always pushes the
-  // page leftwards, grabbing the screen-left edge always pushes it rightwards.
   const makeTurnCorner = (face, side, edge, getRotation, setRotation) => {
     const screenSign = (side === 'back' ? -1 : 1) * (edge === 'end' ? 1 : -1);
     const button = document.createElement('button');
@@ -225,9 +284,8 @@
           return;
         }
 
-        // Hidden sheets must not keep marching sideways with their distance
-        // from the active page. visibility:hidden still has geometry and those
-        // transforms were the real source of large tablet scrollWidth values.
+        // visibility:hidden still has geometry. Hidden sheets therefore stay at
+        // x=0 so only the two intentional neighbour peeks affect the stack.
         if (distance > 1) {
           leaf.style.transform = 'translateX(0) scale(var(--notebook-leaf-scale)) rotateY(0deg)';
           return;
@@ -247,8 +305,6 @@
     const go = (index) => {
       const next = Math.max(0, Math.min(leaves.length - 1, index));
       if (next === active) return;
-      // Sheets left behind are already drawn face-up as neighbours, so their
-      // stored angle has to follow or they would reappear flipped later.
       rotations[active] = 0;
       active = next;
       rotations[active] = 0;
@@ -289,11 +345,6 @@
         if (!dragging) requestAnimationFrame(() => { leaf.style.transition = ''; });
       };
       const getRotation = () => rotations[index];
-      // The stored angle is deliberately left unbounded. Folding it back into
-      // [0, 360) after a turn looks identical in a still frame but is a real
-      // transform change, and suppressing that transition is not reliable, so
-      // every normalised turn animated a second full spin. Leaf changes reset
-      // the angle anyway, and neighbours are always drawn face-up.
       for (const edge of ['start', 'end']) {
         makeTurnCorner(frontFace, 'front', edge, getRotation, setRotation);
         makeTurnCorner(backFace, 'back', edge, getRotation, setRotation);
@@ -317,65 +368,118 @@
       stack.appendChild(leaf);
     });
 
-    document.addEventListener('keydown', (event) => {
+    const onKeydown = (event) => {
       if (!shell.isConnected || event.altKey || event.ctrlKey || event.metaKey) return;
       const activeElement = document.activeElement;
       const tag = activeElement?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || activeElement?.isContentEditable) return;
       if (event.key === 'ArrowRight') { event.preventDefault(); go(active + 1); }
       if (event.key === 'ArrowLeft') { event.preventDefault(); go(active - 1); }
-    });
+    };
+    document.addEventListener('keydown', onKeydown);
+    readerCleanup = () => document.removeEventListener('keydown', onKeydown);
 
     update();
     shell.classList.remove('is-measuring');
     return shell;
   };
 
+  const restoreContinuous = (state = 'continuous') => {
+    readerCleanup?.();
+    readerCleanup = null;
+    if (mounted && reader?.isConnected && originalTemplate) {
+      reader.replaceWith(originalTemplate.cloneNode(true));
+    }
+    mounted = false;
+    reader = null;
+    document.documentElement.dataset.notebookReader = state;
+    delete document.documentElement.dataset.notebookPages;
+    syncViewSwitch();
+  };
+
   const mount = async () => {
-    if (mounted || !desktop.matches || print.matches) return;
+    if (mounted || mounting || effectiveMode() !== 'pages') return;
     const grid = document.querySelector('.study-grid');
     const source = grid?.querySelector(':scope > article');
     if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
 
-    originalTemplate = source.cloneNode(true);
+    if (!originalTemplate) originalTemplate = source.cloneNode(true);
+    mounting = true;
     await waitForAssets(source);
+    if (effectiveMode() !== 'pages' || !source.isConnected) {
+      mounting = false;
+      syncViewSwitch();
+      return;
+    }
 
     const {shell, stack, status} = createReaderShell();
     grid.insertBefore(shell, source);
     const pages = paginate(source, stack);
     if (!pages) {
       shell.remove();
+      mounting = false;
+      syncViewSwitch();
       return;
     }
 
-    // A one-page artifact gains nothing from the reader. Restore its semantic
-    // article instead of leaving content detached in a measurement page.
+    // A one-page artifact gains nothing from the reader.
     if (pages.length < 2) {
       restorePageContent(source, pages);
       shell.remove();
+      mounting = false;
       document.documentElement.dataset.notebookReader = 'continuous';
+      syncViewSwitch();
       return;
     }
 
     reader = buildReader(source, pages, shell, stack, status);
     source.remove();
     mounted = true;
+    mounting = false;
     document.documentElement.dataset.notebookReader = 'ready';
     document.documentElement.dataset.notebookPages = String(pages.length);
+    syncViewSwitch();
+  };
+
+  const setViewMode = (mode, {persist = true} = {}) => {
+    if (mode !== 'continuous' && mode !== 'pages') return;
+    if (mode === 'pages' && !desktop.matches) return;
+    preferredMode = mode;
+    if (persist) writeStoredMode(mode);
+
+    if (effectiveMode() === 'pages') {
+      mount();
+    } else {
+      restoreContinuous('continuous');
+    }
+    syncViewSwitch();
   };
 
   const restoreForPrint = () => {
-    if (!mounted || !reader?.isConnected || !originalTemplate) return;
-    const source = originalTemplate.cloneNode(true);
-    reader.replaceWith(source);
-    mounted = false;
-    reader = null;
-    document.documentElement.dataset.notebookReader = 'print-continuous';
+    if (mounted) restoreContinuous('print-continuous');
+  };
+
+  const init = () => {
+    const source = document.querySelector('.study-grid > article');
+    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
+    originalTemplate = source.cloneNode(true);
+    createViewSwitch();
+    if (effectiveMode() === 'pages') mount();
+    else {
+      document.documentElement.dataset.notebookReader = 'continuous';
+      syncViewSwitch();
+    }
   };
 
   window.addEventListener('beforeprint', restoreForPrint);
-  window.addEventListener('afterprint', () => { mount(); });
-  desktop.addEventListener?.('change', () => location.reload());
+  window.addEventListener('afterprint', () => {
+    if (effectiveMode() === 'pages') mount();
+  });
+  desktop.addEventListener?.('change', () => {
+    if (effectiveMode() === 'pages') mount();
+    else restoreContinuous('continuous');
+    syncViewSwitch();
+  });
 
-  mount();
+  init();
 })();
