@@ -3,6 +3,7 @@
   --notebook-page-lines: 48;
   --notebook-page-height: calc(var(--notebook-line-pitch) * var(--notebook-page-lines));
   --notebook-leaf-peek: 2.85rem;
+  --notebook-leaf-hover-extra: .75rem;
   --notebook-leaf-scale: .972;
 }
 
@@ -37,9 +38,21 @@ article::after {
   gap: .8rem;
 }
 
+/* Reserve real inline room for both neighbour peeks (including their hover lift).
+   Using the reader's available width instead of 100vw keeps the physical stack
+   inside the study shell on tablets while preserving the carousel cue. */
 .notebook-stack {
   position: relative;
-  width: min(calc(100vw - 6.25rem), var(--notebook-paper-width));
+  width: min(
+    calc(
+      100%
+      - var(--notebook-leaf-peek)
+      - var(--notebook-leaf-peek)
+      - var(--notebook-leaf-hover-extra)
+      - var(--notebook-leaf-hover-extra)
+    ),
+    var(--notebook-paper-width)
+  );
   height: var(--notebook-page-height);
   perspective: 2200px;
   perspective-origin: 50% 46%;
@@ -187,7 +200,16 @@ article.notebook-page.notebook-back::after {
   position: absolute;
   left: -200vw;
   top: 0;
-  width: min(calc(100vw - 6.25rem), var(--notebook-paper-width));
+  width: min(
+    calc(
+      100%
+      - var(--notebook-leaf-peek)
+      - var(--notebook-leaf-peek)
+      - var(--notebook-leaf-hover-extra)
+      - var(--notebook-leaf-hover-extra)
+    ),
+    var(--notebook-paper-width)
+  );
   height: var(--notebook-page-height);
   visibility: hidden;
   pointer-events: none;
@@ -197,6 +219,16 @@ article.notebook-page.notebook-back::after {
 .notebook-measure-host article.notebook-page {
   position: relative;
   inset: auto;
+}
+
+/* On tablet the notebook remains physical, but the peek becomes quieter and
+   the sheet itself gets the room it needs. Mobile still uses the proven
+   continuous renderer below 48rem. */
+@media (min-width: 48.01rem) and (max-width: 64rem) {
+  :root {
+    --notebook-leaf-peek: clamp(1.35rem, 3vw, 2rem);
+    --notebook-leaf-scale: .98;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
