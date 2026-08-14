@@ -2,6 +2,7 @@
 :root {
   --notebook-page-lines: 48;
   --notebook-page-height: calc(var(--notebook-line-pitch) * var(--notebook-page-lines));
+  --notebook-page-safe-bottom: .875rem;
   --notebook-leaf-peek: 2.85rem;
   --notebook-leaf-hover-extra: .75rem;
   --notebook-leaf-scale: .972;
@@ -32,15 +33,20 @@ article::after {
 
 .notebook-reader {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   display: grid;
   justify-items: center;
   gap: .8rem;
 }
 
-/* Reserve real inline room for both neighbour peeks (including their hover lift).
-   Using the reader's available width instead of 100vw keeps the physical stack
-   inside the study shell on tablets while preserving the carousel cue. */
+.notebook-reader.is-measuring {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Reserve inline room for the immediately adjacent sheets. Hidden sheets are
+   never translated, so only these two peeks can contribute to visual overflow. */
 .notebook-stack {
   position: relative;
   width: min(
@@ -53,6 +59,7 @@ article::after {
     ),
     var(--notebook-paper-width)
   );
+  max-width: 100%;
   height: var(--notebook-page-height);
   perspective: 2200px;
   perspective-origin: 50% 46%;
@@ -131,10 +138,13 @@ article.notebook-page.notebook-back::after {
   right: clamp(.8rem, 1.7vw, 1.35rem);
 }
 
+/* Reader chrome belongs to the 3D face, not to the article itself. Keeping it
+   outside the content scroller means page numbers/corners cannot change the
+   page's measured scrollHeight after pagination. */
 .notebook-page-number {
   position: absolute;
-  z-index: 4;
-  right: var(--notebook-paper-padding-end);
+  z-index: 40;
+  right: clamp(1.25rem, 4vw, 2.5rem);
   bottom: calc(var(--notebook-line-pitch) * .45);
   font-family: var(--study-font-utility);
   font-size: .66rem;
@@ -144,14 +154,14 @@ article.notebook-page.notebook-back::after {
   pointer-events: none;
 }
 
-.notebook-back .notebook-page-number {
+.notebook-back-face .notebook-page-number {
   right: auto;
-  left: var(--notebook-paper-padding-start);
+  left: clamp(1.25rem, 4vw, 2.5rem);
 }
 
 .notebook-turn-corner {
   position: absolute;
-  z-index: 30;
+  z-index: 45;
   right: 0;
   bottom: 0;
   width: 3.25rem;
@@ -178,7 +188,7 @@ article.notebook-page.notebook-back::after {
       transparent 53%);
 }
 
-.notebook-back .notebook-turn-corner {
+.notebook-back-face .notebook-turn-corner {
   right: auto;
   left: 0;
   border-radius: 0 0 0 6px;
@@ -196,29 +206,22 @@ article.notebook-page.notebook-back::after {
   text-align: center;
 }
 
+/* Measurement now happens inside the exact final stack. This guarantees the
+   width used for line wrapping is the width the physical page will actually
+   have after the reader is mounted. */
 .notebook-measure-host {
   position: absolute;
-  left: -200vw;
-  top: 0;
-  width: min(
-    calc(
-      100%
-      - var(--notebook-leaf-peek)
-      - var(--notebook-leaf-peek)
-      - var(--notebook-leaf-hover-extra)
-      - var(--notebook-leaf-hover-extra)
-    ),
-    var(--notebook-paper-width)
-  );
-  height: var(--notebook-page-height);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   visibility: hidden;
   pointer-events: none;
   contain: layout style;
 }
 
 .notebook-measure-host article.notebook-page {
-  position: relative;
-  inset: auto;
+  position: absolute;
+  inset: 0;
 }
 
 /* On tablet the notebook remains physical, but the peek becomes quieter and
