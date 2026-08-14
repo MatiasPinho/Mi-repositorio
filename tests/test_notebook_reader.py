@@ -71,7 +71,24 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("const hoverExtra = cssLengthPx", js)
         self.assertIn("peek + hoverBoost", js)
 
-    def test_tablet_browser_audit_has_no_horizontal_overflow(self):
+    def test_hidden_sheets_do_not_expand_document_scroll_width(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        self.assertIn("if (distance > 1)", js)
+        self.assertIn("translateX(0) scale(var(--notebook-leaf-scale)) rotateY(0deg)", js)
+        self.assertIn("visibility:hidden still has geometry", js)
+
+    def test_pagination_measures_inside_final_stack_and_keeps_chrome_outside_article(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+        self.assertIn("stack.appendChild(measure)", js)
+        self.assertIn("frontFace.appendChild(numberFront)", js)
+        self.assertIn("backFace.appendChild(numberBack)", js)
+        self.assertIn("makeTurnCorner(frontFace, 'front'", js)
+        self.assertIn("--notebook-page-safe-bottom: .875rem", css)
+        self.assertIn(".notebook-measure-host {", css)
+        self.assertIn("inset: 0", css)
+
+    def test_tablet_browser_audit_has_no_horizontal_or_page_overflow(self):
         with tempfile.TemporaryDirectory() as td:
             td = Path(td)
             md = td / "summary.md"
@@ -79,8 +96,8 @@ class NotebookReaderTests(unittest.TestCase):
             audit_dir = td / "audit"
             md.write_text(
                 "# Unidad 3\n\nIntroducción del resumen.\n\n## Algoritmos\n\n" + "\n\n".join(
-                    f"Párrafo {i} con una explicación breve que debe distribuirse entre varias hojas sin desbordar el carrusel."
-                    for i in range(1, 70)
+                    f"Párrafo {i} con una explicación breve que debe distribuirse entre muchas hojas sin desbordar el carrusel."
+                    for i in range(1, 181)
                 ),
                 encoding="utf-8",
             )
@@ -102,9 +119,12 @@ class NotebookReaderTests(unittest.TestCase):
             report = json.loads((audit_dir / "audit.json").read_text(encoding="utf-8"))
             tablet = report["viewports"]["tablet"]
             self.assertNotIn("tablet:horizontal-overflow", report["issues"])
+            self.assertFalse(any(issue.startswith("tablet:reader-page-overflow") for issue in report["issues"]))
             self.assertLessEqual(tablet["scrollWidth"], tablet["clientWidth"] + 2)
             self.assertEqual(tablet["notebook_reader"]["state"], "ready")
             self.assertGreaterEqual(tablet["notebook_reader"]["visibleNeighbours"], 1)
+            self.assertGreaterEqual(tablet["notebook_reader"]["leaves"], 4)
+            self.assertEqual(tablet["notebook_reader"]["overflowingPages"], [])
 
     def test_reader_assets_participate_in_visual_artifact_fingerprint(self):
         artifact_state = (ROOT / "scripts" / "artifact_state.py").read_text(encoding="utf-8")
