@@ -31,6 +31,10 @@ article::after {
       center 86% / 1.45rem 1.45rem no-repeat;
 }
 
+/* The running labels stay, but the dark divider under them is intentionally
+   removed so the ruled paper remains the only horizontal structure there. */
+.book-running-line { border-bottom: 0; }
+
 /* Make the warm white stock read more clearly as real paper on screen. This is
    intentionally a small step up from the base theme: slightly stronger fibres,
    edge falloff and cast shadow, without tinting the page grey or muddying the
