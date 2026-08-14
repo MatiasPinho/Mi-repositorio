@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -63,14 +64,10 @@ class NotebookReaderTests(unittest.TestCase):
         js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
         css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
 
-        # A spine origin made the sheet swing out of the stack and cover the
-        # sheets on its left instead of spinning in place.
         leaf_rule = css.split(".notebook-leaf {", 1)[1].split("}", 1)[0]
         self.assertIn("transform-origin: 50% 50%", leaf_rule)
         self.assertNotIn("left center", leaf_rule)
 
-        # Both outer edges are handles, and the reverse face reuses the same
-        # positions because rotateY(180deg) already mirrors them.
         self.assertIn('.notebook-turn-corner[data-edge="start"]', css)
         self.assertIn('.notebook-turn-corner[data-edge="end"]', css)
         self.assertIn('.notebook-turn-corner[data-edge="start"]::after', css)
@@ -80,25 +77,16 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("makeTurnCorner(frontFace, 'front', edge", js)
         self.assertIn("makeTurnCorner(backFace, 'back', edge", js)
 
-        # Grabbing the screen-right edge always spins the sheet leftwards and
-        # vice versa, which on the mirrored reverse face inverts the sign.
         self.assertIn(
             "const screenSign = (side === 'back' ? -1 : 1) * (edge === 'end' ? 1 : -1)",
             js,
         )
         self.assertIn("setRotation(getRotation() + screenSign * 180)", js)
-
-        # Regression guard: normalising the settled angle back into [0, 360) is a
-        # real transform change that cannot be reliably un-transitioned, so one
-        # click animated two full spins.
         self.assertNotIn("% 360", js)
         self.assertNotIn("transitionend", js)
 
     def test_peeking_sheet_is_clickable_instead_of_its_own_turn_handle(self):
         css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
-        # The visible strip of a neighbour (2.85rem peek) is narrower than the
-        # 2.5rem turn handle plus its scaling, so an interactive handle on a
-        # non-active sheet swallowed every navigation click.
         self.assertIn(
             ".notebook-leaf:not(.is-active) .notebook-turn-corner { pointer-events: none; }",
             css,
@@ -144,6 +132,87 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn(".notebook-measure-host {", css)
         self.assertIn("inset: 0", css)
 
+    def test_view_switch_is_persistent_presentation_state(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+        self.assertIn("university-study:reader-mode", js)
+        self.assertIn("data-reader-mode=\"continuous\"", js)
+        self.assertIn("data-reader-mode=\"pages\"", js)
+        self.assertIn("localStorage", js)
+        self.assertIn("restoreContinuous", js)
+        self.assertIn("setViewMode", js)
+        self.assertIn(".notebook-view-switch", css)
+        self.assertIn("position: fixed", css.split(".notebook-view-switch {", 1)[1].split("}", 1)[0])
+        self.assertIn(".notebook-view-switch { display: none; }", css)
+
+    def test_browser_can_switch_continuous_and_pages_without_regenerating_content(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            html = td / "summary.html"
+            md.write_text(
+                "# Unidad 3\n\nIntroducción del resumen.\n\n## Algoritmos\n\n" + "\n\n".join(
+                    f"Párrafo {i} con suficiente contenido para repartir el mismo documento entre hojas físicas."
+                    for i in range(1, 90)
+                ),
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--course", "Programación I", "--scope", "Unidad 3", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+            html_text = html.read_text(encoding="utf-8")
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                page = browser.new_page(viewport={"width": 1200, "height": 1000})
+                page.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+                self.assertEqual(page.locator(".notebook-view-switch").count(), 1)
+                original_text = page.locator("body").inner_text()
+
+                page.locator('[data-reader-mode="continuous"]').click()
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                self.assertEqual(page.locator(".notebook-reader").count(), 0)
+                self.assertEqual(page.locator(".study-grid > article").count(), 1)
+                self.assertEqual(
+                    page.locator('[data-reader-mode="continuous"]').get_attribute("aria-pressed"),
+                    "true",
+                )
+                self.assertIn("Párrafo 89", page.locator("body").inner_text())
+
+                page.locator('[data-reader-mode="pages"]').click()
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+                self.assertEqual(page.locator(".notebook-reader").count(), 1)
+                self.assertEqual(
+                    page.locator('[data-reader-mode="pages"]').get_attribute("aria-pressed"),
+                    "true",
+                )
+                self.assertIn("Párrafo 89", page.locator("body").inner_text())
+                self.assertIn("Unidad 3", original_text)
+                browser.close()
+
     def test_tablet_browser_audit_has_no_horizontal_or_page_overflow(self):
         with tempfile.TemporaryDirectory() as td:
             td = Path(td)
@@ -182,9 +251,6 @@ class NotebookReaderTests(unittest.TestCase):
             self.assertGreaterEqual(reader["visibleNeighbours"], 1)
             self.assertGreaterEqual(reader["leaves"], 4)
             self.assertEqual(reader["overflowingPages"], [])
-            # Regression guard: an empty fixed-height page must not count as an
-            # overflow. The old safety-reserve bug produced roughly one page per
-            # top-level paragraph, so this long fixture exploded past 100 pages.
             self.assertLess(reader["pages"], 80)
 
     def test_reader_assets_participate_in_visual_artifact_fingerprint(self):
