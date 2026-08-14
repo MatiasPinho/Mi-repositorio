@@ -177,13 +177,18 @@
     const leaves = [];
     const sideIsBack = (deg) => Math.abs(Math.round(deg / 180)) % 2 === 1;
 
+    const cssLengthPx = (style, name, fallback) => {
+      const rootPx = parseFloat(style.fontSize) || 16;
+      const token = style.getPropertyValue(name).trim();
+      if (token.endsWith('rem')) return parseFloat(token) * rootPx;
+      if (token.endsWith('px')) return parseFloat(token);
+      return parseFloat(token) || fallback;
+    };
+
     const update = () => {
       const rootStyle = getComputedStyle(document.documentElement);
-      const rootPx = parseFloat(rootStyle.fontSize) || 16;
-      const peekToken = rootStyle.getPropertyValue('--notebook-leaf-peek').trim();
-      const peek = peekToken.endsWith('rem')
-        ? parseFloat(peekToken) * rootPx
-        : (parseFloat(peekToken) || 45.6);
+      const peek = cssLengthPx(rootStyle, '--notebook-leaf-peek', 45.6);
+      const hoverExtra = cssLengthPx(rootStyle, '--notebook-leaf-hover-extra', 12);
 
       leaves.forEach((leaf, index) => {
         const d = index - active;
@@ -197,7 +202,7 @@
         if (d === 0) {
           leaf.style.transform = `translateX(0) scale(1) rotateY(${rotations[index].toFixed(2)}deg)`;
         } else {
-          const hoverBoost = leaf.matches(':hover') ? 12 : 0;
+          const hoverBoost = leaf.matches(':hover') ? hoverExtra : 0;
           leaf.style.transform = `translateX(${d * (peek + hoverBoost)}px) scale(var(--notebook-leaf-scale)) rotateY(0deg)`;
         }
       });
