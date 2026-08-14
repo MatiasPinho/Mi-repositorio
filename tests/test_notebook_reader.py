@@ -39,7 +39,7 @@ class NotebookReaderTests(unittest.TestCase):
             self.assertIn("PAGED_KINDS", page)
             self.assertIn("continuous-fallback", page)
 
-    def test_reader_navigation_is_page_stack_and_flip_is_corner_only(self):
+    def test_reader_navigation_is_page_stack_and_flip_uses_only_outer_edge(self):
         js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
         css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
         self.assertIn("is-neighbor", js)
@@ -49,6 +49,15 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("rotateY", css)
         self.assertIn("backface-visibility: hidden", css)
         self.assertIn("cursor: pointer", css)
+
+        turn_rule = css.split(".notebook-turn-corner {", 1)[1].split("}", 1)[0]
+        self.assertIn("top: 0", turn_rule)
+        self.assertIn("bottom: 0", turn_rule)
+        self.assertIn("width: 2.5rem", turn_rule)
+        self.assertIn("height: auto", turn_rule)
+        self.assertIn("background: transparent", turn_rule)
+        self.assertIn(".notebook-turn-corner::after", css)
+        self.assertIn(".notebook-back-face .notebook-turn-corner", css)
 
     def test_reader_keeps_safe_fallback_and_three_hole_binding(self):
         js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
