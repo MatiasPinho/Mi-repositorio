@@ -7,6 +7,7 @@ figure {
   padding: 0;
 }
 figure .plate {
+  block-size: calc-size(auto, round(up, size, var(--notebook-line-pitch)));
   border: 1px solid var(--study-rule);
   background: color-mix(in srgb, var(--study-paper) 96%, white 4%);
   padding: 1rem;
@@ -42,14 +43,12 @@ figure.study-sketch img {
 figcaption {
   display: flex;
   flex-wrap: wrap;
-  gap: .15rem .55rem;
-  margin: .45rem 0 0;
+  gap: 0 .55rem;
+  margin: 0;
   color: var(--study-ink-muted);
   font-family: var(--study-font-hand);
   font-size: 1rem;
-  line-height: 1.45;
-  transform: rotate(-.12deg);
-  transform-origin: left top;
+  line-height: var(--notebook-line-pitch);
 }
 figcaption::before {
   content: "fig. " counter(study-figure) " —";

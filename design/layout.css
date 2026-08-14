@@ -34,8 +34,9 @@ article {
   color: var(--study-ink);
   background-color: var(--study-paper);
   background-image: var(--notebook-rule-image);
-  background-size: 100% var(--notebook-line-pitch);
-  background-position: 0 var(--notebook-rule-offset);
+  background-origin: content-box;
+  background-size: calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch);
+  background-position: calc(-1 * var(--notebook-paper-padding-start)) 0;
   background-repeat: repeat-y;
   border: 1px solid var(--study-rule);
   border-radius: 1px 7px 7px 1px;
@@ -101,15 +102,12 @@ article::after {
   max-width: var(--notebook-wide);
 }
 .row > .mark:empty { display: none; }
-/* Block snapping keeps the document on a 27px rhythm; these component-level
-   phase corrections place the actual font box above the following rule.
-   They are role- and viewport-based, so figures of arbitrary height cannot
-   change the alignment of prose that follows them. */
+/* Block snapping and metric-based type trimming share one origin: the article
+   content edge. Every following baseline therefore returns to the same rule. */
 .row > .body {
   width: min(100%, var(--notebook-measure));
   max-width: var(--notebook-measure);
   min-width: 0;
-  transform: translateY(var(--notebook-prose-baseline-shift));
 }
 .mark {
   font-family: var(--study-font-utility);
@@ -127,14 +125,14 @@ article::after {
   flex-wrap: wrap;
   gap: 0 1.5rem;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: flex-start;
   height: var(--notebook-line-pitch);
   min-height: var(--notebook-line-pitch);
   padding-bottom: 0;
   border-bottom: 1px solid var(--study-rule-strong);
   font-family: var(--study-font-utility);
   font-size: .68rem;
-  line-height: calc(var(--notebook-line-pitch) - 1px);
+  line-height: var(--notebook-line-pitch);
   font-weight: 600;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -176,7 +174,7 @@ article::after {
   display: flex;
   flex-wrap: nowrap;
   gap: .45rem;
-  align-items: baseline;
+  align-items: flex-start;
   width: min(100%, var(--notebook-measure));
   margin: var(--notebook-line-pitch) 0;
 }
@@ -191,11 +189,6 @@ article::after {
   letter-spacing: .01em;
   color: var(--study-accent);
   font-variant-numeric: tabular-nums;
-}
-.section-head > .num,
-.section-head > h2,
-.section-head > h3 {
-  transform: translateY(var(--notebook-heading-baseline-shift));
 }
 .section-head > .num::before { content: "§" counter(study-section); }
 .section-head > h2,
@@ -269,11 +262,6 @@ article::after {
 .minor-head { margin: var(--notebook-line-pitch) 0 0; }
 
 @media (max-width: 48rem) {
-  :root {
-    --notebook-rule-offset: 1.5rem;
-    --notebook-prose-baseline-shift: -.6875rem;
-    --notebook-heading-baseline-shift: -.6875rem;
-  }
   body { background: var(--study-paper); }
   .study-shell { padding: 0; }
   .study-grid,

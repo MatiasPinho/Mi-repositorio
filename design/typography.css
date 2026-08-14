@@ -21,13 +21,18 @@ h1, h2, h3, h4 {
 }
 
 h1 {
-  display: inline-block;
-  margin: 0 0 .35rem;
+  --notebook-title-line-pitch: var(--notebook-line-pitch);
+  --notebook-title-baseline-inset: calc((var(--notebook-title-line-pitch) - 1cap) / 2);
+  position: relative;
+  display: block;
+  inset-block-start: var(--notebook-title-baseline-inset);
+  margin: 0;
   max-width: var(--notebook-measure);
-  background: var(--study-paper);
-  box-shadow: 0 0 0 .18rem var(--study-paper);
-  font-size: clamp(1.75rem, 1.48rem + 1vw, 2.15rem);
-  line-height: 1.16;
+  block-size: calc-size(auto, round(up, size, var(--notebook-line-pitch)));
+  background: transparent;
+  box-shadow: none;
+  font-size: clamp(1.65rem, 1.5rem + .6vw, 1.85rem);
+  line-height: var(--notebook-title-line-pitch);
   letter-spacing: -.018em;
   font-weight: 700;
 }
@@ -101,28 +106,132 @@ code {
   font-family: var(--study-font-code);
   font-size: .84em;
   color: var(--study-ink-strong);
-  background: color-mix(in srgb, var(--study-paper-muted) 86%, transparent);
-  border: 1px solid var(--study-rule);
-  padding: .05em .28em;
+  background: transparent;
+  border: 0;
+  padding: 0 .06em;
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: color-mix(in srgb, var(--study-accent) 48%, transparent);
+  text-decoration-thickness: .055em;
+  text-underline-offset: .18em;
 }
 pre {
-  width: min(100%, var(--notebook-wide));
+  position: relative;
+  isolation: isolate;
+  width: min(calc(100% - var(--notebook-frame-inset)), var(--notebook-wide));
   overflow-x: auto;
-  margin: var(--notebook-line-pitch) 0;
-  padding: 1rem 1.15rem;
-  border: 1.5px solid var(--study-rule-strong);
-  background: color-mix(in srgb, var(--study-paper) 96%, white 4%);
+  margin: var(--notebook-line-pitch) 0 var(--notebook-line-pitch) var(--notebook-frame-inset);
+  padding: 0 var(--notebook-frame-padding-inline) var(--notebook-line-pitch);
+  border: 0;
+  background: transparent;
   color: var(--study-ink-strong);
   font-family: var(--study-font-code);
   font-size: .86rem;
-  line-height: 1.58;
+  line-height: var(--notebook-line-pitch);
   tab-size: 2;
 }
+pre::before,
+pre::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--study-rule-strong);
+  -webkit-mask-position: center;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+pre::before {
+  -webkit-mask-image: var(--notebook-frame-trace-a);
+  mask-image: var(--notebook-frame-trace-a);
+}
+pre::after {
+  opacity: .38;
+  -webkit-mask-image: var(--notebook-frame-trace-b);
+  mask-image: var(--notebook-frame-trace-b);
+}
 pre code {
+  position: relative;
+  z-index: 1;
+  display: block;
   padding: 0;
   border: 0;
   background: transparent;
   font-size: 1em;
+  text-decoration: none;
+}
+
+/* Baseline-grid subjects. The fallback centers each font's cap box inside the
+   line. Modern Chromium trims to the real cap/alphabetic edges, so moving the
+   box by pitch - 1cap places its alphabetic baseline exactly on the next rule.
+   Rounding every subject to the pitch prevents wrapped text from accumulating
+   fractional drift farther down the page. */
+:is(
+  .book-running-line > span,
+  .study-lede,
+  .study-header .study-meta,
+  .row > .body > p,
+  .row > .body > h3,
+  .row > .body > h4,
+  .row > .body li,
+  .section-head > .num,
+  .section-head > h2,
+  .section-head > h3,
+  .callout > .callout-title,
+  .callout > .callout-body > p,
+  .callout > .callout-body > summary,
+  .callout > .callout-body li,
+  pre > code,
+  blockquote > p,
+  .table-caption > span,
+  .code-caption > span,
+  figcaption > span
+),
+:is(.table-caption, .code-caption, figcaption)::before {
+  --notebook-baseline-inset: calc((var(--notebook-line-pitch) - 1cap) / 2);
+  position: relative;
+  inset-block-start: var(--notebook-baseline-inset);
+  block-size: calc-size(auto, round(up, size, var(--notebook-line-pitch)));
+  line-height: var(--notebook-line-pitch);
+}
+
+@supports (text-box-trim: trim-both) and (text-box-edge: cap alphabetic) {
+  h1 {
+    --notebook-title-baseline-inset: calc(var(--notebook-line-pitch) - 1cap);
+    text-box-edge: cap alphabetic;
+    text-box-trim: trim-both;
+  }
+
+  :is(
+    .book-running-line > span,
+    .study-lede,
+    .study-header .study-meta,
+    .row > .body > p,
+    .row > .body > h3,
+    .row > .body > h4,
+    .row > .body li,
+    .section-head > .num,
+    .section-head > h2,
+    .section-head > h3,
+    .callout > .callout-title,
+    .callout > .callout-body > p,
+    .callout > .callout-body > summary,
+    .callout > .callout-body li,
+    pre > code,
+    blockquote > p,
+    .table-caption > span,
+    .code-caption > span,
+    figcaption > span
+  ),
+  :is(.table-caption, .code-caption, figcaption)::before {
+    --notebook-baseline-inset: calc(var(--notebook-line-pitch) - 1cap);
+    text-box-edge: cap alphabetic;
+    text-box-trim: trim-both;
+  }
 }
 
 blockquote {

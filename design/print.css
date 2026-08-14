@@ -15,10 +15,9 @@
     --study-rule-line: #dce5ef;
     --study-margin-rule: #dba9a4;
     --study-marker: #efe3a8;
-    --notebook-line-pitch: 6.7mm;
-    --notebook-rule-offset: 4mm;
-    --notebook-prose-baseline-shift: -1.85mm;
-    --notebook-heading-baseline-shift: -2.4mm;
+    /* Quantize the physical target to a whole CSS pixel so pagination cannot
+       accumulate subpixel drift between layout boxes and painted rules. */
+    --notebook-line-pitch: round(nearest, 6.7mm, 1px);
     --study-measure: 100%;
     --study-wide: 100%;
     --shadow-paper: none;
@@ -38,7 +37,7 @@
   body {
     background: #fff;
     font-size: 10.5pt;
-    line-height: 6.7mm;
+    line-height: var(--notebook-line-pitch);
   }
   .study-shell {
     width: auto;
@@ -55,8 +54,6 @@
     border-radius: 0;
     box-shadow: none;
     overflow: visible;
-    background-size: 100% 6.7mm;
-    background-position: 0 var(--notebook-rule-offset);
   }
   article::before {
     display: block;
@@ -67,7 +64,7 @@
   .toc,
   .reading-progress { display: none; }
 
-  h1 { font-size: 22pt; }
+  h1 { font-size: 20pt; }
   h2 { font-size: 12.5pt; break-after: avoid; }
   h3 { font-size: 10.5pt; break-after: avoid; }
   .section-head {
@@ -90,12 +87,9 @@
   figcaption {
     break-inside: avoid;
   }
-  .callout.exam { transform: none; }
-  .callout.recall > .callout-body::after { height: 20mm; }
   .table-scroll { overflow: visible; }
   table { min-width: 0; }
   figure .plate { padding: 3mm; }
-  figcaption { transform: none; }
   a {
     color: inherit;
     text-decoration: none;

@@ -1,19 +1,51 @@
-/* Semantic rails and study marks translated into notebook language. Role words remain
+/* Semantic rails use Variante 02: the outline is an actual pair of wandering
+   pencil paths rather than a pair of rotated CSS borders. Role words remain
    explicit so colour and handwriting are never the only meaning channel. */
 .callout {
   --rail: var(--study-rule-strong);
-  width: min(100%, var(--notebook-measure));
-  margin: var(--notebook-line-pitch) 0;
-  padding: .65rem .95rem .75rem;
-  border-left: 3px solid var(--rail);
-  background: color-mix(in srgb, var(--rail) 7%, var(--study-paper) 93%);
+  --notebook-frame-measure: var(--notebook-measure);
+  position: relative;
+  isolation: isolate;
+  width: min(calc(100% - var(--notebook-frame-inset)), var(--notebook-frame-measure));
+  margin: var(--notebook-line-pitch) 0 var(--notebook-line-pitch) var(--notebook-frame-inset);
+  padding: 0 var(--notebook-frame-padding-inline) var(--notebook-line-pitch);
+  border: 0;
+  background: transparent;
+}
+.callout::before,
+.callout::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--rail);
+  -webkit-mask-position: center;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+.callout::before {
+  -webkit-mask-image: var(--notebook-frame-trace-a);
+  mask-image: var(--notebook-frame-trace-a);
+}
+.callout::after {
+  opacity: .38;
+  -webkit-mask-image: var(--notebook-frame-trace-b);
+  mask-image: var(--notebook-frame-trace-b);
+}
+.callout > * {
+  position: relative;
+  z-index: 1;
 }
 .callout > .callout-title {
-  margin-bottom: .18rem;
+  margin: 0;
   color: var(--rail);
   font-family: var(--study-font-utility);
   font-size: .66rem;
-  line-height: 1.35rem;
+  line-height: var(--notebook-line-pitch);
   font-weight: 600;
   letter-spacing: .09em;
   text-transform: uppercase;
@@ -24,50 +56,40 @@
 }
 .callout > .callout-body > :last-child { margin-bottom: 0; }
 .callout .term {
-  margin-bottom: .2rem;
+  margin: 0;
   color: var(--study-ink-strong);
   font-weight: 600;
 }
 
 .callout.definition {
   --rail: var(--study-concept);
-  background: var(--study-concept-soft);
 }
 .callout.example {
   --rail: var(--study-example);
-  background: var(--study-example-soft);
 }
 .callout.connection {
   --rail: var(--study-connection);
-  background: color-mix(in srgb, var(--study-connection) 7%, var(--study-paper) 93%);
 }
 
 .callout.warning,
 .callout.danger {
-  width: min(100%, var(--notebook-wide));
-  border: 1.5px solid var(--rail);
-  border-left-width: 1.5px;
+  --notebook-frame-measure: var(--notebook-wide);
 }
 .callout.warning {
   --rail: var(--study-warning);
-  background: var(--study-warning-soft);
 }
 .callout.danger {
   --rail: var(--study-danger);
-  background: var(--study-danger-soft);
 }
 
 /* Exam relevance becomes a restrained handwritten margin note rather than
    another boxed card. The role label is still literal text. */
 .callout.exam {
   --rail: var(--study-accent);
-  width: min(100%, var(--notebook-measure));
-  margin: var(--notebook-line-pitch) 0;
-  padding: 0 0 0 .15rem;
+  --notebook-frame-measure: var(--notebook-measure);
+  padding: 0 0 var(--notebook-line-pitch) .15rem;
   border: 0;
   background: transparent;
-  transform: rotate(-.2deg);
-  transform-origin: left top;
 }
 .callout.exam > .callout-title {
   margin: 0;
@@ -80,45 +102,66 @@
 }
 .callout.exam > .callout-title::before { content: "↑ "; }
 .callout.exam > .callout-body {
+  position: relative;
   margin-left: .8rem;
-  padding: .2rem 0 .2rem .8rem;
-  border-left: 2px solid var(--rail);
+  padding: 0 0 0 .8rem;
+  border-left: 0;
 }
+.callout.exam > .callout-body::before {
+  content: "";
+  position: absolute;
+  inset: .15rem auto .15rem 0;
+  width: .35rem;
+  pointer-events: none;
+  background: var(--rail);
+  -webkit-mask: var(--notebook-hand-rail-mask) center / 100% 100% no-repeat;
+  mask: var(--notebook-hand-rail-mask) center / 100% 100% no-repeat;
+}
+.callout.exam::before,
+.callout.exam::after { content: none; }
 
 /* Retrieval is a real worksheet: prompt first, then physical-looking answer
    lines. Nothing is hidden behind a disclosure. */
 .callout.recall {
   --rail: var(--study-recall);
-  width: min(100%, var(--notebook-wide));
-  margin: var(--notebook-line-pitch) 0;
-  padding: 0;
-  border: 1.5px solid var(--study-rule-strong);
-  background: color-mix(in srgb, var(--study-paper) 97%, white 3%);
+  --notebook-frame-measure: var(--notebook-wide);
+  padding: 0 var(--notebook-frame-padding-inline) var(--notebook-line-pitch);
+  border: 0;
+  background: transparent;
 }
 .callout.recall > .callout-title {
   margin: 0;
-  padding: .45rem .9rem;
-  border-bottom: 1px solid var(--study-rule);
-  background: color-mix(in srgb, var(--study-rule) 35%, var(--study-paper));
-  color: var(--study-ink-strong);
-  font-family: var(--study-font-utility);
-  line-height: 1.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rail);
+  font-family: var(--study-font-hand);
+  font-size: 1.02rem;
+  line-height: var(--notebook-line-pitch);
+  letter-spacing: 0;
+  text-transform: none;
 }
 .callout.recall > .callout-body {
-  padding: .85rem 1rem 1rem;
+  padding: 0;
 }
 .callout.recall > .callout-body::after {
   content: "";
   display: block;
-  height: calc(var(--notebook-line-pitch) * 3.3);
-  margin-top: .3rem;
-  background-image: var(--notebook-rule-image);
-  background-size: 100% var(--notebook-line-pitch);
-  background-position: 0 var(--notebook-rule-offset);
-  background-repeat: repeat-y;
+  height: calc(var(--notebook-line-pitch) * 3);
+  margin-top: 0;
+  background: var(--rail);
+  opacity: .38;
+  -webkit-mask-image: var(--notebook-hand-rule-mask);
+  -webkit-mask-size: 100% var(--notebook-line-pitch);
+  -webkit-mask-position: 0 0;
+  -webkit-mask-repeat: repeat-y;
+  mask-image: var(--notebook-hand-rule-mask);
+  mask-size: 100% var(--notebook-line-pitch);
+  mask-position: 0 0;
+  mask-repeat: repeat-y;
 }
 .callout.recall .prompt {
-  margin-bottom: .25rem;
+  margin: 0;
   color: var(--study-ink-strong);
 }
 .callout.recall .hint {
@@ -126,9 +169,8 @@
   color: var(--study-ink-muted);
   font-family: var(--study-font-utility);
   font-size: .7rem;
-  line-height: 1.4;
+  line-height: var(--notebook-line-pitch);
 }
-
 details.callout.recall > .callout-body > summary {
   cursor: pointer;
   list-style: none;
@@ -188,15 +230,19 @@ tbody td:first-child {
 .code-caption {
   display: flex;
   flex-wrap: wrap;
-  gap: .25rem .65rem;
+  gap: 0 .65rem;
   width: min(100%, var(--notebook-wide));
   margin: 0 0 var(--notebook-line-pitch);
-  padding-top: .25rem;
+  padding-top: 0;
 }
 pre:has(+ .code-caption),
 .table-scroll:has(+ .table-caption) { margin-bottom: 0; }
 .table-caption { counter-increment: study-table; }
 .code-caption { counter-increment: study-code; }
+.code-caption {
+  width: min(calc(100% - var(--notebook-frame-inset)), var(--notebook-wide));
+  margin-inline-start: var(--notebook-frame-inset);
+}
 .table-caption::before,
 .code-caption::before {
   flex: 0 0 auto;
@@ -215,6 +261,6 @@ pre:has(+ .code-caption),
   max-width: var(--notebook-measure);
   color: var(--study-ink-muted);
   font-size: .82rem;
-  line-height: 1.45;
+  line-height: var(--notebook-line-pitch);
   text-wrap: pretty;
 }
