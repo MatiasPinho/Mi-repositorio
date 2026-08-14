@@ -132,20 +132,22 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn(".notebook-measure-host {", css)
         self.assertIn("inset: 0", css)
 
-    def test_view_switch_is_persistent_presentation_state(self):
+    def test_view_shortcut_is_persistent_presentation_state(self):
         js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
         css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
         self.assertIn("university-study:reader-mode", js)
-        self.assertIn("data-reader-mode=\"continuous\"", js)
-        self.assertIn("data-reader-mode=\"pages\"", js)
+        self.assertIn("event.key?.toLowerCase() !== 'v'", js)
+        self.assertIn("toggleViewMode", js)
+        self.assertIn("showModeToast", js)
         self.assertIn("localStorage", js)
         self.assertIn("restoreContinuous", js)
         self.assertIn("setViewMode", js)
-        self.assertIn(".notebook-view-switch", css)
-        self.assertIn("position: fixed", css.split(".notebook-view-switch {", 1)[1].split("}", 1)[0])
         self.assertIn(".notebook-view-switch { display: none; }", css)
+        self.assertIn(".notebook-mode-toast", css)
+        self.assertIn("Vista Hojas · V", js)
+        self.assertIn("Vista Continua · V", js)
 
-    def test_browser_can_switch_continuous_and_pages_without_regenerating_content(self):
+    def test_browser_can_switch_continuous_and_pages_with_v_without_regenerating_content(self):
         try:
             from playwright.sync_api import sync_playwright
         except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
@@ -184,32 +186,28 @@ class NotebookReaderTests(unittest.TestCase):
                     timeout=6000,
                 )
                 self.assertEqual(page.locator(".notebook-view-switch").count(), 1)
+                self.assertFalse(page.locator(".notebook-view-switch").is_visible())
                 original_text = page.locator("body").inner_text()
 
-                page.locator('[data-reader-mode="continuous"]').click()
+                page.keyboard.press("v")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'continuous'",
                     timeout=3000,
                 )
                 self.assertEqual(page.locator(".notebook-reader").count(), 0)
                 self.assertEqual(page.locator(".study-grid > article").count(), 1)
-                self.assertEqual(
-                    page.locator('[data-reader-mode="continuous"]').get_attribute("aria-pressed"),
-                    "true",
-                )
                 self.assertIn("Párrafo 89", page.locator("body").inner_text())
+                self.assertEqual(page.locator(".notebook-mode-toast").count(), 1)
+                self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
 
-                page.locator('[data-reader-mode="pages"]').click()
+                page.keyboard.press("v")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'ready'",
                     timeout=6000,
                 )
                 self.assertEqual(page.locator(".notebook-reader").count(), 1)
-                self.assertEqual(
-                    page.locator('[data-reader-mode="pages"]').get_attribute("aria-pressed"),
-                    "true",
-                )
                 self.assertIn("Párrafo 89", page.locator("body").inner_text())
+                self.assertIn("Vista Hojas", page.locator(".notebook-mode-toast").inner_text())
                 self.assertIn("Unidad 3", original_text)
                 browser.close()
 
