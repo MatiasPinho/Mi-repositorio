@@ -253,13 +253,13 @@
       leaf.dataset.leaf = String(index + 1);
 
       const frontFace = document.createElement('div');
-      frontFace.className = 'notebook-face notebook-front-face';
+      frontFace.className = 'notebook-face notebook-front-face notebook-front';
       front.classList.add('notebook-front');
       front.dataset.page = String(index * 2 + 1);
       frontFace.appendChild(front);
 
       const backFace = document.createElement('div');
-      backFace.className = 'notebook-face notebook-back-face';
+      backFace.className = 'notebook-face notebook-back-face notebook-back';
       back.classList.add('notebook-back');
       back.dataset.page = String(index * 2 + 2);
       backFace.appendChild(back);
