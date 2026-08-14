@@ -14,6 +14,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 THEME = ROOT / "assets" / "study-theme.css"
+NOTEBOOK_READER_CSS = ROOT / "assets" / "notebook-reader.css"
+NOTEBOOK_READER_JS = ROOT / "assets" / "notebook-reader.js"
 
 FONT_LINKS = """<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -656,7 +658,12 @@ def render(input_path: Path, output_path: Path, kind: str, course: str = "", sco
     content, toc, title = render_markdown(
         rendered_text, scope=scope, image_base=output_path.parent.resolve()
     )
-    css = THEME.read_text(encoding="utf-8")
+    css = (
+        THEME.read_text(encoding="utf-8")
+        + "\n"
+        + NOTEBOOK_READER_CSS.read_text(encoding="utf-8")
+    )
+    notebook_reader_js = NOTEBOOK_READER_JS.read_text(encoding="utf-8")
 
     toc_html = "".join(f'<a class="depth-{d}" href="#{hid}">{html.escape(label)}</a>' for d, hid, label in toc)
     show_toc = kind == "guide" and len(toc) >= 3
@@ -683,7 +690,7 @@ def render(input_path: Path, output_path: Path, kind: str, course: str = "", sco
     document = f'''<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title>{FONT_LINKS}<style>{css}</style></head>
-<body>{progress}<main class="study-shell"><div class="study-grid {grid_class}"><article data-kind="{html.escape(kind)}">{frontmatter}{content}</article>{toc_block}</div></main>{_progress_script(show_progress)}</body></html>'''
+<body>{progress}<main class="study-shell"><div class="study-grid {grid_class}"><article data-kind="{html.escape(kind)}">{frontmatter}{content}</article>{toc_block}</div></main>{_progress_script(show_progress)}<script>{notebook_reader_js}</script></body></html>'''
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(document, encoding="utf-8")
     return issues
