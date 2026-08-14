@@ -131,10 +131,17 @@
     return pages;
   };
 
-  const makeTurnCorner = (face, side, getRotation, setRotation) => {
+  // `edge` is the handle's position inside its own face. The reverse face is
+  // mirrored by rotateY(180deg), so its start edge is drawn on the screen right.
+  // `screenSign` resolves that mirroring into the direction the sheet must spin
+  // when the handle is clicked: grabbing the screen-right edge always pushes the
+  // page leftwards, grabbing the screen-left edge always pushes it rightwards.
+  const makeTurnCorner = (face, side, edge, getRotation, setRotation) => {
+    const screenSign = (side === 'back' ? -1 : 1) * (edge === 'end' ? 1 : -1);
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'notebook-turn-corner';
+    button.dataset.edge = edge;
     button.setAttribute(
       'aria-label',
       side === 'back' ? 'Volver al frente de la hoja' : 'Dar vuelta la hoja'
@@ -183,9 +190,7 @@
       event.preventDefault();
       event.stopPropagation();
       if (dragged) return;
-      const current = getRotation();
-      const back = Math.abs(Math.round(current / 180)) % 2 === 1;
-      setRotation(current + (back ? -180 : 180));
+      setRotation(getRotation() + screenSign * 180);
     });
   };
 
@@ -242,6 +247,9 @@
     const go = (index) => {
       const next = Math.max(0, Math.min(leaves.length - 1, index));
       if (next === active) return;
+      // Sheets left behind are already drawn face-up as neighbours, so their
+      // stored angle has to follow or they would reappear flipped later.
+      rotations[active] = 0;
       active = next;
       rotations[active] = 0;
       update();
@@ -281,8 +289,15 @@
         if (!dragging) requestAnimationFrame(() => { leaf.style.transition = ''; });
       };
       const getRotation = () => rotations[index];
-      makeTurnCorner(frontFace, 'front', getRotation, setRotation);
-      makeTurnCorner(backFace, 'back', getRotation, setRotation);
+      // The stored angle is deliberately left unbounded. Folding it back into
+      // [0, 360) after a turn looks identical in a still frame but is a real
+      // transform change, and suppressing that transition is not reliable, so
+      // every normalised turn animated a second full spin. Leaf changes reset
+      // the angle anyway, and neighbours are always drawn face-up.
+      for (const edge of ['start', 'end']) {
+        makeTurnCorner(frontFace, 'front', edge, getRotation, setRotation);
+        makeTurnCorner(backFace, 'back', edge, getRotation, setRotation);
+      }
 
       leaf.append(frontFace, backFace);
       leaf.addEventListener('pointerdown', (event) => {

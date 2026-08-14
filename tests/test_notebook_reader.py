@@ -50,7 +50,7 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("backface-visibility: hidden", css)
         self.assertIn("cursor: pointer", css)
 
-        turn_rule = css.split(".notebook-turn-corner {", 1)[1].split("}", 1)[0]
+        turn_rule = css.split("\n.notebook-turn-corner {", 1)[1].split("}", 1)[0]
         self.assertIn("top: 0", turn_rule)
         self.assertIn("bottom: 0", turn_rule)
         self.assertIn("width: 2.5rem", turn_rule)
@@ -58,6 +58,51 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("background: transparent", turn_rule)
         self.assertIn(".notebook-turn-corner::after", css)
         self.assertIn(".notebook-back-face .notebook-turn-corner", css)
+
+    def test_sheet_turns_on_its_own_axis_from_either_paper_edge(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+
+        # A spine origin made the sheet swing out of the stack and cover the
+        # sheets on its left instead of spinning in place.
+        leaf_rule = css.split(".notebook-leaf {", 1)[1].split("}", 1)[0]
+        self.assertIn("transform-origin: 50% 50%", leaf_rule)
+        self.assertNotIn("left center", leaf_rule)
+
+        # Both outer edges are handles, and the reverse face reuses the same
+        # positions because rotateY(180deg) already mirrors them.
+        self.assertIn('.notebook-turn-corner[data-edge="start"]', css)
+        self.assertIn('.notebook-turn-corner[data-edge="end"]', css)
+        self.assertIn('.notebook-turn-corner[data-edge="start"]::after', css)
+        self.assertIn('.notebook-turn-corner[data-edge="end"]::after', css)
+        self.assertIn("button.dataset.edge = edge", js)
+        self.assertIn("for (const edge of ['start', 'end'])", js)
+        self.assertIn("makeTurnCorner(frontFace, 'front', edge", js)
+        self.assertIn("makeTurnCorner(backFace, 'back', edge", js)
+
+        # Grabbing the screen-right edge always spins the sheet leftwards and
+        # vice versa, which on the mirrored reverse face inverts the sign.
+        self.assertIn(
+            "const screenSign = (side === 'back' ? -1 : 1) * (edge === 'end' ? 1 : -1)",
+            js,
+        )
+        self.assertIn("setRotation(getRotation() + screenSign * 180)", js)
+
+        # Regression guard: normalising the settled angle back into [0, 360) is a
+        # real transform change that cannot be reliably un-transitioned, so one
+        # click animated two full spins.
+        self.assertNotIn("% 360", js)
+        self.assertNotIn("transitionend", js)
+
+    def test_peeking_sheet_is_clickable_instead_of_its_own_turn_handle(self):
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+        # The visible strip of a neighbour (2.85rem peek) is narrower than the
+        # 2.5rem turn handle plus its scaling, so an interactive handle on a
+        # non-active sheet swallowed every navigation click.
+        self.assertIn(
+            ".notebook-leaf:not(.is-active) .notebook-turn-corner { pointer-events: none; }",
+            css,
+        )
 
     def test_reader_keeps_safe_fallback_and_three_hole_binding(self):
         js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
