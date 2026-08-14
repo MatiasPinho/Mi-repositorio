@@ -152,6 +152,105 @@ def _force_images_ready(page) -> list[dict]:
     )
 
 
+def _wait_for_notebook_reader(page) -> str:
+    """Let the optional desktop reader finish pagination before measuring."""
+    try:
+        page.wait_for_function(
+            """() => {
+              const kind = document.querySelector('.study-grid > article')?.dataset.kind || '';
+              const desktop = matchMedia('(min-width: 48.01rem)').matches;
+              const printable = matchMedia('print').matches;
+              const eligible = ['summary', 'rapid-review', 'learn', 'explain'].includes(kind);
+              if (!desktop || printable || !eligible) return true;
+              const state = document.documentElement.dataset.notebookReader || '';
+              return state === 'ready' || state === 'continuous-fallback';
+            }""",
+            timeout=4500,
+        )
+    except Exception:
+        # The following metrics turn an unfinished eligible reader into an issue.
+        pass
+    return page.evaluate(
+        "() => document.documentElement.dataset.notebookReader || 'continuous'"
+    )
+
+
+def _reader_metrics(page) -> dict:
+    return page.evaluate(
+        """() => {
+          const root = document.documentElement;
+          const state = root.dataset.notebookReader || 'continuous';
+          const reader = document.querySelector('.notebook-reader');
+          if (!reader) {
+            return {
+              state,
+              pages: 0,
+              leaves: 0,
+              activeLeaf: null,
+              activeSide: null,
+              overflowingPages: [],
+              visibleNeighbours: 0
+            };
+          }
+          const pages = Array.from(reader.querySelectorAll('article.notebook-page'));
+          const leaves = Array.from(reader.querySelectorAll('.notebook-leaf'));
+          const overflowingPages = pages
+            .filter(node => node.scrollHeight > node.clientHeight + 1)
+            .map(node => ({
+              page: Number(node.dataset.page || 0),
+              scrollHeight: node.scrollHeight,
+              clientHeight: node.clientHeight
+            }));
+          return {
+            state,
+            pages: pages.length,
+            leaves: leaves.length,
+            activeLeaf: Number(reader.dataset.activeLeaf || 0) || null,
+            activeSide: reader.dataset.activeSide || null,
+            overflowingPages,
+            visibleNeighbours: reader.querySelectorAll('.notebook-leaf.is-neighbor').length
+          };
+        }"""
+    )
+
+
+def _exercise_notebook_reader(page, metrics: dict) -> list[str]:
+    """Smoke-test neighbour navigation and front/back flipping without touching prose."""
+    if metrics.get("state") != "ready":
+        return []
+    issues: list[str] = []
+
+    leaves = int(metrics.get("leaves") or 0)
+    if leaves > 1:
+        changed = page.evaluate(
+            """() => {
+              const reader = document.querySelector('.notebook-reader');
+              const target = reader?.querySelector('.notebook-leaf[data-leaf="2"]');
+              if (!reader || !target) return false;
+              target.dispatchEvent(new PointerEvent('pointerdown', {
+                bubbles: true, cancelable: true, clientX: 0, clientY: 0, button: 0
+              }));
+              return reader.dataset.activeLeaf === '2';
+            }"""
+        )
+        if not changed:
+            issues.append("reader:neighbor-navigation-failed")
+
+    flipped = page.evaluate(
+        """() => {
+          const reader = document.querySelector('.notebook-reader');
+          const corner = reader?.querySelector('.notebook-leaf.is-active .notebook-front .notebook-turn-corner');
+          if (!reader || !corner) return false;
+          corner.click();
+          return reader.dataset.activeSide === 'back';
+        }"""
+    )
+    if not flipped:
+        issues.append("reader:page-flip-failed")
+
+    return issues
+
+
 def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None = None) -> dict:
     try:
         from playwright.sync_api import sync_playwright
@@ -209,13 +308,24 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
             if broken_images:
                 report["issues"].append(f"{name}:images-not-loaded:{len(broken_images)}/{len(image_states)}")
 
+            reader_state = _wait_for_notebook_reader(page) if name != "print" else "print-continuous"
+            reader = _reader_metrics(page) if name != "print" else {
+                "state": reader_state,
+                "pages": 0,
+                "leaves": 0,
+                "activeLeaf": None,
+                "activeSide": None,
+                "overflowingPages": [],
+                "visibleNeighbours": 0,
+            }
+
             metrics = page.evaluate(
                 """() => {
                   const article = document.querySelector('article');
                   const p = document.querySelector('article p');
                   const body = getComputedStyle(document.body);
                   const ps = p ? getComputedStyle(p) : body;
-                  const rect = article.getBoundingClientRect();
+                  const rect = article ? article.getBoundingClientRect() : {width: 0};
                   const images = Array.from(document.images);
                   return {
                     clientWidth: document.documentElement.clientWidth,
@@ -234,6 +344,7 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
                 }"""
             )
             metrics["image_states"] = image_states
+            metrics["notebook_reader"] = reader
 
             if metrics["scrollWidth"] > metrics["clientWidth"] + 2:
                 report["issues"].append(f"{name}:horizontal-overflow")
@@ -243,13 +354,44 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
                 if metrics["paragraphLineHeight"] / metrics["paragraphFontSize"] < 1.45:
                     report["issues"].append(f"{name}:line-height-too-tight")
 
+            if reader.get("state") == "ready":
+                overflowing = reader.get("overflowingPages") or []
+                if overflowing:
+                    report["issues"].append(f"{name}:reader-page-overflow:{len(overflowing)}")
+                if int(reader.get("pages") or 0) < 2:
+                    report["issues"].append(f"{name}:reader-too-few-pages")
+            elif (
+                name in {"desktop", "tablet"}
+                and reader.get("state") not in {"continuous", "continuous-fallback"}
+            ):
+                report["issues"].append(f"{name}:reader-incomplete:{reader.get('state')}")
+
             shot = out_dir / f"{name}.png"
             if name == "print":
                 pdf_path = out_dir / "print.pdf"
                 page.pdf(path=str(pdf_path), format="A4", print_background=True, prefer_css_page_size=False)
                 metrics["print_capture"] = _pdf_to_vertical_png(pdf_path, shot)
+            elif reader.get("state") == "ready":
+                # A viewport capture is the faithful representation of a 3D leaf stack.
+                # Chromium full-page capture can flatten/omit transformed backfaces.
+                page.screenshot(path=str(shot), full_page=False)
+                metrics["screen_capture"] = {
+                    "mode": "reader-viewport",
+                    "active_leaf": page.evaluate(
+                        "() => document.querySelector('.notebook-reader')?.dataset.activeLeaf || null"
+                    ),
+                    "active_side": page.evaluate(
+                        "() => document.querySelector('.notebook-reader')?.dataset.activeSide || null"
+                    ),
+                }
             else:
                 page.screenshot(path=str(shot), full_page=True)
+                metrics["screen_capture"] = {"mode": "continuous-full-page"}
+
+            if reader.get("state") == "ready":
+                report["issues"].extend(
+                    f"{name}:{issue}" for issue in _exercise_notebook_reader(page, reader)
+                )
 
             report["screenshots"][name] = str(shot)
             report["viewports"][name] = metrics
