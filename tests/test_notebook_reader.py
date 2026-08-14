@@ -58,6 +58,17 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("86%", css)
         self.assertNotIn("repeat-y;\n}", css.split("article::after", 1)[1].split("}", 1)[0])
 
+    def test_reader_reserves_inline_room_for_neighbour_peeks_on_tablet(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+        self.assertIn("--notebook-leaf-hover-extra: .75rem", css)
+        self.assertIn("100%\n      - var(--notebook-leaf-peek)", css)
+        self.assertNotIn("100vw - 6.25rem", css)
+        self.assertIn("@media (min-width: 48.01rem) and (max-width: 64rem)", css)
+        self.assertIn("--notebook-leaf-peek: clamp(1.35rem, 3vw, 2rem)", css)
+        self.assertIn("const hoverExtra = cssLengthPx", js)
+        self.assertIn("peek + hoverBoost", js)
+
     def test_reader_assets_participate_in_visual_artifact_fingerprint(self):
         artifact_state = (ROOT / "scripts" / "artifact_state.py").read_text(encoding="utf-8")
         self.assertIn('assets / "study-theme.css"', artifact_state)
