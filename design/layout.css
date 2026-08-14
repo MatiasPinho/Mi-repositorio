@@ -32,12 +32,40 @@ article {
   padding: calc(var(--notebook-line-pitch) * 2) var(--notebook-paper-padding-end) 4rem var(--notebook-paper-padding-start);
   overflow: hidden;
   color: var(--study-ink);
+
+  /* The notebook stays the same document; only the material underneath gains
+     physical depth. Rules remain the top paint layer so grain never muddies
+     the baseline grid. */
   background-color: var(--study-paper);
-  background-image: var(--notebook-rule-image);
-  background-origin: content-box;
-  background-size: calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch);
-  background-position: calc(-1 * var(--notebook-paper-padding-start)) 0;
-  background-repeat: repeat-y;
+  background-image:
+    var(--notebook-rule-image),
+    radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 4%, transparent) 0 1px, transparent 1.15px),
+    radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 2.5%, transparent) 0 1px, transparent 1.15px),
+    linear-gradient(
+      100deg,
+      rgba(0, 0, 0, .045) 0%,
+      rgba(0, 0, 0, 0) 14%,
+      rgba(0, 0, 0, 0) 86%,
+      rgba(0, 0, 0, .055) 100%
+    ),
+    radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, .06) 0%, rgba(0, 0, 0, 0) 58%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--study-paper) 94%, white 6%), var(--study-paper));
+  background-origin: content-box, border-box, border-box, border-box, border-box, border-box;
+  background-size:
+    calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch),
+    7px 7px,
+    11px 11px,
+    100% 100%,
+    13rem 13rem,
+    100% 100%;
+  background-position:
+    calc(-1 * var(--notebook-paper-padding-start)) 0,
+    0 0,
+    4px 6px,
+    0 0,
+    100% 100%,
+    0 0;
+  background-repeat: repeat-y, repeat, repeat, no-repeat, no-repeat, no-repeat;
   border: 1px solid var(--study-rule);
   border-radius: 1px 7px 7px 1px;
   box-shadow: var(--notebook-shadow);
@@ -265,7 +293,7 @@ article::after {
   body { background: var(--study-paper); }
   .study-shell { padding: 0; }
   .study-grid,
-  .study-grid.with-toc { display: block; }
+  .study-grid.without-toc { display: block; }
   article {
     --notebook-paper-padding-start: 3.45rem;
     --notebook-paper-padding-end: 1.2rem;
