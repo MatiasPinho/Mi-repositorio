@@ -29,6 +29,14 @@
     }));
   };
 
+  const cssLengthPx = (style, name, fallback) => {
+    const rootPx = parseFloat(style.fontSize) || 16;
+    const token = style.getPropertyValue(name).trim();
+    if (token.endsWith('rem')) return parseFloat(token) * rootPx;
+    if (token.endsWith('px')) return parseFloat(token);
+    return parseFloat(token) || fallback;
+  };
+
   const isHeadingLike = (node) => node?.matches?.('.section-head, .subsection-head, .minor-head');
 
   const makePage = (source, pageIndex) => {
@@ -41,13 +49,41 @@
     return page;
   };
 
-  const pageOverflows = (page) => page.scrollHeight > page.clientHeight + 1;
+  const restorePageContent = (source, pages) => {
+    for (const page of pages || []) {
+      for (const node of Array.from(page.children)) source.appendChild(node);
+    }
+  };
 
-  const paginate = (source, grid) => {
+  const createReaderShell = () => {
+    const shell = document.createElement('section');
+    shell.className = 'notebook-reader is-measuring';
+    shell.setAttribute('aria-label', 'Cuaderno paginado');
+
+    const stack = document.createElement('div');
+    stack.className = 'notebook-stack';
+    shell.appendChild(stack);
+
+    const status = document.createElement('div');
+    status.className = 'notebook-reader-status';
+    status.setAttribute('aria-live', 'polite');
+    shell.appendChild(status);
+
+    return {shell, stack, status};
+  };
+
+  const paginate = (source, stack) => {
     const nodes = Array.from(source.children);
     const measure = document.createElement('div');
     measure.className = 'notebook-measure-host';
-    grid.appendChild(measure);
+    stack.appendChild(measure);
+
+    const rootStyle = getComputedStyle(document.documentElement);
+    const safeBottom = cssLengthPx(rootStyle, '--notebook-page-safe-bottom', 14);
+    const overflows = (page, keepSafeBottom = true) => {
+      const reserve = keepSafeBottom ? safeBottom : 0;
+      return page.scrollHeight > page.clientHeight - reserve + 1;
+    };
 
     const pages = [];
     let current = makePage(source, 0);
@@ -55,8 +91,7 @@
     pages.push(current);
 
     const fail = (reason) => {
-      const all = pages.flatMap((page) => Array.from(page.children));
-      for (const node of all) source.appendChild(node);
+      restorePageContent(source, pages);
       measure.remove();
       source.dataset.notebookReaderFallback = reason;
       document.documentElement.dataset.notebookReader = 'continuous-fallback';
@@ -65,7 +100,7 @@
 
     for (const node of nodes) {
       current.appendChild(node);
-      if (!pageOverflows(current)) continue;
+      if (!overflows(current, true)) continue;
 
       current.removeChild(node);
 
@@ -83,27 +118,28 @@
       if (carry) current.appendChild(carry);
       current.appendChild(node);
 
-      // A component that cannot fit on an empty page falls back to the proven
-      // continuous renderer instead of clipping or introducing inner scrolling.
-      if (pageOverflows(current)) {
+      // A genuinely oversize component falls back to the proven continuous
+      // renderer. The small safe-bottom reserve is not treated as an error for
+      // a component that otherwise fits on an empty physical page.
+      if (overflows(current, false)) {
         return fail(`oversize-block:${node.className || node.tagName.toLowerCase()}`);
       }
     }
 
-    if (pages.some(pageOverflows)) return fail('post-pagination-overflow');
+    if (pages.some((page) => overflows(page, false))) return fail('post-pagination-overflow');
     measure.remove();
     return pages;
   };
 
-  const makeTurnCorner = (page, getRotation, setRotation) => {
+  const makeTurnCorner = (face, side, getRotation, setRotation) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'notebook-turn-corner';
     button.setAttribute(
       'aria-label',
-      page.dataset.side === 'back' ? 'Volver al frente de la hoja' : 'Dar vuelta la hoja'
+      side === 'back' ? 'Volver al frente de la hoja' : 'Dar vuelta la hoja'
     );
-    page.appendChild(button);
+    face.appendChild(button);
 
     let dragged = false;
     let x0 = 0;
@@ -153,20 +189,7 @@
     });
   };
 
-  const buildReader = (source, pages) => {
-    const shell = document.createElement('section');
-    shell.className = 'notebook-reader';
-    shell.setAttribute('aria-label', 'Cuaderno paginado');
-
-    const stack = document.createElement('div');
-    stack.className = 'notebook-stack';
-    shell.appendChild(stack);
-
-    const status = document.createElement('div');
-    status.className = 'notebook-reader-status';
-    status.setAttribute('aria-live', 'polite');
-    shell.appendChild(status);
-
+  const buildReader = (source, pages, shell, stack, status) => {
     const pagePairs = [];
     for (let i = 0; i < pages.length; i += 2) {
       pagePairs.push([pages[i], pages[i + 1] || makePage(source, i + 1)]);
@@ -177,14 +200,6 @@
     const leaves = [];
     const sideIsBack = (deg) => Math.abs(Math.round(deg / 180)) % 2 === 1;
 
-    const cssLengthPx = (style, name, fallback) => {
-      const rootPx = parseFloat(style.fontSize) || 16;
-      const token = style.getPropertyValue(name).trim();
-      if (token.endsWith('rem')) return parseFloat(token) * rootPx;
-      if (token.endsWith('px')) return parseFloat(token);
-      return parseFloat(token) || fallback;
-    };
-
     const update = () => {
       const rootStyle = getComputedStyle(document.documentElement);
       const peek = cssLengthPx(rootStyle, '--notebook-leaf-peek', 45.6);
@@ -192,19 +207,29 @@
 
       leaves.forEach((leaf, index) => {
         const d = index - active;
+        const distance = Math.abs(d);
         leaf.classList.toggle('is-active', d === 0);
-        leaf.classList.toggle('is-neighbor', Math.abs(d) === 1);
-        leaf.classList.toggle('is-hidden', Math.abs(d) > 1);
-        leaf.style.zIndex = String(20 - Math.abs(d));
-        leaf.tabIndex = Math.abs(d) === 1 ? 0 : -1;
-        leaf.setAttribute('aria-hidden', Math.abs(d) > 1 ? 'true' : 'false');
+        leaf.classList.toggle('is-neighbor', distance === 1);
+        leaf.classList.toggle('is-hidden', distance > 1);
+        leaf.style.zIndex = String(20 - Math.min(distance, 19));
+        leaf.tabIndex = distance === 1 ? 0 : -1;
+        leaf.setAttribute('aria-hidden', distance > 1 ? 'true' : 'false');
 
         if (d === 0) {
           leaf.style.transform = `translateX(0) scale(1) rotateY(${rotations[index].toFixed(2)}deg)`;
-        } else {
-          const hoverBoost = leaf.matches(':hover') ? hoverExtra : 0;
-          leaf.style.transform = `translateX(${d * (peek + hoverBoost)}px) scale(var(--notebook-leaf-scale)) rotateY(0deg)`;
+          return;
         }
+
+        // Hidden sheets must not keep marching sideways with their distance
+        // from the active page. visibility:hidden still has geometry and those
+        // transforms were the real source of large tablet scrollWidth values.
+        if (distance > 1) {
+          leaf.style.transform = 'translateX(0) scale(var(--notebook-leaf-scale)) rotateY(0deg)';
+          return;
+        }
+
+        const hoverBoost = leaf.matches(':hover') ? hoverExtra : 0;
+        leaf.style.transform = `translateX(${d * (peek + hoverBoost)}px) scale(var(--notebook-leaf-scale)) rotateY(0deg)`;
       });
 
       const back = sideIsBack(rotations[active]);
@@ -242,12 +267,12 @@
       const numberFront = document.createElement('div');
       numberFront.className = 'notebook-page-number';
       numberFront.textContent = `— ${index * 2 + 1} —`;
-      front.appendChild(numberFront);
+      frontFace.appendChild(numberFront);
 
       const numberBack = document.createElement('div');
       numberBack.className = 'notebook-page-number';
       numberBack.textContent = `— ${index * 2 + 2} —`;
-      back.appendChild(numberBack);
+      backFace.appendChild(numberBack);
 
       const setRotation = (value, dragging = false) => {
         rotations[index] = value;
@@ -256,8 +281,8 @@
         if (!dragging) requestAnimationFrame(() => { leaf.style.transition = ''; });
       };
       const getRotation = () => rotations[index];
-      makeTurnCorner(front, getRotation, setRotation);
-      makeTurnCorner(back, getRotation, setRotation);
+      makeTurnCorner(frontFace, 'front', getRotation, setRotation);
+      makeTurnCorner(backFace, 'back', getRotation, setRotation);
 
       leaf.append(frontFace, backFace);
       leaf.addEventListener('pointerdown', (event) => {
@@ -287,6 +312,7 @@
     });
 
     update();
+    shell.classList.remove('is-measuring');
     return shell;
   };
 
@@ -298,11 +324,26 @@
 
     originalTemplate = source.cloneNode(true);
     await waitForAssets(source);
-    const pages = paginate(source, grid);
-    if (!pages || pages.length < 2) return;
 
-    reader = buildReader(source, pages);
-    source.replaceWith(reader);
+    const {shell, stack, status} = createReaderShell();
+    grid.insertBefore(shell, source);
+    const pages = paginate(source, stack);
+    if (!pages) {
+      shell.remove();
+      return;
+    }
+
+    // A one-page artifact gains nothing from the reader. Restore its semantic
+    // article instead of leaving content detached in a measurement page.
+    if (pages.length < 2) {
+      restorePageContent(source, pages);
+      shell.remove();
+      document.documentElement.dataset.notebookReader = 'continuous';
+      return;
+    }
+
+    reader = buildReader(source, pages, shell, stack, status);
+    source.remove();
     mounted = true;
     document.documentElement.dataset.notebookReader = 'ready';
     document.documentElement.dataset.notebookPages = String(pages.length);
