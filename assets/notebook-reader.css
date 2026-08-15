@@ -35,6 +35,46 @@ article::after {
    removed so the ruled paper remains the only horizontal structure there. */
 .book-running-line { border-bottom: 0; }
 
+/* Unordered lists use a small irregular ink mark instead of the browser's
+   perfectly geometric bullet. The first-line alignment stays on the notebook
+   baseline, while tiny alternating rotations keep the mark feeling drawn by
+   hand without compromising readability. Ordered lists keep native numbers. */
+article ul {
+  list-style: none;
+  padding-left: 1.45rem;
+}
+
+article ul > li {
+  position: relative;
+}
+
+article ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.08rem;
+  top: calc(var(--notebook-line-pitch) / 2);
+  width: .38rem;
+  height: .35rem;
+  transform: translateY(-50%) rotate(-9deg);
+  border-radius: 58% 43% 61% 46% / 47% 60% 44% 56%;
+  background:
+    radial-gradient(circle at 36% 38%,
+      color-mix(in srgb, var(--study-accent) 90%, var(--study-ink) 10%) 0 54%,
+      transparent 58%),
+    radial-gradient(circle at 66% 64%,
+      color-mix(in srgb, var(--study-accent) 82%, var(--study-ink) 18%) 0 50%,
+      transparent 55%);
+  box-shadow:
+    .025rem .02rem 0 color-mix(in srgb, var(--study-ink) 18%, transparent),
+    -.015rem .015rem 0 color-mix(in srgb, var(--study-accent) 22%, transparent);
+  opacity: .94;
+}
+
+article ul > li:nth-child(even)::before {
+  transform: translateY(-50%) rotate(7deg) scale(.94, 1.05);
+  border-radius: 45% 61% 48% 57% / 59% 43% 56% 46%;
+}
+
 /* Make the warm white stock read more clearly as real paper on screen. This is
    intentionally a small step up from the base theme: slightly stronger fibres,
    edge falloff and cast shadow, without tinting the page grey or muddying the
