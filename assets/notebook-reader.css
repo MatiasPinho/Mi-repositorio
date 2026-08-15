@@ -36,9 +36,9 @@ article::after {
 .book-running-line { border-bottom: 0; }
 
 /* Unordered lists use a small irregular ink mark instead of the browser's
-   perfectly geometric bullet. The first-line alignment stays on the notebook
-   baseline, while tiny alternating rotations keep the mark feeling drawn by
-   hand without compromising readability. Ordered lists keep native numbers. */
+   perfectly geometric bullet. The mark is optically centred on the glyphs of
+   the first text line rather than the full 27px notebook line box. Ordered
+   lists keep native numbers. */
 article ul {
   list-style: none;
   padding-left: 1.45rem;
@@ -52,7 +52,7 @@ article ul > li::before {
   content: "";
   position: absolute;
   left: -1.08rem;
-  top: calc(var(--notebook-line-pitch) / 2);
+  top: .5em;
   width: .38rem;
   height: .35rem;
   transform: translateY(-50%) rotate(-9deg);
