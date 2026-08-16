@@ -1,8 +1,8 @@
 # Complete local setup
 
-The normal study environment is installed once and then reused by every action. It lives in a repository-local `.venv`, so unrelated packages from the user's global Python installation cannot break the study system.
+The normal study environment is installed once and then reused by every action. It lives in a repository-local `.venv`, so unrelated packages from the user's global Python installation cannot break Carpeta.
 
-A complete setup includes the Python runtime dependencies, MCP support, PDF/figure support, Pillow, Playwright and the Playwright Chromium browser.
+A complete setup includes the Python runtime dependencies, MCP support, PDF/figure support, Pillow, Playwright, the Playwright Chromium browser and a machine-local OpenCode MCP configuration.
 
 ## Windows: one step
 
@@ -19,10 +19,10 @@ The installer:
 3. upgrades pip **inside `.venv`**;
 4. installs `requirements.txt` **inside `.venv`**;
 5. installs Playwright Chromium using the venv interpreter;
-6. runs `pip check` inside the isolated environment;
-7. launches the environment preflight, including a real headless Chromium launch.
+6. runs `pip check` and the full environment preflight;
+7. generates the local `opencode.json` with the correct Windows venv path for `university-study`.
 
-Global Python packages are deliberately ignored. A conflict such as an unrelated global FastAPI/Starlette installation must not affect University Study System.
+Global Python packages are deliberately ignored.
 
 After that, normal use starts with:
 
@@ -32,39 +32,89 @@ INICIAR-STUDY.bat
 
 `INICIAR-STUDY.bat` always uses `.venv\Scripts\python.exe`. It performs the same preflight before opening the menu. If `.venv` is absent or incomplete it stops immediately and asks for `INSTALAR-STUDY.bat`.
 
+## Linux: one step
+
+From the repository root, run:
+
+```bash
+bash INSTALAR-STUDY.sh
+```
+
+The Linux installer mirrors the Windows setup:
+
+1. finds `python3` or `python` with Python 3.10+;
+2. creates `.venv` at `.venv/bin/python`;
+3. installs the complete dependency set inside the venv;
+4. installs Playwright Chromium;
+5. runs `pip check` and the full environment preflight;
+6. generates the local `opencode.json` with the Linux venv interpreter and enables the `university-study` MCP server.
+
+After that, normal use starts with:
+
+```bash
+bash INICIAR-STUDY.sh
+```
+
+No global `python` alias is required after installation: OpenCode is configured to launch the repository-local `.venv/bin/python` directly.
+
+## OpenCode MCP configuration
+
+`opencode.json` is generated locally because the venv interpreter path is platform-specific:
+
+- Windows: `.venv/Scripts/python.exe`
+- Linux/POSIX: `./.venv/bin/python`
+
+The generated project config registers `university-study` as a local stdio MCP server and runs:
+
+```text
+<venv-python> study.py mcp serve
+```
+
+The file is intentionally ignored by Git. `scripts/configure_opencode.py` preserves other settings already present in a valid `opencode.json` and only creates or updates the `mcp.university-study` entry.
+
+To verify the OpenCode connection after setup:
+
+```bash
+opencode mcp list
+```
+
+OpenCode should show `university-study` as connected. OpenCode starts and owns the stdio server process; it should not be kept running manually in another terminal.
+
 ## Agent/MCP execution
 
-Claude Code and Codex MCP configs invoke the standard-library shim:
+Claude Code and Codex can still use the portable standard-library shim:
 
 ```text
 python scripts/venv_exec.py study.py mcp serve
 ```
 
-The shim immediately re-executes the requested command with the repository-local `.venv` Python. This keeps MCP and dependency-heavy pipeline commands isolated even when the host shell's `python` points to a global installation.
+The shim immediately re-executes the requested command with the repository-local `.venv` Python. This keeps MCP and dependency-heavy pipeline commands isolated from global packages.
 
-For direct project commands in pipeline instructions, use the same pattern:
+For direct project commands in pipeline instructions, use the same pattern when a host `python` command exists:
 
 ```text
 python scripts/venv_exec.py study.py status programacion-i
 python scripts/venv_exec.py scripts/visual_audit.py archivo.html --out salida
 ```
 
-## Cross-platform/manual installation
-
-Create the project venv first:
+On Linux, commands can also invoke the venv directly:
 
 ```bash
-python -m venv .venv
+./.venv/bin/python study.py status programacion-i
 ```
 
-Then use its interpreter. The portable shim resolves `.venv/Scripts/python.exe` on Windows and `.venv/bin/python` on POSIX:
+## Cross-platform/manual installation
+
+If the platform installers cannot be used, create the project venv first and use its interpreter. On Linux:
 
 ```bash
-python scripts/venv_exec.py -m pip install --upgrade pip
-python scripts/venv_exec.py -m pip install -r requirements.txt
-python scripts/venv_exec.py -m playwright install chromium
-python scripts/venv_exec.py -m pip check
-python scripts/venv_exec.py scripts/setup_env.py check
+python3 -m venv .venv
+./.venv/bin/python -m pip install --upgrade pip
+./.venv/bin/python -m pip install -r requirements.txt
+./.venv/bin/python -m playwright install chromium
+./.venv/bin/python -m pip check
+./.venv/bin/python scripts/setup_env.py check
+./.venv/bin/python scripts/configure_opencode.py
 ```
 
 `requirements.txt` is the complete environment entrypoint and includes:
