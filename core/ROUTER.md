@@ -17,6 +17,8 @@ Never expose internal evidence merely to prove that the agent read it.
 
 Do not read every rule file for every task. Follow the pipeline's `READ` section and load only those files plus the canonical course state it names.
 
+Shared pipeline contracts are also opt-in: load them only when the owning pipeline names them. `pipelines/_shared/semantic-document-lifecycle.md` currently owns the common staged review/render/publication lifecycle for `resumen` and `repaso`; it is orchestration infrastructure, not a public action and not a reason to load unrelated pipeline rules.
+
 ### Academic truth
 - `rules/academic/source-truth.md`
 - `rules/academic/uncertainty.md`
