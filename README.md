@@ -1,8 +1,8 @@
-# University Study System V4.0.0
+# Carpeta · V4.0.0
 
-Sistema local para estudiar materias universitarias con **Claude Code o Codex** sobre el mismo núcleo metodológico, con conocimiento canónico trazable, pipelines compartidos, MCP local y salida visual pensada para lectura real.
+**Carpeta** es una plataforma de estudio impulsada por IA que centraliza materias, apuntes, PDFs, transcripciones y resúmenes. Integra procesamiento de documentos, contexto persistente, agentes, MCPs y pipelines de IA para transformar material académico en contenido organizado y listo para estudiar.
 
-La infraestructura puede ser estricta y auditable; el material que recibe el estudiante debe seguir siendo **normal, humano, claro y didáctico**.
+La infraestructura está pensada para ser trazable, portable y auditable, con **Claude Code o Codex** como motores de ejecución sobre el mismo núcleo metodológico. El resultado se presenta desde una interfaz visual cuidada, enfocada en lectura, organización y experiencia de estudio.
 
 > Mapa técnico y protocolos de mantenimiento: [`docs/README.md`](docs/README.md)
 
