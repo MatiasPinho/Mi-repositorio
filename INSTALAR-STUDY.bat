@@ -25,7 +25,7 @@ if not defined BASE_PYTHON goto no_python
 set "VENV_PYTHON=%CD%\.venv\Scripts\python.exe"
 
 echo.
-echo [1/5] Preparando entorno virtual aislado...
+echo [1/6] Preparando entorno virtual aislado...
 if not exist "%VENV_PYTHON%" (
     %BASE_PYTHON% -m venv .venv
     if errorlevel 1 goto error
@@ -34,31 +34,37 @@ if not exist "%VENV_PYTHON%" (
 if errorlevel 1 goto broken_venv
 
 echo.
-echo [2/5] Actualizando pip dentro de .venv...
+echo [2/6] Actualizando pip dentro de .venv...
 "%VENV_PYTHON%" -m pip install --upgrade pip
 if errorlevel 1 goto error
 
 echo.
-echo [3/5] Instalando dependencias completas dentro de .venv...
+echo [3/6] Instalando dependencias completas dentro de .venv...
 "%VENV_PYTHON%" -m pip install -r requirements.txt
 if errorlevel 1 goto error
 
 echo.
-echo [4/5] Instalando Chromium para Playwright...
+echo [4/6] Instalando Chromium para Playwright...
 "%VENV_PYTHON%" -m playwright install chromium
 if errorlevel 1 goto error
 
 echo.
-echo [5/5] Verificando entorno aislado...
+echo [5/6] Verificando entorno aislado...
 "%VENV_PYTHON%" -m pip check
 if errorlevel 1 goto error
 "%VENV_PYTHON%" scripts\setup_env.py check
 if errorlevel 1 goto error
 
 echo.
+echo [6/6] Configurando OpenCode y el MCP local...
+"%VENV_PYTHON%" scripts\configure_opencode.py
+if errorlevel 1 goto error
+
+echo.
 echo ==============================================
 echo University Study System listo para usar.
 echo Dependencias aisladas en .venv.
+echo OpenCode configurado para university-study.
 echo Ya podes ejecutar INICIAR-STUDY.bat.
 echo ==============================================
 echo.
