@@ -25,8 +25,8 @@ def main() -> int:
     target = venv_python()
     if not target.is_file():
         print(
-            "University Study System environment is missing. Run INSTALAR-STUDY.bat "
-            "on Windows or create/install .venv as documented in docs/setup.md.",
+            "Carpeta environment is missing. Run INSTALAR-STUDY.bat on Windows "
+            "or `bash INSTALAR-STUDY.sh` on Linux.",
             file=sys.stderr,
         )
         return 2
