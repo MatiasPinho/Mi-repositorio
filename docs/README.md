@@ -1,10 +1,10 @@
-# Documentation Index
+# Documentación técnica de Carpeta
 
-Este directorio contiene la documentación técnica del University Study System. El `README.md` de la raíz explica el producto y el flujo normal de uso; este índice apunta a los contratos y protocolos que mantienen el sistema verificable.
+Este directorio contiene la documentación técnica de **Carpeta**. El `README.md` de la raíz está enfocado en explicar el producto y sus funciones; este índice reúne los contratos, decisiones de arquitectura y protocolos que mantienen el sistema verificable.
 
 ## Arquitectura y operación
 
-- [`../README.md`](../README.md): visión general, inicio rápido, arquitectura vigente y flujo de estudio.
+- [`../README.md`](../README.md): visión general de Carpeta y sus funciones principales.
 - [`public-actions.md`](public-actions.md): contrato de las nueve acciones públicas, consolidaciones de `guia`/`explicar` y frontera de `auditar` interno.
 - [`engine-qa.md`](engine-qa.md): laboratorio adversarial autónomo del motor, materias sintéticas, invariantes, journal, findings y handoff por reportes reproducibles.
 - [`setup.md`](setup.md): instalación completa, `INSTALAR-STUDY.bat`, `.venv`, preflight de Chromium y paridad con CI.
@@ -127,6 +127,6 @@ Cuando una materia real o Engine QA descubre un fallo:
 | Estructura materia/unidades o migración V3 | `unit-layout.md` |
 | Temas observados / asignación semántica de conceptos | `topics.md` |
 | Figuras dibujadas / sketch specs / SVG determinista | `sketch-figures.md` |
-| Flujo global o experiencia de uso | `../README.md` |
+| Presentación del producto | `../README.md` |
 
 Una modificación de comportamiento no se considera completamente cerrada si cambia un contrato descrito aquí y la documentación correspondiente no se actualiza.
