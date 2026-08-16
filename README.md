@@ -1,483 +1,63 @@
-# Carpeta · V4.0.0
+# Carpeta
 
-**Carpeta** es una plataforma de estudio impulsada por IA que centraliza materias, apuntes, PDFs, transcripciones y resúmenes. Integra procesamiento de documentos, contexto persistente, agentes, MCPs y pipelines de IA para transformar material académico en contenido organizado y listo para estudiar.
+**Carpeta** es una aplicación de estudio que reúne materias, apuntes, PDFs, transcripciones y resúmenes en un solo lugar. Usa inteligencia artificial para trabajar sobre el material real de cada materia y convertirlo en contenido organizado, conectado y listo para estudiar.
 
-La infraestructura está pensada para ser trazable, portable y auditable, con **Claude Code o Codex** como motores de ejecución sobre el mismo núcleo metodológico. El resultado se presenta desde una interfaz visual cuidada, enfocada en lectura, organización y experiencia de estudio.
+La idea es simple: dejar de tener archivos, apuntes y herramientas repartidos por todos lados y tener un único espacio para preparar una materia de principio a fin.
 
-> Mapa técnico y protocolos de mantenimiento: [`docs/README.md`](docs/README.md)
+## Todo lo que necesitás para estudiar una materia
 
-## Principio central
+Con Carpeta podés organizar cada materia por unidades, cargar sus fuentes y trabajar sobre ellas sin perder el contexto. A partir de ese material podés generar resúmenes, repasos, explicaciones, preguntas, quizzes y simulacros, además de consultar temas específicos y seguir tu progreso.
 
-```text
-                         FUENTES
-                            │
-                            ▼
-                   EVIDENCIA LOCALIZADA
-              hashes + páginas + timestamps
-                            │
-                            ▼
-                  CONOCIMIENTO CANÓNICO
-           academic + concepts + claims + evidence
-                            │
-                            ▼
-                    PIPELINE COMPARTIDO
-                            │
-                 ┌──────────┴──────────┐
-                 │                     │
-            Claude Code              Codex
-                 │                     │
-                 └──────────┬──────────┘
-                            │
-                       mismo contrato
-```
+El contenido no se trata como archivos aislados. Carpeta mantiene el contexto de cada materia y relaciona conceptos, temas, fuentes y evaluaciones para que cada herramienta trabaje sobre la misma base de conocimiento.
 
-Claude y Codex son **motores de ejecución**. La metodología, las reglas, los contratos, las policies y el estado canónico viven fuera del proveedor.
+## IA integrada al flujo de estudio
 
----
+La IA no funciona como un chat separado del resto de la aplicación. Forma parte del flujo completo de Carpeta: procesa fuentes, identifica información relevante, conecta conceptos, detecta posibles contradicciones y utiliza el contexto acumulado de cada materia para generar material de estudio.
 
-# Instalación e inicio
+Carpeta puede trabajar con **Claude Code y Codex** sobre el mismo sistema, utilizando agentes, MCPs y pipelines compartidos para acceder a las herramientas y al conocimiento de cada materia sin depender de un único proveedor.
 
-## Windows: instalar una vez
+El objetivo no es simplemente generar texto, sino conseguir que la IA trabaje sobre tus propias fuentes y mantenga coherencia entre lo que procesás, lo que estudiás y lo que después usás para repasar o practicar.
 
-Después de clonar/copiar el proyecto, ejecutá:
+## De tus archivos al estudio
 
 ```text
-INSTALAR-STUDY.bat
+PDFs · apuntes · transcripciones · material de clase
+                         ↓
+                    Carpeta
+                         ↓
+           contenido organizado por materia
+                         ↓
+      resúmenes · repasos · preguntas · quizzes
+                         ↓
+               estudio y seguimiento
 ```
 
-Ese instalador prepara el entorno completo:
+## Herramientas
 
-- Python packages de MCP;
-- PyMuPDF para PDFs y figuras;
-- Pillow;
-- Playwright;
-- Chromium de Playwright;
-- verificación de dependencias y lanzamiento real del navegador headless.
+| Herramienta | Para qué sirve |
+|---|---|
+| **Procesar** | Incorporar nuevas fuentes y actualizar el conocimiento de una materia. |
+| **Aprender** | Entender un tema o concepto a partir del material disponible. |
+| **Estudiar** | Realizar una sesión de estudio adaptada a la materia. |
+| **Resumen** | Crear material completo para estudiar una unidad. |
+| **Repaso** | Obtener una versión rápida con lo más importante. |
+| **Preguntas** | Practicar recuperación activa de forma conversacional. |
+| **Quiz** | Resolver preguntas multiple choice con feedback. |
+| **Simulacro** | Practicar con una evaluación basada en la materia. |
+| **Estado** | Consultar progreso, evaluaciones y material pendiente de actualizar. |
 
-Después, para usar el sistema normalmente:
+## Experiencia visual
 
-```text
-INICIAR-STUDY.bat
-```
+Carpeta está pensada para que el material generado también sea cómodo de estudiar. Los resúmenes, repasos y quizzes tienen una presentación visual cuidada, con soporte para figuras, tablas, código y distintos tipos de contenido académico.
 
-`INICIAR-STUDY.bat` hace un preflight antes de abrir el menú. Si falta una dependencia o Chromium no puede arrancar, se detiene inmediatamente y pide volver a ejecutar `INSTALAR-STUDY.bat`; no espera hasta el final de un `/resumen` para descubrir el problema.
+La interfaz prioriza lectura, jerarquía visual y navegación simple para que el foco esté en el contenido y no en la herramienta.
 
-## Instalación manual / otros sistemas
+<!-- Agregar acá capturas de la interfaz de Carpeta. -->
 
-```bash
-python -m pip install -r requirements.txt
-python -m playwright install chromium
-python -m pip check
-python scripts/setup_env.py check
-```
+## En desarrollo
 
-`requirements.txt` es el entrypoint del entorno completo e incluye `requirements-mcp.txt`, `requirements-visual.txt` y `requirements-design.txt`.
+Carpeta es un proyecto en desarrollo activo. El sistema continúa evolucionando tanto en sus herramientas de estudio como en la experiencia visual y en la integración de IA.
 
-Preflight en JSON:
+## Documentación técnica
 
-```bash
-python scripts/setup_env.py check --json
-```
-
-Ver detalles en [`docs/setup.md`](docs/setup.md).
-
-## Inicio por terminal
-
-```bash
-python study.py
-```
-
-Crear una materia:
-
-```bash
-python study.py course add "Programación I"
-```
-
-Declarar las unidades en `academico/academic.json` y sincronizar la estructura:
-
-```bash
-python study.py units sync programacion-i
-```
-
-Copiar el contenido de cada unidad a su ámbito canónico:
-
-```text
-materias/programacion-i/
-├── academico/academic.json
-├── fuentes/                         # programa, reglas y material transversal
-└── unidades/
-    └── unidad-1/
-        ├── unidad.json
-        ├── fuentes/{oficiales,transcripciones}/
-        ├── conocimiento/{concepts.json,topics.json,figures.json}
-        ├── progreso/progress.json
-        ├── notas/
-        ├── resumenes/_source/
-        ├── preguntas/ y simulacros/
-        ├── assets/figures/
-        └── .study/runs/
-```
-
-La materia conserva globalmente la identidad, el programa académico, las
-evaluaciones y las reglas. Todo contenido pedagógico, seguimiento y artefacto
-pertenece a una unidad estable (`unidad-1`, `unidad-2`, etc.).
-
-Dentro de cada unidad, `topics.json` agrupa semánticamente los conceptos
-observados en el material procesado. Es una capa distinta de
-`academic.json -> units[].topics`, que sigue siendo el temario declarado y no
-se reescribe durante la ingesta. Ver [`docs/topics.md`](docs/topics.md).
-
-Procesarlas:
-
-```text
-Claude: /procesar Programacion-I
-Codex:  $procesar Programacion-I
-```
-
-Después generás sólo lo que necesitás:
-
-```text
-/resumen Programacion-I "Unidad 1"
-/resumen Programacion-I "Unidad 1" detallado
-/repaso Programacion-I "Unidad 1"
-/quiz Programacion-I "Unidad 1" 15
-```
-
-En Codex reemplazá `/` por `$`.
-
-Resetear una materia para reprocesarla desde cero, conservando fuentes e identidad básica:
-
-```bash
-python study.py course reset programacion-i
-```
-
----
-
-# Arquitectura
-
-## Core portable
-
-```text
-core/                    router mínimo
-rules/                   reglas por responsabilidad
-pipelines/               orden de ejecución
-contracts/               contratos entre etapas
-vendor/humanizer/        Humanizer canónico
-config/actions.json      definición de acciones
-config/*_policy.json     policies determinísticas versionadas
-```
-
-`.claude/skills/` y `.agents/skills/` contienen adaptadores finos generados, no metodología duplicada.
-
-```bash
-python scripts/sync_agent_assets.py generate
-python scripts/sync_agent_assets.py verify
-```
-
-## Progressive disclosure
-
-Cada acción carga sólo las reglas necesarias. `/resumen` carga pedagogía, escritura y evaluación; `/procesar` carga fuentes, ingesta y auditoría, pero no Humanizer ni reglas de prosa.
-
-## MCP local
-
-```text
-Claude Code / Codex
-        │
-        │ MCP stdio
-        ▼
-   study_mcp/
-        │
-        ▼
-study.py + scripts/
-        │
-        ▼
-estado canónico local
-```
-
-El MCP expone herramientas acotadas sobre el mismo core. No ofrece borrado libre, reset remoto, JSON arbitrario ni publicación de archivos sin contrato. Ver [`docs/mcp.md`](docs/mcp.md).
-
----
-
-# `/procesar`: ingesta, no generación
-
-`/procesar` no genera resumen, repaso, preguntas, quiz ni simulacro. Convierte fuentes nuevas o modificadas en conocimiento canónico trazable.
-
-```text
-FUENTES NUEVAS / MODIFICADAS
-        ↓
-scan + SHA-256
-        ↓
-PDF health / visual preflight
-        ↓
-claim candidate extraction
-        ↓
-claim_candidates
-(página/timestamp + excerpt)
-        ↓
-REVISIÓN SEMÁNTICA
-   ↙                ↘
-reject              accept
-                      ↓
-               claims canónicos
-                      ↓
-          semantic contradiction resolver
-              ┌───────┴────────┐
-              │                │
-       academic_truth   assessment_expectation
-              └───────┬────────┘
-                      ↓
-academic.json + concepts.json + topics.json + contexto.md
-                      ↓
-auditoría + tracker + hashes + estado STALE
-```
-
-## Candidatos no son verdad
-
-`scripts/claim_candidates.py` detecta señales de alto valor y las registra en `academico/academic.json -> claim_candidates` con evidencia localizable. Un candidato puede ser `semantic_ready` y aun así **no ser verdadero**: sólo la revisión semántica puede aceptarlo y convertirlo en claim canónico.
-
-Una transcripción cruda conserva `teacher_transcript`; no se promociona automáticamente a `teacher_explicit` ni puede declarar por sí sola `supersedes`.
-
-Ver [`docs/claim-extraction.md`](docs/claim-extraction.md).
-
-## Dos vistas cuando las fuentes chocan
-
-- `academic_truth`: qué valor está mejor respaldado como conocimiento académico.
-- `assessment_expectation`: qué valor está mejor respaldado como lo que la cátedra espera.
-
-```text
-bibliografía fuerte  → A
-profesor confirmado  → B
-
-academic_truth         = A
-assessment_expectation = B
-status                 = split-view
-```
-
-Si la evidencia no permite resolver con suficiente autoridad, queda `unresolved`; el sistema no elige silenciosamente. Ver [`docs/semantic-contradictions.md`](docs/semantic-contradictions.md).
-
----
-
-# Pipelines de `/resumen` y `/repaso`
-
-`/resumen` es el único documento largo público. Por defecto usa profundidad estándar; si pedís `detallado`, conserva el mismo alcance y los mismos gates pero desarrolla más los conceptos que lo necesitan. `/repaso` mantiene su objetivo separado de recuperación high-yield en 5–10 minutos.
-
-```text
-CONOCIMIENTO CANÓNICO + FIGURAS
-        ↓
-PLAN PEDAGÓGICO
-        ↓
-BORRADOR SEMÁNTICO
-        ↓
-HUMANIZER (sólo prosa)
-        ↓
-REVIEW ACADÉMICO + PEDAGÓGICO + VISUAL
-        ↓
-PASS ───────────────→ FINAL MD
- │
-FAIL
- ↓
-UNA REPARACIÓN + SEGUNDO REVIEW
-        ↓
-RENDER DETERMINÍSTICO
-        ↓
-INTEGRITY GATE
-        ↓
-CHROMIUM VISUAL AUDIT
- desktop + tablet + mobile + print
-        ↓
-INSPECCIÓN DE CAPTURAS
-        ↓
-PUBLICACIÓN HTML
-```
-
-No hay loops infinitos: máximo dos reviews académicos.
-
-El Markdown es la fuente portable entre Claude y Codex. **El HTML es el artefacto normal de lectura.** Layout, tipografía, callouts, impresión y estilos provienen de `scripts/render_study.py` y `assets/study-theme.css`.
-
-## Quality gate académico
-
-`pipeline_run.review_gate()` delega la aceptación en `config/academic_eval_policy.json`. Exige scores, fidelity checks, claims respaldados y ausencia de `academic_issues`, `pedagogy_issues`, `visual_issues` y `contradiction_issues`.
-
-Ver [`docs/academic-eval.md`](docs/academic-eval.md).
-
-## Integrity gate vs browser visual gate
-
-Son controles distintos:
-
-- **integrity**: rutas, alt text, captions, `unit_id`, procedencia y registro de figuras;
-- **browser visual**: Chromium renderiza el HTML real y `visual_audit.py` verifica overflow, tipografía, line-height, contraste y vistas desktop/tablet/mobile/print.
-
-`pipeline_run.py finish` exige `visual-audit/audit.json -> ok: true` y capturas desktop/mobile. Una validación de rutas no puede presentarse como revisión visual completa.
-
-Si Playwright o Chromium faltan, es un error de instalación: el pipeline no debe publicar ni afirmar visual PASS.
-
----
-
-# Humanizer
-
-Fuente canónica:
-
-```text
-vendor/humanizer/SKILL.md
-```
-
-Puede mejorar ritmo, sintaxis, transiciones y naturalidad. No puede cambiar hechos, definiciones, fórmulas, código, fechas, alcance, condiciones ni nivel de certeza. Después de Humanizer siempre hay revisión académica.
-
----
-
-# Stress testing y CI
-
-CI instala el mismo entorno completo que una máquina de uso:
-
-```bash
-python -m pip install -r requirements.txt
-python -m playwright install chromium
-python scripts/setup_env.py check --json
-```
-
-Después ejecuta los benchmarks congelados:
-
-```bash
-python scripts/stressed_materials.py benchmark
-python scripts/pdf_stress.py benchmark
-python scripts/semantic_claims.py benchmark
-python scripts/claim_candidates.py benchmark
-python scripts/academic_eval.py benchmark
-```
-
-Release suite:
-
-```bash
-python tests/run_release_tests.py
-```
-
-La suite incluye un smoke test real de Chromium que renderiza y audita un documento sintético. GitHub Actions valida **Windows y Ubuntu con Python 3.11**.
-
-Documentación:
-
-- [`docs/stressed-materials.md`](docs/stressed-materials.md)
-- [`docs/pdf-stress.md`](docs/pdf-stress.md)
-- [`docs/semantic-contradictions.md`](docs/semantic-contradictions.md)
-- [`docs/claim-extraction.md`](docs/claim-extraction.md)
-- [`docs/academic-eval.md`](docs/academic-eval.md)
-- [`docs/public-actions.md`](docs/public-actions.md)
-
----
-
-# Design system y lectura visual
-
-El theme aprobado es un **contemporary technical manual**: columna de lectura estable, gutter semántico, figuras/tablas/código con ancho adicional y roles visuales consistentes.
-
-```text
-design/
-├── tokens.css
-├── typography.css
-├── layout.css
-├── components.css
-├── figures.css
-└── print.css
-```
-
-Regenerar theme:
-
-```bash
-python scripts/build_design.py
-```
-
-Skills de diseño:
-
-```text
-Claude: /study-design
-Codex:  $study-design
-
-Claude: /study-design-reviewer
-Codex:  $study-design-reviewer
-```
-
-El escritor usa roles semánticos como `DEFINITION`, `EXAMPLE`, `WARNING`, `CONNECTION` o `RECALL`, nunca colores o márgenes.
-
-## Figuras de PDFs
-
-Con el setup completo, PyMuPDF ya está instalado:
-
-```bash
-python study.py figures preflight programacion-i
-python study.py figures scan programacion-i --write
-```
-
-Renderizar una página seleccionada:
-
-```bash
-python study.py figures render programacion-i \
-  --unit unidad-2 --file "oficiales/arquitectura.pdf" --page 12 --id jerarquia-memoria
-```
-
-Las figuras derivadas usan namespace `derived:`, `unit_id` estable y procedencia `based_on`.
-
----
-
-# Acciones públicas
-
-La superficie pública está fijada en **nueve acciones**. Las variaciones de profundidad o mantenimiento no crean comandos nuevos; ver [`docs/public-actions.md`](docs/public-actions.md).
-
-| Acción | Claude | Codex | Función |
-|---|---|---|---|
-| Procesar | `/procesar` | `$procesar` | ingesta, evidencia y conocimiento canónico |
-| Aprender | `/aprender` | `$aprender` | aprender un tema observado o un concepto canónico |
-| Estudiar | `/estudiar` | `$estudiar` | sesión adaptativa |
-| Resumen | `/resumen` | `$resumen` | documento principal, estándar o detallado |
-| Repaso | `/repaso` | `$repaso` | high-yield 5–10 min |
-| Preguntas | `/preguntas` | `$preguntas` | active recall conversacional |
-| Quiz | `/quiz` | `$quiz` | multiple choice HTML offline e interactivo |
-| Simulacro | `/simulacro` | `$simulacro` | examen realista ligado a una evaluación registrada |
-| Estado | `/estado` | `$estado` | progreso, evaluaciones y stale |
-
----
-
-# Artefactos STALE
-
-V4.0.0 usa `artifact_contract_version = 9`. Material pedagógico creado con
-contratos anteriores queda STALE automáticamente aunque las fuentes no hayan
-cambiado o todavía esté publicado fuera de su unidad canónica.
-
-```bash
-python study.py artifacts programacion-i
-```
-
-`/procesar` detecta artefactos STALE pero no los regenera.
-
----
-
-# Migración de materias V3
-
-Primero inspeccioná el plan sin modificar archivos:
-
-```bash
-python study.py units migrate programacion-i
-```
-
-Después aplicalo:
-
-```bash
-python study.py units migrate programacion-i --apply
-```
-
-La migración separa fuentes, conocimiento, progreso, figuras y artefactos por
-`unit_id`; deja los materiales transversales en la raíz y conserva una copia de
-recuperación en `.study/legacy-layout-v3/`. No relee PDFs ni transcripciones.
-
-Para registros de figuras V3 que todavía necesiten normalización interna:
-
-```bash
-python study.py figures migrate programacion-i
-```
-
-Esto normaliza metadatos legacy de figuras sin releer fuentes.
-
----
-
-# Documentación técnica
-
-El índice canónico está en [`docs/README.md`](docs/README.md). Ahí se indica qué documento actualizar cuando cambia un contrato de instalación, ingesta, PDF, claims, contradicciones, evaluación, visuales o MCP.
-
-El criterio del proyecto sigue siendo simple: **la infraestructura sólo se conserva si mejora de forma comprobable la calidad, fidelidad o robustez del material de estudio frente a subir los mismos archivos y pedir “resumime esto”.**
+Este README está enfocado en **qué hace Carpeta**. La arquitectura interna, MCPs, pipelines, contratos, evaluación, procesamiento de fuentes, instalación y demás documentación técnica están separadas en [`docs/README.md`](docs/README.md).
