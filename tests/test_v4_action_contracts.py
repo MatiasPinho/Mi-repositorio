@@ -12,6 +12,13 @@ class V4ActionContractTests(unittest.TestCase):
     def pipeline(self, name: str) -> str:
         return (ROOT / "pipelines" / f"{name}.md").read_text(encoding="utf-8")
 
+    def semantic_document_contract(self, name: str) -> str:
+        pipeline = self.pipeline(name)
+        shared_path = "pipelines/_shared/semantic-document-lifecycle.md"
+        self.assertIn(shared_path, pipeline, name)
+        shared = (ROOT / shared_path).read_text(encoding="utf-8")
+        return pipeline + "\n" + shared
+
     def test_generated_action_metadata_matches_config_exactly(self):
         for name, spec in ACTIONS.items():
             claude = (ROOT / ".claude" / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
@@ -64,7 +71,7 @@ class V4ActionContractTests(unittest.TestCase):
 
     def test_staged_public_artifacts_are_unit_scoped_topic_aware_and_ingest_safe(self):
         for name in ("resumen", "repaso"):
-            text = self.pipeline(name)
+            text = self.semantic_document_contract(name)
             lower = text.lower()
             self.assertIn("unit-only", lower, name)
             self.assertIn("observed topics", lower, name)
