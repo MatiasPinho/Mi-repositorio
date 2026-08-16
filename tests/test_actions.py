@@ -14,6 +14,7 @@ class PortableActionTests(unittest.TestCase):
         required = [
             "core/ROUTER.md",
             "contracts/handoffs.md",
+            "pipelines/_shared/semantic-document-lifecycle.md",
             "rules/academic/source-truth.md",
             "rules/academic/uncertainty.md",
             "rules/ingestion/material-processing.md",
@@ -115,14 +116,29 @@ class PortableActionTests(unittest.TestCase):
         self.assertIn("Do not generate summaries", (ROOT / "rules" / "ingestion" / "material-processing.md").read_text(encoding="utf-8"))
         self.assertNotIn("humanizer", text.lower())
 
-    def test_summary_pipeline_has_distinct_stages(self):
-        text = (ROOT / "pipelines" / "resumen.md").read_text(encoding="utf-8")
-        for token in ("02-plan.json", "03-draft.md", "04-humanized.md", "05-review.json", "06-repair.md", "07-review.json", "08-final.md"):
-            self.assertIn(token, text)
-        self.assertIn("vendor/humanizer/SKILL.md", text)
-        self.assertIn("independent critic", text)
-        self.assertIn("09-rendered.html", text)
-        self.assertIn("render_study.py", text)
+    def test_semantic_document_pipelines_share_lifecycle(self):
+        shared = (ROOT / "pipelines" / "_shared" / "semantic-document-lifecycle.md").read_text(encoding="utf-8")
+        for token in ("02-plan.json", "03-draft.md", "04-humanized.md", "05-review.json", "06-repair.md", "07-review.json", "08-final.md", "09-rendered.html", "10-integrity.json"):
+            self.assertIn(token, shared)
+        self.assertIn("vendor/humanizer/SKILL.md", shared)
+        self.assertIn("independent critic", shared)
+        self.assertIn("ENGINE FAILURE", shared)
+
+        for name in ("resumen", "repaso"):
+            text = (ROOT / "pipelines" / f"{name}.md").read_text(encoding="utf-8")
+            self.assertIn("pipelines/_shared/semantic-document-lifecycle.md", text)
+            self.assertIn("render_study.py", text)
+            self.assertNotIn("## Engine failure contract", text)
+            self.assertNotIn("## Environment contract", text)
+
+        summary = (ROOT / "pipelines" / "resumen.md").read_text(encoding="utf-8")
+        self.assertIn("02-visual-build.json", summary)
+        self.assertIn("visual_plan.py", summary)
+        self.assertIn("--kind summary", summary)
+
+        review = (ROOT / "pipelines" / "repaso.md").read_text(encoding="utf-8")
+        self.assertIn("--kind rapid-review", review)
+        self.assertIn("register-derived", review)
 
     def test_core_is_provider_neutral(self):
         checked = list((ROOT / "rules").rglob("*.md")) + list((ROOT / "pipelines").rglob("*.md")) + [ROOT / "core" / "ROUTER.md"]
