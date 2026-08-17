@@ -15,6 +15,8 @@ Recommended shape, adapted rather than mechanically copied:
 
 Summary artifacts must not generate `RECALL` / `Recuperación` blocks, self-test prompts, answer lines or other spaces intended for the student to respond. Active retrieval belongs to the dedicated interactive study/practice actions, not to the summary reading artifact.
 
+Do not use Markdown horizontal rules (`---`, `***`, or `___`) as separators between summary sections. Section hierarchy and spacing already provide the visual separation; do not add standalone divider lines.
+
 Write semantic Markdown using the callouts defined in `rules/visual/study-document.md`. The published reading artifact is HTML; Markdown is the portable source.
 
 A summary is not an exhaustive dossier and not a rapid-review sheet.
