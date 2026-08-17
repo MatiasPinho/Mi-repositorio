@@ -10,9 +10,10 @@ Recommended shape, adapted rather than mechanically copied:
 3. small examples where needed;
 4. relevant figure/diagram beside the concept when it materially improves understanding;
 5. key distinctions/traps after their concepts are explained;
-6. occasional `RECALL` checks after coherent clusters, not after every paragraph;
-7. compact “what to retain” close;
-8. optional short source/uncertainty note only when useful.
+6. compact “what to retain” close;
+7. optional short source/uncertainty note only when useful.
+
+Summary artifacts must not generate `RECALL` / `Recuperación` blocks, self-test prompts, answer lines or other spaces intended for the student to respond. Active retrieval belongs to the dedicated interactive study/practice actions, not to the summary reading artifact.
 
 Write semantic Markdown using the callouts defined in `rules/visual/study-document.md`. The published reading artifact is HTML; Markdown is the portable source.
 
