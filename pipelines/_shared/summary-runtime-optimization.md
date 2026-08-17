@@ -16,10 +16,27 @@ Only `published: true` means a current Markdown+HTML pair exists under the resol
 - Geometry that code can prove must fail before vision review. In particular, an arrow/connector path whose final-display length is too short for its marker footprint is a deterministic preflight failure (`arrow-shaft-too-short`) and consumes no reviewed attempt.
 - Hash equality, asset identity, responsive variant identity, bounds, collisions, empty semantic shapes and own-label crossings remain deterministic facts. Never ask a model to re-prove them.
 
-## Cross-run visual PASS reuse
+## Registered visual reuse vs cross-run scene PASS reuse
+There are two different reuse paths and they must not be confused.
+
+### A. Already-registered immutable derived figures
+A mixed summary run may reuse an already-registered **legacy V1 deterministic sketch** without creating a new `scene_spec`. `visual_plan_v2.py` validates its stable unit, treatment, provenance, source companion when applicable, registered asset hash and legacy spec hash, then reports it under `reused_registered`.
+
+Rules:
+- a registered legacy row is **not** a current V2 scene and must not be sent through preview or vision review again;
+- its absence of `scene_spec` is not a reason to fall back to previewing every visual in the plan;
+- in a mixed run, `02-visual-preview.json -> entries` contains only current V2 scenes that actually need preview/review; `reused_registered` contains immutable legacy reuse;
+- finalization carries both sets into one `02-visual-build.json`;
+- integrity validates reused legacy asset/spec hashes deterministically.
+
+Therefore, if four registered legacy figures are reused and one new V2 scene is added, the expected visual work is **one previewed/reviewed scene, not five**.
+
+A previously registered **V2** scene is different: do not treat registry metadata alone as a new visual PASS. Materialize the exact registered scene JSON into the current run's `02-scenes/` and use the hash-bound cross-run PASS path below.
+
+### B. Cross-run V2 visual PASS reuse
 A rerun may reuse a previous V2 visual PASS only when the current scene spec and registered wide/narrow SVG assets are byte-identical to evidence from a previous independent PASS.
 
-When the plan intentionally reuses already-registered derived scenes, materialize the exact registered scene JSON into the current run's `02-scenes/` instead of redesigning it. Then, before normal preview, run:
+When the plan intentionally reuses an already-reviewed V2 scene, materialize the exact registered scene JSON into the current run's `02-scenes/` instead of redesigning it. Then, before normal preview, run:
 
 ```bash
 python scripts/venv_exec.py scripts/visual_reuse_v2.py \
@@ -36,7 +53,7 @@ If `all_reused: true`:
 - **do not call a vision model**. Use the mechanically carried `02-visual-review.json` and proceed to the normal `visual_plan_v2.py finalize` command;
 - integrity/browser/publication/finish remain unchanged.
 
-If `all_reused: false`, the utility must not claim a PASS. Continue through the normal preview + independent vision review flow. Partial/mismatched reuse is intentionally conservative: fall back rather than fabricate or combine unverifiable evidence.
+If `all_reused: false`, the utility must not claim a PASS. Continue through normal preview + independent vision review **only for the current V2 entries returned by preview**. Registered legacy reuse stays outside that review set. Partial/mismatched V2 PASS reuse remains conservative: fall back for those V2 scenes rather than fabricate or combine unverifiable review evidence.
 
 ## Fidelity risk ledger before prose
 Before drafting, run:
