@@ -47,6 +47,14 @@ def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _read_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
 def _safe_run_dir(course: Path, run_dir: Path) -> Path:
     run = run_dir.resolve()
     course = course.resolve()
@@ -67,6 +75,66 @@ def _next_attempt(run: Path, scene_id: str) -> tuple[int, Path]:
     if attempt > MAX_ATTEMPTS:
         raise SceneFigureError(f"{scene_id}: maximum {MAX_ATTEMPTS} visual attempts exceeded")
     return attempt, root / f"{attempt:02d}"
+
+
+def _reusable_preview(run: Path, scene: dict[str, Any], unit_id: str) -> dict[str, Any] | None:
+    """Reuse the latest exact preview instead of burning a new attempt.
+
+    Repair loops often change one scene while every other scene is byte-identical.
+    Those unchanged scenes must not be re-rendered, re-screenshot or promoted to a
+    fake new attempt.  SHA-256 is authoritative here; vision is only needed again
+    for a scene whose rendered evidence changed.
+    """
+    root = run / "02-visual-attempts" / scene["id"]
+    if not root.is_dir():
+        return None
+    wanted_scene_sha = scene_spec.scene_sha256(scene)
+    wanted_scene_bytes = scene_spec.scene_bytes(scene)
+    attempts = sorted(
+        (path for path in root.iterdir() if path.is_dir() and path.name.isdigit()),
+        key=lambda path: int(path.name),
+        reverse=True,
+    )
+    for attempt_dir in attempts:
+        report = _read_json(attempt_dir / "preview.json")
+        if report.get("ok") is not True:
+            continue
+        if report.get("unit_id") != unit_id or report.get("scene_id") != scene["id"]:
+            continue
+        if report.get("scene_sha256") != wanted_scene_sha:
+            continue
+        scene_path = Path(str(report.get("scene_file") or ""))
+        if not scene_path.is_file() or scene_path.read_bytes() != wanted_scene_bytes:
+            continue
+        variants = report.get("variants")
+        if not isinstance(variants, dict):
+            continue
+        valid = True
+        for variant in scene_spec.VARIANTS:
+            row = variants.get(variant)
+            if not isinstance(row, dict):
+                valid = False
+                break
+            svg = Path(str(row.get("svg") or ""))
+            png = Path(str(row.get("png") or ""))
+            if (
+                not svg.is_file()
+                or not png.is_file()
+                or sha256_file(svg) != row.get("svg_sha256")
+                or sha256_file(png) != row.get("png_sha256")
+            ):
+                valid = False
+                break
+        if valid:
+            reused = dict(report)
+            reused["reused"] = True
+            reused["review_reuse_key"] = {
+                "scene_sha256": wanted_scene_sha,
+                "wide_png_sha256": variants["wide"]["png_sha256"],
+                "narrow_png_sha256": variants["narrow"]["png_sha256"],
+            }
+            return reused
+    return None
 
 
 def _screenshot_svg(svg_bytes: bytes, out_path: Path, *, variant: str) -> None:
@@ -110,6 +178,11 @@ def preview_scene(course: Path, unit_value: str, scene_value: Any, run_dir: Path
     unit_id = str(resolved.get("unit_id") or "")
     if not unit_id:
         raise SceneFigureError(f"Could not resolve stable unit id from: {unit_value}")
+
+    cached = _reusable_preview(run, scene, unit_id)
+    if cached is not None:
+        return cached
+
     attempt, attempt_dir = _next_attempt(run, scene["id"])
     attempt_dir.mkdir(parents=True, exist_ok=False)
     scene_path = attempt_dir / "scene.json"
@@ -151,6 +224,7 @@ def preview_scene(course: Path, unit_value: str, scene_value: Any, run_dir: Path
         "scene_file": str(scene_path),
         "attempt": attempt,
         "attempt_dir": str(attempt_dir),
+        "reused": False,
         "preflight": str(attempt_dir / "preflight.json"),
         "variants": variants,
     }
@@ -259,7 +333,7 @@ def finalize_scene(
             raise SceneFigureError(f"existing scene registration differs; refusing overwrite: {key}")
         return {"ok": True, "created": False, "key": key, "record": existing}
 
-    registration = register_derived(
+    register_derived(
         course,
         scene["id"],
         unit_id,
