@@ -7,6 +7,13 @@ are valid inside ``.study/runs/<run-id>/`` therefore cannot be copied verbatim t
 for the destination while keeping the validated run sources byte-for-byte
 immutable. Responsive Visual System V2 ``<source srcset>`` resources participate in
 the same relocation contract as ordinary ``<img src>`` assets.
+
+A final Markdown draft may still point at a run-local copy under
+``.study/runs/<run-id>/assets/figures``. Those copies are never a valid permanent
+publication dependency. When an identical canonical unit figure exists, the
+publisher promotes the reference to that canonical asset by SHA-256; a missing or
+non-identical canonical counterpart fails publication instead of leaking run-local
+state into the published Markdown.
 """
 from __future__ import annotations
 
@@ -85,12 +92,48 @@ def _is_remote_or_embedded(src: str) -> bool:
     return bool(re.match(r"^[a-z][a-z0-9+.-]*://", src, re.I)) or src.startswith(("data:", "#"))
 
 
+def _canonicalize_run_figure_target(target: Path) -> Path:
+    """Promote an immutable run-local figure copy to its unit canonical asset.
+
+    Only ``.study/runs/.../assets/figures`` is eligible. The canonical counterpart
+    must already exist under the owning unit's ``assets/figures`` and be byte
+    identical. This keeps publication independent from disposable run history
+    without allowing a basename match to substitute different pixels/content.
+    """
+    target = target.resolve()
+    parts = target.parts
+    try:
+        study_idx = parts.index(".study")
+    except ValueError:
+        return target
+    if study_idx + 1 >= len(parts) or parts[study_idx + 1] != "runs":
+        return target
+
+    assets_idx = -1
+    for idx in range(study_idx + 2, len(parts) - 1):
+        if parts[idx] == "assets" and parts[idx + 1] == "figures":
+            assets_idx = idx
+            break
+    if assets_idx < 0:
+        return target
+
+    unit_root = Path(*parts[:study_idx])
+    figure_suffix = Path(*parts[assets_idx + 2:])
+    canonical = (unit_root / "assets" / "figures" / figure_suffix).resolve()
+    if not canonical.is_file():
+        raise OSError(f"publication-run-figure-not-canonical:{target}:{canonical}")
+    if sha256_file(canonical) != sha256_file(target):
+        raise OSError(f"publication-run-figure-hash-mismatch:{target}:{canonical}")
+    return canonical
+
+
 def _rebase_local_ref(src: str, source_parent: Path, destination_parent: Path) -> tuple[str, Path] | None:
     if _is_remote_or_embedded(src):
         return None
     target = (source_parent / src).resolve()
     if not target.is_file():
         raise OSError(f"publication-resource-missing:{src}:{target}")
+    target = _canonicalize_run_figure_target(target)
     rebased = os.path.relpath(target, destination_parent.resolve()).replace(os.sep, "/")
     return rebased, target
 
