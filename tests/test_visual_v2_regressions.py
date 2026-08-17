@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import tempfile
 import unittest
 import uuid
 from pathlib import Path
@@ -9,7 +10,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from scripts import code_highlight_v2, scene_figure, scene_pencil, scene_preflight, visual_review
+from scripts import artifact_integrity, code_highlight_v2, scene_figure, scene_pencil, scene_preflight, visual_review
 from tests.test_scene_v2 import free_scene
 
 
@@ -104,6 +105,32 @@ class FirstRealRunRegressionTests(unittest.TestCase):
             self.assertEqual(len(attempts), 1)
         finally:
             shutil.rmtree(course, ignore_errors=True)
+
+    def test_legacy_integrity_distinguishes_auto_discovery_from_explicit_none(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            md = root / "06-final.md"
+            rendered = root / "09-rendered.html"
+            (root / "02-plan.json").write_text("{}", encoding="utf-8")
+            md.write_text("texto", encoding="utf-8")
+            rendered.write_text("<html><body>texto</body></html>", encoding="utf-8")
+            patches = (
+                mock.patch.object(artifact_integrity, "validate_images", return_value=[]),
+                mock.patch.object(artifact_integrity, "validate_caption_comments", return_value=[]),
+                mock.patch.object(artifact_integrity, "html_image_issues", return_value=[]),
+                mock.patch.object(artifact_integrity, "load_registry", return_value={"figures": {}}),
+                mock.patch.object(artifact_integrity, "registry_issues", return_value=[]),
+                mock.patch.object(artifact_integrity, "resolve_unit", return_value={"unit_id": "U1"}),
+                mock.patch.object(artifact_integrity, "has_unit_layout", return_value=False),
+                mock.patch.object(artifact_integrity, "artifact_usage_issues", return_value=([], 7)),
+            )
+            with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6], patches[7]:
+                auto = artifact_integrity.check(root, md, rendered, "U1", "summary")
+                explicit_none = artifact_integrity.check(root, md, rendered, "U1", "summary", None)
+            self.assertTrue(auto["visual_plan_checked"])
+            self.assertEqual(auto["planned_visual_count"], 7)
+            self.assertFalse(explicit_none["visual_plan_checked"])
+            self.assertEqual(explicit_none["planned_visual_count"], 0)
 
 
 if __name__ == "__main__":
