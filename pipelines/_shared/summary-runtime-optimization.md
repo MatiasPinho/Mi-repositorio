@@ -3,14 +3,14 @@
 This contract is loaded only by `pipelines/resumen.md`. It reduces avoidable model work without weakening academic or visual gates.
 
 ## Published artifact truth
-A finished historical run is **not** proof that a summary is currently published. Before deciding that `/resumen` can stop because an artifact already exists, run:
+A finished historical run is **not** proof that a summary is currently published. Before deciding that a summary-generation request can stop because an artifact already exists, run:
 
 ```bash
 python scripts/venv_exec.py scripts/summary_presence.py \
   --course <course> --scope "<scope>"
 ```
 
-Only `published: true` means a current Markdown+HTML pair exists under the resolved unit's `resumenes/` directory. `.study/runs/`, old publication reports, figure registrations and artifact history are cache/evidence only. If the user deleted the published summary pair, `/resumen` must start a new run even when old finished runs still exist.
+Only `published: true` means a current Markdown+HTML pair exists under the resolved unit's `resumenes/` directory. `.study/runs/`, old publication reports, figure registrations and artifact history are cache/evidence only. If the user deleted the published summary pair, summary generation must start a new run even when old finished runs still exist.
 
 ## Deterministic before perceptual
 - Geometry that code can prove must fail before vision review. In particular, an arrow/connector path whose final-display length is too short for its marker footprint is a deterministic preflight failure (`arrow-shaft-too-short`) and consumes no reviewed attempt.
