@@ -20,7 +20,7 @@ The reviewer scores 0–5 for exactly these dimensions:
 - `connections`: arrows/routes are traceable, unambiguous and do not run through text or unrelated objects;
 - `density`: information fits the available space; split the figure if that is clearly better;
 - `composition`: visual weight and empty space look deliberate rather than accidental auto-layout;
-- `pencil_fidelity`: the notebook/pencil language is perceptible at final display size without becoming cartoonish;
+- `pencil_fidelity`: the figure itself visibly reads as hand-drawn notebook ink/pencil at final size. Boxes, arrows, dividers and geometric forms must have perceptible stroke wander/overdraw and must **not** read as ruler-straight diagram-editor vectors merely placed on notebook paper;
 - `pedagogical_value`: the visual makes understanding easier than prose alone;
 - `responsive`: both wide and narrow compositions work independently, with no mobile zoom dependency;
 - `academic_fidelity`: every visual assertion preserves canonical meaning and analogies are not presented as source truth.
@@ -29,12 +29,14 @@ PASS requires every score >= 4 and no `blocking` or `major` issue.
 
 Hard fail a V2 scene for any of the following:
 - unreadable text or clipping;
+- any semantic shape/container that visibly renders empty or unexplained;
 - visible crowding or elements stuck together without deliberate meaning;
 - ambiguous connection origin/destination;
-- arrow/path through text or unrelated semantic content;
+- arrow/path through text, through its own label, or through unrelated semantic content;
 - missing or invented academic relationship;
 - mobile/narrow figure that only works by shrinking the wide scene or requiring zoom;
 - pencil treatment effectively invisible at final size;
+- geometric boxes/arrows/lines that still look mechanically perfect, ruler-straight or like clean diagram-editor SVG rather than drawn strokes;
 - missing element-level provenance;
 - reviewed screenshot missing or changed;
 - reviewed scene/spec/asset hash differs from the finalized one;
@@ -42,6 +44,11 @@ Hard fail a V2 scene for any of the following:
 - reviewer does not explicitly declare `capability: vision` and `independent: true`.
 
 A model without image input can never emit visual PASS. Structural metrics may be PASS while perceptual inspection remains `UNVERIFIED`; the overall visual state is incomplete until a vision-capable reviewer actually inspects both PNGs.
+
+## Review economy
+The vision gate is strict but narrow. Give the reviewer only the current screenshots, scene spec, pedagogical objective/provenance and this rubric. Do not load unrelated repository/course context.
+
+If a scene already passed and its normalized scene SHA plus both PNG SHA-256 values are unchanged, that PASS remains valid within the same run. Carry the exact prior row forward mechanically. Do **not** spend another vision call re-inspecting byte-identical evidence. On a repair cycle, inspect only changed/failed scenes.
 
 ## General hard failures
 - broken image paths in the published artifact;
@@ -59,7 +66,7 @@ Legacy/non-scene artifacts use `scripts/visual_audit.py`. Artifacts containing V
 
 The browser auditor must force images to load/decode, reject horizontal content overflow and require the complete Playwright/Chromium environment. HTML-string, registry and path checks are integrity evidence, not substitutes for visual inspection.
 
-Inspect at least desktop and mobile document screenshots for hierarchy/integration. For V2, also inspect every per-scene desktop/mobile crop because the physical notebook reader can hide figures on inactive leaves.
+Inspect at least desktop and mobile document screenshots for hierarchy/integration. For V2, also inspect every per-scene desktop/mobile crop because the physical notebook reader can hide figures on inactive leaves. This final audit checks integration; it does not reopen already hash-bound figure review unless the final browser render introduces a new visible defect.
 
 ## Design-system fidelity
 - student Markdown expresses semantic roles, never local styling;
