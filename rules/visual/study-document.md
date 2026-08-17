@@ -1,40 +1,40 @@
 # Study document visual system
 
-Student-facing documents are **learning documents**, not raw Markdown dumps or miniature web apps.
-Markdown remains the portable semantic source; the primary reading artifact is rendered HTML.
+Student-facing documents are **learning documents**, not raw Markdown dumps or miniature web apps. Markdown remains the portable semantic source; rendered HTML is the primary reading artifact.
 
 ## Evidence-informed defaults
-- Use a comfortable single reading column; target roughly 60–75 characters per line and never design for >80.
-- Body text should be large enough for sustained on-screen reading (about 19px desktop in the shipped theme).
+- Use a comfortable single reading column; target roughly 60–75 characters per line and never design ordinary prose for >80.
+- Body text must support sustained on-screen reading.
 - Use left alignment, never full justification.
-- Use generous but not extreme line spacing (about 1.72 in the shipped screen theme) and clear paragraph separation.
-- Headings must form a real hierarchy and describe what the section teaches.
-- Maintain high luminance contrast. Color is a cue, not the only carrier of meaning.
-- Prefer whitespace and grouping over borders everywhere.
+- Use generous but not extreme leading and clear paragraph separation.
+- Headings form a real hierarchy and describe what the section teaches.
+- Maintain high luminance contrast. Color is a cue, never the only carrier of meaning.
+- Prefer whitespace/grouping over generic card borders.
 
-## Book structure
-The rendered artifact follows a contemporary technical-manual/textbook grammar:
-1. course/subject name and artifact type in a quiet running line;
-2. artifact type + academic scope remain in the running line (for example `Resumen · Unidad 1`);
-3. when the scope is `Unidad N`, the opening gutter presents it editorially as `Capítulo N`, beside one restrained H1;
-4. the first orienting paragraph, when present, stays inside the chapter opening under the H1 rather than becoming a detached prose row;
-5. numbered major sections with numbers in the gutter;
-6. semantic callout labels in the gutter so prose stays uninterrupted;
-7. figures/tables/code allowed to use more width than prose;
-8. compact visible retrieval material near the end of coherent concept groups.
+## Carpeta notebook structure
+The active product direction is the **university study notebook** defined in `design/README.md`, not the historical technical-manual direction. The renderer owns this grammar:
+1. course/subject + artifact type + scope in quiet running metadata;
+2. a restrained chapter opening with H1 and orienting lede;
+3. ruled warm paper and a stable binding/margin cue supplied by CSS;
+4. compact section markers and semantic role labels;
+5. practical reading typography for body explanations;
+6. selective marker/handwriting accents where a student would naturally annotate;
+7. figures/tables/code may use more width than prose;
+8. retrieval material remains visible near coherent concept groups.
+
+Ruled paper, binding holes/margin cues and deterministic pencil figures are intentional product grammar. Do not treat them as fake-paper defects. Also do not escalate the metaphor into scrapbook/vintage decoration, heavy grain, distressed edges, stickers or unrelated ornament.
 
 Do not repeat the unit label inside the title when the renderer already receives `--scope`.
-Do not fake book aesthetics with paper textures, ornamental flourishes or decorative chapter numbers.
 
 ## Emphasis
 - **Bold** is the default emphasis for a term or decisive phrase.
-- Do not underline normal emphasis. Underlining is reserved for links.
+- Do not underline normal emphasis; underlining is for links.
 - Do not highlight whole paragraphs.
 - Do not use ALL CAPS as emphasis.
 - Keep each paragraph focused on one idea.
 
 ## Semantic callouts
-Use the supported Markdown callout syntax only when it earns visual weight:
+Use supported Markdown callouts only when they earn visual weight:
 
 ```markdown
 > [!DEFINITION] Optional title
@@ -47,7 +47,7 @@ Use the supported Markdown callout syntax only when it earns visual weight:
 > A trap, contradiction or exception.
 
 > [!EXAM] Exam relevance
-> Only if the assessment relevance is actually supported.
+> Only if assessment relevance is supported.
 
 > [!CONNECTION] Connection
 > A useful relationship to another concept.
@@ -56,22 +56,21 @@ Use the supported Markdown callout syntax only when it earns visual weight:
 > A retrieval question, preferably answerable without rereading.
 ```
 
-The renderer owns the gutter label and keeps it stable by semantic role (`Definición`, `Ejemplo`, `Cuidado`, `Error típico`, `Relación`, `Recuperación`). An optional specific title must never replace or disappear behind that role label. When present, it appears as a term inside the reading column for every callout type (for example `Cuidado` in the gutter + **Precondición no es lo mismo que validación** in the body).
-
-Callouts must always include a textual role label, so meaning never depends on color alone.
+The renderer owns the stable semantic role label (`Definición`, `Ejemplo`, `Cuidado`, `Error típico`, `Relación`, `Recuperación`). Optional specific titles appear as content terms and never replace the semantic role. Meaning never depends on color alone.
 
 ## Color semantics
-The renderer owns exact colors. Writers only choose semantic roles.
-- Definition/concept → blue family.
-- Example/application → green family.
-- Warning/error/uncertainty → amber/red family depending on severity.
-- Exam relevance → amber family.
-- Connection/relationship → violet family.
-- Recall/self-test → neutral/blue-gray family.
+The renderer owns exact colors. Writers choose semantic roles only:
+- definition/concept → blue family;
+- example/application → green family;
+- warning/error/uncertainty → amber/red according to severity;
+- exam relevance → amber;
+- connection/relationship → violet;
+- recall/self-test → neutral/blue-gray.
 
 Never invent a new color meaning inside an artifact.
 
-## Frozen design system
-The writer chooses **semantic roles only**. It must never choose hex colors, fonts, margins, border radii, component shapes or per-course styling.
+## Figures and free scene composition
+Writers still cannot choose local CSS, fonts or exact visual styling. Visual System V2 is a deliberate exception only for **structured figure composition**: a planner may choose scene primitives and geometry through `contracts/scene-figure.schema.json`, while deterministic code owns all concrete style. See `rules/visual/figures.md` and `docs/visual-system-v2.md`.
 
-The canonical visual implementation lives in `design/` and is compiled to `assets/study-theme.css`. Ordinary summary, guide and rapid-review runs must **not** load `frontend-design`, `study-design` or `study-design-reviewer`; those are design-time maintenance skills. This prevents style drift and avoids spending design tokens on every artifact.
+## Frozen design system
+Ordinary student artifacts consume the shared visual system; they do not redesign it per course. Canonical CSS lives in `design/` and compiles to `assets/study-theme.css`. Design-time skills remain maintenance tools rather than ordinary summary-writing instructions.
