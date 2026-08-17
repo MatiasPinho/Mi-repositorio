@@ -119,6 +119,13 @@ def preflight_variant(scene_value: Any, variant: str) -> dict[str, Any]:
             add("out-of-bounds", "error", [eid], "element geometry exceeds canvas")
         element = by_id[eid]
         placement = layout["placements"][eid]
+        if element["type"] == "shape" and element.get("semantic", True) and not (element.get("label") or element.get("detail")):
+            add(
+                "empty-semantic-shape",
+                "error",
+                [eid],
+                "semantic shape renders as an unexplained empty box/form; add visible content or mark it decorative",
+            )
         if _text_overflow(element, placement, profile):
             add("text-overflow", "error", [eid], "text does not fit its declared geometry")
 
@@ -160,6 +167,11 @@ def preflight_variant(scene_value: Any, variant: str) -> dict[str, Any]:
             p = layout["placements"][eid]
             lx, ly = p.get("label_x", route_box.cx), p.get("label_y", route_box.cy)
             label_box = scene_render.Box(lx - 55*profile.logical_per_css_px, ly - 14*profile.logical_per_css_px, 110*profile.logical_per_css_px, 28*profile.logical_per_css_px)
+            # A connector's own label is not exempt from its route. This exact
+            # defect escaped the first real V2 run and required an expensive
+            # vision retry, so catch it deterministically before rendering.
+            if any(_segment_intersects_box(a, b, label_box) for a, b in zip(points, points[1:])):
+                add("connector-through-own-label", "error", [eid], "connector route crosses its own label")
             for other in protected:
                 if other in exempt or tuple(sorted((eid, other))) in allowed:
                     continue
@@ -172,8 +184,8 @@ def preflight_variant(scene_value: Any, variant: str) -> dict[str, Any]:
         add("excessive-density", "warning", [], f"scene density {density:.2f} with {len(scene['elements'])} elements may need splitting")
 
     metrics = profile.display_metrics()
-    if metrics["main_width_px"] < 1.35 or metrics["jitter_px"] < .8 or metrics["ghost_width_px"] < .5:
-        add("pencil-underpowered", "error", [], "pencil profile falls below perceptual minimum at target display size")
+    if metrics["main_width_px"] < 1.7 or metrics["jitter_px"] < 1.25 or metrics["ghost_width_px"] < .7:
+        add("pencil-underpowered", "error", [], "pencil profile falls below perceptual hand-drawn minimum at target display size")
     if metrics["label_font_px"] < 17 or metrics["detail_font_px"] < 13.5:
         add("text-too-small", "error", [], "renderer font profile is below final-display readability minimum")
 
