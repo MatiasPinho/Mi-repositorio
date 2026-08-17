@@ -16,12 +16,14 @@ if str(ROOT) not in sys.path:
 from study import resolve_course  # noqa: E402
 try:
     from . import scene_figure, scene_spec, visual_review
+    from .course_layout import has_unit_layout, unit_root
     from .figure_assets import derived_key, load_registry
     from .unit_identity import record_unit_id, resolve_unit
 except ImportError:
     import scene_figure  # type: ignore
     import scene_spec  # type: ignore
     import visual_review  # type: ignore
+    from course_layout import has_unit_layout, unit_root  # type: ignore
     from figure_assets import derived_key, load_registry  # type: ignore
     from unit_identity import record_unit_id, resolve_unit  # type: ignore
 
@@ -87,6 +89,116 @@ def _registry_match(figures: dict[str, Any], figure_id: str) -> tuple[str, dict[
     return None
 
 
+def _content_base(course: Path, unit_id: str) -> Path:
+    return unit_root(course, unit_id) if has_unit_layout(course) else course
+
+
+def _asset_ok(base: Path, asset: str, digest: Any) -> bool:
+    if not asset:
+        return False
+    path = (base / asset).resolve()
+    if not path.is_file():
+        return False
+    return not digest or sha256(path) == str(digest)
+
+
+def _registered_derived_reuse(
+    course: Path,
+    unit_id: str,
+    figures: dict[str, Any],
+    *,
+    loc: str,
+    treatment: str,
+    derived_id: str,
+    based_on: list[str],
+    source_id: str,
+) -> dict[str, Any]:
+    """Validate an immutable previously-registered derived figure.
+
+    A rerun may reference an existing V1 sketch or V2 scene without copying its
+    old run-local spec into the new run. This is asset reuse, not a new visual
+    review. New/changed V2 scenes still require a current run-local scene_spec.
+    """
+    key = derived_key(derived_id)
+    match = _registry_match(figures, key)
+    if match is None:
+        raise VisualPlanV2Error(
+            f"{loc}.scene_spec required for a new derived figure; registered figure not found: {key}"
+        )
+    key, record = match
+    if record.get("origin") != "derived":
+        raise VisualPlanV2Error(f"{loc}.derived_figure_id must identify a derived figure")
+    if record_unit_id(course, record) != unit_id:
+        raise VisualPlanV2Error(f"{loc}.derived_figure_id belongs to another unit")
+    if _text(record.get("visual_treatment")) != treatment:
+        raise VisualPlanV2Error(f"{loc}.visual_treatment does not match registered derived figure")
+    if set(map(str, record.get("based_on", []))) != set(based_on):
+        raise VisualPlanV2Error(f"{loc}.based_on does not match registered derived provenance")
+    if treatment == "preserve+derived_sketch" and _text(record.get("source_figure_id")) != source_id:
+        raise VisualPlanV2Error(f"{loc}.source_figure_id does not match registered derived companion")
+
+    base = _content_base(course, unit_id)
+    asset = _text(record.get("asset"))
+    if not _asset_ok(base, asset, record.get("asset_sha256")):
+        raise VisualPlanV2Error(f"{loc}.derived_figure_id asset missing or hash-mismatched")
+
+    scene_generation = record.get("scene_generation")
+    if isinstance(scene_generation, dict) and scene_generation.get("schema_version") == 2:
+        if scene_generation.get("method") != "deterministic-scene-svg":
+            raise VisualPlanV2Error(f"{loc}.registered V2 scene generation metadata invalid")
+        scene_rel = _text(scene_generation.get("scene"))
+        scene_path = (base / scene_rel).resolve() if scene_rel else Path()
+        if not scene_rel or not scene_path.is_file() or sha256(scene_path) != scene_generation.get("scene_sha256"):
+            raise VisualPlanV2Error(f"{loc}.registered V2 scene spec missing or changed")
+        scene = scene_spec.load_scene(scene_path)
+        if derived_key(scene["id"]) != key:
+            raise VisualPlanV2Error(f"{loc}.registered V2 scene id mismatch")
+        if scene["visual_treatment"] != treatment or set(scene["based_on"]) != set(based_on):
+            raise VisualPlanV2Error(f"{loc}.registered V2 scene semantics changed")
+        if treatment == "preserve+derived_sketch" and _text(scene.get("source_figure_id")) != source_id:
+            raise VisualPlanV2Error(f"{loc}.registered V2 scene companion changed")
+        variants = scene_generation.get("variants")
+        if not isinstance(variants, dict):
+            raise VisualPlanV2Error(f"{loc}.registered V2 variants missing")
+        for variant in ("wide", "narrow"):
+            meta = variants.get(variant)
+            if not isinstance(meta, dict) or not _asset_ok(
+                base, _text(meta.get("asset")), meta.get("asset_sha256")
+            ):
+                raise VisualPlanV2Error(f"{loc}.registered V2 {variant} variant missing or changed")
+        review_meta = scene_generation.get("visual_review")
+        if not isinstance(review_meta, dict) or not review_meta.get("wide_png_sha256") or not review_meta.get("narrow_png_sha256"):
+            raise VisualPlanV2Error(f"{loc}.registered V2 review evidence metadata missing")
+        return {
+            "derived_figure_id": key,
+            "based_on": based_on,
+            "reuse_registered": True,
+            "reuse_kind": "v2",
+            "registered_asset": asset,
+            "registered_asset_sha256": _text(record.get("asset_sha256")),
+            "scene_path": scene_path,
+            "scene": scene,
+        }
+
+    generation = record.get("generation")
+    if not isinstance(generation, dict) or generation.get("method") != "deterministic-svg":
+        raise VisualPlanV2Error(f"{loc}.registered derived figure has unsupported generation metadata")
+    spec_rel = _text(generation.get("spec"))
+    spec_hash = _text(generation.get("spec_sha256"))
+    if spec_rel:
+        spec_path = (base / spec_rel).resolve()
+        if not spec_path.is_file() or (spec_hash and sha256(spec_path) != spec_hash):
+            raise VisualPlanV2Error(f"{loc}.registered legacy sketch spec missing or changed")
+    return {
+        "derived_figure_id": key,
+        "based_on": based_on,
+        "reuse_registered": True,
+        "reuse_kind": "legacy",
+        "registered_asset": asset,
+        "registered_asset_sha256": _text(record.get("asset_sha256")),
+    }
+
+
 def inspect_plan(course: Path, unit_value: str, plan_path: Path) -> list[dict[str, Any]]:
     plan = _json(plan_path)
     unit_id = _text(resolve_unit(course, unit_value).get("unit_id"))
@@ -140,32 +252,47 @@ def inspect_plan(course: Path, unit_value: str, plan_path: Path) -> list[dict[st
         if treatment in DERIVED:
             spec_value = _text(item.get("scene_spec"))
             derived_id = _text(item.get("derived_figure_id"))
-            based_on = item.get("based_on")
-            if not spec_value or not derived_id or not isinstance(based_on, list) or not based_on:
-                raise VisualPlanV2Error(f"{loc}: derived_figure_id, scene_spec and based_on are required")
-            spec_rel = Path(spec_value)
-            if spec_rel.is_absolute():
-                raise VisualPlanV2Error(f"{loc}.scene_spec must be run-relative")
-            spec_path = (plan_path.parent / spec_rel).resolve()
-            scene_root = (plan_path.parent / "02-scenes").resolve()
-            if not spec_path.is_relative_to(scene_root) or spec_path.suffix.lower() != ".json":
-                raise VisualPlanV2Error(f"{loc}.scene_spec must stay under 02-scenes/")
-            scene = scene_spec.load_scene(spec_path)
-            if derived_key(derived_id) != derived_key(scene["id"]):
-                raise VisualPlanV2Error(f"{loc}.derived_figure_id does not match scene id")
-            if scene["visual_treatment"] != treatment:
-                raise VisualPlanV2Error(f"{loc}.visual_treatment does not match scene")
-            if set(map(str, based_on)) != set(scene["based_on"]):
-                raise VisualPlanV2Error(f"{loc}.based_on must match scene provenance")
-            if treatment == "preserve+derived_sketch" and scene.get("source_figure_id") != source_id:
-                raise VisualPlanV2Error(f"{loc}.source_figure_id does not match scene companion")
-            row.update({
-                "derived_figure_id": derived_key(scene["id"]),
-                "scene_spec": spec_rel.as_posix(),
-                "scene_path": spec_path,
-                "scene": scene,
-                "based_on": list(map(str, based_on)),
-            })
+            based_on_raw = item.get("based_on")
+            if not derived_id or not isinstance(based_on_raw, list) or not based_on_raw:
+                raise VisualPlanV2Error(f"{loc}: derived_figure_id and based_on are required")
+            based_on = list(map(str, based_on_raw))
+            if spec_value:
+                spec_rel = Path(spec_value)
+                if spec_rel.is_absolute():
+                    raise VisualPlanV2Error(f"{loc}.scene_spec must be run-relative")
+                spec_path = (plan_path.parent / spec_rel).resolve()
+                scene_root = (plan_path.parent / "02-scenes").resolve()
+                if not spec_path.is_relative_to(scene_root) or spec_path.suffix.lower() != ".json":
+                    raise VisualPlanV2Error(f"{loc}.scene_spec must stay under 02-scenes/")
+                scene = scene_spec.load_scene(spec_path)
+                if derived_key(derived_id) != derived_key(scene["id"]):
+                    raise VisualPlanV2Error(f"{loc}.derived_figure_id does not match scene id")
+                if scene["visual_treatment"] != treatment:
+                    raise VisualPlanV2Error(f"{loc}.visual_treatment does not match scene")
+                if set(based_on) != set(scene["based_on"]):
+                    raise VisualPlanV2Error(f"{loc}.based_on must match scene provenance")
+                if treatment == "preserve+derived_sketch" and scene.get("source_figure_id") != source_id:
+                    raise VisualPlanV2Error(f"{loc}.source_figure_id does not match scene companion")
+                row.update({
+                    "derived_figure_id": derived_key(scene["id"]),
+                    "scene_spec": spec_rel.as_posix(),
+                    "scene_path": spec_path,
+                    "scene": scene,
+                    "based_on": based_on,
+                    "reuse_registered": False,
+                    "reuse_kind": None,
+                })
+            else:
+                row.update(_registered_derived_reuse(
+                    course,
+                    unit_id,
+                    figures,
+                    loc=loc,
+                    treatment=treatment,
+                    derived_id=derived_id,
+                    based_on=based_on,
+                    source_id=row["source_figure_id"],
+                ))
         else:
             if item.get("scene_spec") or item.get("derived_figure_id"):
                 raise VisualPlanV2Error(f"{loc}: preserve must not declare a scene")
@@ -177,9 +304,20 @@ def preview_plan(course: Path, unit_value: str, plan_path: Path) -> dict[str, An
     rows = inspect_plan(course, unit_value, plan_path)
     entries = []
     preserved = []
+    reused_registered = []
     for row in rows:
-        if row["visual_treatment"] in DERIVED:
+        if row["visual_treatment"] in DERIVED and not row.get("reuse_registered"):
             entries.append(scene_figure.preview_scene(course, unit_value, row["scene"], plan_path.parent))
+        elif row.get("reuse_registered"):
+            reused_registered.append({
+                "concept_id": row["concept_id"],
+                "visual_treatment": row["visual_treatment"],
+                "derived_figure_id": row["derived_figure_id"],
+                "source_figure_id": row.get("source_figure_id") or None,
+                "asset": row["registered_asset"],
+                "asset_sha256": row["registered_asset_sha256"],
+                "reuse_kind": row["reuse_kind"],
+            })
         else:
             preserved.append({
                 "concept_id": row["concept_id"],
@@ -193,6 +331,7 @@ def preview_plan(course: Path, unit_value: str, plan_path: Path) -> dict[str, An
         "plan_sha256": sha256(plan_path),
         "entries": entries,
         "preserved": preserved,
+        "reused_registered": reused_registered,
     }
 
 
@@ -212,6 +351,7 @@ def finalize_plan(
     review = binding["review"]
     review_by_id = {row["scene_id"]: row for row in review["figures"]}
     preview_by_id = {row["scene_id"]: row for row in preview["entries"]}
+    figures = load_registry(course).get("figures", {})
 
     built = []
     for row in rows:
@@ -220,7 +360,7 @@ def finalize_plan(
             "visual_treatment": row["visual_treatment"],
             "source_figure_id": row.get("source_figure_id") or None,
         }
-        if row["visual_treatment"] in DERIVED:
+        if row["visual_treatment"] in DERIVED and not row.get("reuse_registered"):
             scene_id = row["scene"]["id"]
             result = scene_figure.finalize_scene(
                 course, unit_value, row["scene"], preview_by_id[scene_id], review_by_id[scene_id]
@@ -235,6 +375,25 @@ def finalize_plan(
                 "variants": record["scene_generation"]["variants"],
                 "review_attempt": record["scene_generation"]["visual_review"]["attempt"],
             })
+        elif row.get("reuse_registered"):
+            record = figures.get(row["derived_figure_id"])
+            if not isinstance(record, dict):
+                raise VisualPlanV2Error(f"registered figure disappeared during finalize: {row['derived_figure_id']}")
+            output.update({
+                "derived_figure_id": row["derived_figure_id"],
+                "asset": record["asset"],
+                "asset_sha256": record.get("asset_sha256"),
+                "reused_registered": True,
+                "reuse_kind": row["reuse_kind"],
+            })
+            if row["reuse_kind"] == "v2":
+                generation = record["scene_generation"]
+                output.update({
+                    "scene_sha256": generation["scene_sha256"],
+                    "scene": generation["scene"],
+                    "variants": generation["variants"],
+                    "review_attempt": generation["visual_review"].get("attempt"),
+                })
         else:
             output.update({"asset": row["source_asset"]})
         built.append(output)
