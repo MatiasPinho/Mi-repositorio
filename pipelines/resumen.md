@@ -28,7 +28,7 @@ Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps be
 
 ## RUNTIME BUDGET
 Quality gates exist to protect the artifact, not to make normal generation unbounded.
-- A standard `/resumen` should normally finish in roughly **10–20 minutes** on a capable hosted model; **30 minutes** is a performance warning and **60+ minutes is a runtime/product failure that must be investigated**, even when the artifact eventually passes.
+- A standard `resumen` run should normally finish in roughly **10–20 minutes** on a capable hosted model; **30 minutes** is a performance warning and **60+ minutes is a runtime/product failure that must be investigated**, even when the artifact eventually passes.
 - This is an engineering budget, not permission to skip a required fidelity gate.
 - Never ask an AI reviewer to prove a byte/hash fact that deterministic code can prove.
 - Never re-review a scene whose normalized scene SHA and wide/narrow PNG SHA-256 values are unchanged from a previous visual PASS in the same run.
@@ -45,7 +45,7 @@ Quality gates exist to protect the artifact, not to make normal generation unbou
 - The published artifact remains the unit's canonical `resumen`; detailed mode changes depth, not the public artifact type.
 
 ## Pipeline-specific RUN specialization
-1. **SCOPE + PREREQUISITE** → resolve course + scope to exactly one stable `unit_id`; summary scope is unit-only. Apply the shared **NEEDS_INGESTION** boundary before starting. If Study MCP is connected, prefer `study_get_unit_context(course, scope)` / `study_list_artifacts(course)` for canonical context. Run the figure migration command only for legacy metadata normalization; it must not reread sources.
+1. **SCOPE + PREREQUISITE** → resolve course + scope to exactly one stable `unit_id`; summary scope is unit-only. Apply the shared **NEEDS_INGESTION** boundary before starting. Use canonical concepts plus **observed topics** from `conocimiento/topics.json` as a coverage guard; observed topics organize what was actually ingested and never replace declared syllabus scope. If Study MCP is connected, prefer `study_get_unit_context(course, scope)` / `study_list_artifacts(course)` for canonical context. Run the figure migration command only for legacy metadata normalization; it must not reread sources.
 
 2. **START RUN** → `python scripts/venv_exec.py scripts/pipeline_run.py start --course <course-folder> --pipeline resumen --scope "<scope>"`. The run records deterministic fingerprints of engine and canonical inputs. Figure mutation is allowed only after a reviewed visual finalization.
 
