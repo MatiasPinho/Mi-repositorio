@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 CONFLICT_CONTEXT = re.compile(
-    r"\b(fuente|fuentes|apunte|diapositiva|clase|conflicto|discrepancia|versi[oó]n|formulaci[oó]n|evidencia|source|sources|slide|notes|conflict|discrepancy|version|formulation|evidence)\b",
+    r"\b(fuente|fuentes|apunte|apuntes|diapositiva|clase|c[aá]tedra|profesor|material|materiales|oficial|conflicto|discrepancia|versi[oó]n|formulaci[oó]n|evidencia|source|sources|slide|notes|class|teacher|official|material|materials|conflict|discrepancy|version|formulation|evidence)\b",
     re.I,
 )
 WINNER_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -29,6 +29,24 @@ WINNER_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("follow-this-version", re.compile(r"\b(?:version|formulation|option)\b.{0,100}\b(?:we\s+follow|we\s+use|preferred|correct)\b", re.I)),
     ("pick-winner", re.compile(r"\b(?:nos\s+quedamos|tomamos)\s+con\b|\b(?:prevalece|gana)\b", re.I)),
     ("pick-winner", re.compile(r"\b(?:we\s+choose|we\s+go\s+with|prevails|wins)\b", re.I)),
+    (
+        "dismiss-competing-evidence",
+        re.compile(
+            r"\b(?:es|ser[ií]a|se\s+trata\s+de)\s+(?:un\s+)?(?:error(?:\s+de\s+edici[oó]n)?|errata)\b"
+            r"|\b(?:es|resulta|queda)\s+(?:incorrect[oa]|equivocad[oa]|inv[aá]lid[oa])\b"
+            r"|\b(?:debe|hay\s+que)\s+(?:ignorarse|descartarse)\b",
+            re.I,
+        ),
+    ),
+    (
+        "dismiss-competing-evidence",
+        re.compile(
+            r"\b(?:is|would\s+be)\s+(?:an?\s+)?(?:editing\s+error|erratum|mistake)\b"
+            r"|\b(?:is|becomes)\s+(?:incorrect|wrong|invalid)\b"
+            r"|\b(?:must|should)\s+be\s+(?:ignored|discarded)\b",
+            re.I,
+        ),
+    ),
 )
 
 
