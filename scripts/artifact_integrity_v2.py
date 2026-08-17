@@ -113,6 +113,45 @@ def _scene_html_variant_issues(
     return issues
 
 
+def _legacy_reuse_issues(
+    course: Path,
+    scope: str,
+    row: dict[str, Any],
+    record: dict[str, Any] | None,
+) -> list[str]:
+    """Validate an already-registered V1 sketch used inside a mixed V2 run."""
+    derived_id = row["derived_figure_id"]
+    issues: list[str] = []
+    if not isinstance(record, dict) or record.get("origin") != "derived":
+        return [f"planned-legacy-derived-not-registered:{derived_id}"]
+    if record.get("visual_treatment") != row["visual_treatment"]:
+        issues.append(f"planned-legacy-treatment-mismatch:{derived_id}")
+    if set(map(str, record.get("based_on", []))) != set(map(str, row.get("based_on", []))):
+        issues.append(f"planned-legacy-provenance-mismatch:{derived_id}")
+    if row["visual_treatment"] == "preserve+derived_sketch" and record.get("source_figure_id") != row.get("source_figure_id"):
+        issues.append(f"planned-legacy-source-mismatch:{derived_id}")
+    generation = record.get("generation")
+    if not isinstance(generation, dict) or generation.get("method") != "deterministic-svg":
+        issues.append(f"planned-legacy-generation-invalid:{derived_id}")
+        return issues
+    unit_id = str(resolve_unit(course, scope).get("unit_id") or "")
+    content_base = unit_root(course, unit_id) if unit_id and has_unit_layout(course) else course
+    asset = str(record.get("asset") or "")
+    asset_path = (content_base / asset).resolve() if asset else None
+    if asset_path is None or not asset_path.is_file() or (
+        record.get("asset_sha256") and sha256(asset_path) != record.get("asset_sha256")
+    ):
+        issues.append(f"planned-legacy-asset-missing-or-changed:{derived_id}")
+    spec = str(generation.get("spec") or "")
+    if spec:
+        spec_path = (content_base / spec).resolve()
+        if not spec_path.is_file() or (
+            generation.get("spec_sha256") and sha256(spec_path) != generation.get("spec_sha256")
+        ):
+            issues.append(f"planned-legacy-spec-missing-or-changed:{derived_id}")
+    return issues
+
+
 def check(
     course: Path,
     md_path: Path,
@@ -165,12 +204,17 @@ def check(
                 issues.append(f"planned-preserve-source-not-used:{concept}:{row['source_figure_id']}")
             continue
         derived_id = row["derived_figure_id"]
-        planned_scene_ids.add(derived_id)
         record = figures.get(derived_id)
         if derived_id not in used:
             issues.append(f"planned-scene-not-used:{concept}:{derived_id}")
         if treatment == "preserve+derived_sketch" and row["source_figure_id"] not in used:
             issues.append(f"planned-companion-source-not-used:{concept}:{row['source_figure_id']}")
+
+        if row.get("reuse_registered") and row.get("reuse_kind") == "legacy":
+            issues.extend(_legacy_reuse_issues(course, scope, row, record if isinstance(record, dict) else None))
+            continue
+
+        planned_scene_ids.add(derived_id)
         if not isinstance(record, dict) or record.get("origin") != "derived":
             issues.append(f"planned-scene-not-registered:{derived_id}")
             continue
