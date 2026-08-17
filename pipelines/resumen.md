@@ -18,7 +18,6 @@ Then load only these summary-specific shared rules before semantic work:
 - `rules/writing/student-prose.md`
 - `rules/visual/study-document.md`
 - `rules/visual/figures.md`
-- `rules/visual/active-reading.md`
 - `rules/writing/summary.md`
 - `rules/evaluation/academic-fidelity.md`
 - `rules/evaluation/pedagogy-rubric.md`
