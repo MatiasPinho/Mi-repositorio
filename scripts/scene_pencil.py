@@ -48,22 +48,30 @@ class PencilProfile:
             "ghost_width_px": self.ghost_width / scale,
             "jitter_px": self.jitter / scale,
             "bend_px": self.bend / scale,
+            "ghost_opacity": self.ghost_opacity,
             "label_font_px": self.label_font / scale,
             "detail_font_px": self.detail_font / scale,
         }
 
 
 def profile(canvas_width: float, target_display_width: float) -> PencilProfile:
+    """Return a perceptual pencil profile at the actual expected display size.
+
+    V1/V2 originally had mathematically rough geometry whose sub-pixel variation
+    disappeared after the SVG was scaled into the notebook.  These values are
+    defined in CSS-pixel terms and converted back to logical scene units so the
+    wobble remains visible on both wide and narrow renders.
+    """
     if canvas_width <= 0 or target_display_width <= 0:
         raise ValueError("canvas/display width must be positive")
     logical = canvas_width / target_display_width
     return PencilProfile(
         logical_per_css_px=logical,
-        main_width=1.75 * logical,
-        ghost_width=0.72 * logical,
-        jitter=1.05 * logical,
-        bend=1.75 * logical,
-        ghost_opacity=0.34,
+        main_width=2.05 * logical,
+        ghost_width=0.92 * logical,
+        jitter=1.65 * logical,
+        bend=2.85 * logical,
+        ghost_opacity=0.42,
         label_font=20.0 * logical,
         detail_font=15.5 * logical,
         title_font=24.0 * logical,
@@ -81,6 +89,36 @@ def jitter(seed: str, *parts, scale: float = 1.0) -> float:
     return (number * 2 - 1) * scale
 
 
+def _densify(
+    points: list[tuple[float, float]], *, max_segment: float, closed: bool
+) -> list[tuple[float, float]]:
+    """Subdivide long straight geometry before jittering it.
+
+    A single quadratic between perfect rectangle corners still reads as a vector
+    line.  Small deterministic intermediate points make long edges visibly hand
+    drawn while preserving the model's intended composition and bounds.
+    """
+    if len(points) < 2:
+        return points
+    result = [points[0]]
+    pair_count = len(points) if closed else len(points) - 1
+    for index in range(pair_count):
+        start = points[index]
+        end = points[(index + 1) % len(points)]
+        length = math.hypot(end[0] - start[0], end[1] - start[1])
+        steps = max(1, int(math.ceil(length / max(max_segment, 1.0))))
+        for step in range(1, steps + 1):
+            if closed and index == pair_count - 1 and step == steps:
+                # The caller closes against the independently jittered first point.
+                continue
+            t = step / steps
+            result.append((
+                start[0] + (end[0] - start[0]) * t,
+                start[1] + (end[1] - start[1]) * t,
+            ))
+    return result
+
+
 def rough_polyline(
     points: Iterable[tuple[float, float]],
     seed: str,
@@ -93,6 +131,10 @@ def rough_polyline(
     pts = list(points)
     if len(pts) < 2:
         raise ValueError("rough polyline needs at least two points")
+    # jitter_scale is 1.65 CSS px in logical units for the normal profile.
+    # ~50 display px per segment keeps a long edge from looking ruler-straight.
+    max_segment = max(jitter_scale * 30.0, 18.0)
+    pts = _densify(pts, max_segment=max_segment, closed=closed)
     varied = [
         (
             x + jitter(seed, key, i, "x", scale=jitter_scale),
@@ -132,7 +174,7 @@ def rounded_rect_points(x: float, y: float, width: float, height: float, radius:
     ]
 
 
-def ellipse_points(cx: float, cy: float, rx: float, ry: float, count: int = 24) -> list[tuple[float, float]]:
+def ellipse_points(cx: float, cy: float, rx: float, ry: float, count: int = 28) -> list[tuple[float, float]]:
     return [
         (cx + rx * math.cos(i * math.tau / count), cy + ry * math.sin(i * math.tau / count))
         for i in range(count)
@@ -145,6 +187,31 @@ def rough_commands(
     out: list[str] = []
     current: tuple[float, float] | None = None
     start: tuple[float, float] | None = None
+
+    def rough_line_to(target_x: float, target_y: float, index: int) -> tuple[float, float]:
+        nonlocal current
+        if current is None:
+            raise ValueError("line before move")
+        raw_start = current
+        dx, dy = target_x - raw_start[0], target_y - raw_start[1]
+        distance = math.hypot(dx, dy)
+        max_segment = max(jitter_scale * 30.0, 18.0)
+        steps = max(1, int(math.ceil(distance / max_segment)))
+        for sub in range(1, steps + 1):
+            t = sub / steps
+            base_x = raw_start[0] + dx * t
+            base_y = raw_start[1] + dy * t
+            x = base_x + jitter(seed, key, index, sub, "x", scale=jitter_scale)
+            y = base_y + jitter(seed, key, index, sub, "y", scale=jitter_scale)
+            seg_dx, seg_dy = x - current[0], y - current[1]
+            length = max(1.0, math.hypot(seg_dx, seg_dy))
+            bend = jitter(seed, key, index, sub, "bend", scale=bend_scale)
+            cx = (current[0] + x) / 2 + (-seg_dy / length) * bend
+            cy = (current[1] + y) / 2 + (seg_dx / length) * bend
+            out.append(f"Q {cx:.2f} {cy:.2f} {x:.2f} {y:.2f}")
+            current = (x, y)
+        return current
+
     for index, command in enumerate(commands):
         op = command["op"]
         if op == "close":
@@ -162,17 +229,7 @@ def rough_commands(
             out.append(f"M {x:.2f} {y:.2f}")
             current = start = (x, y)
         elif op == "line":
-            if current is None:
-                raise ValueError("line before move")
-            x = command["x"] + j("x")
-            y = command["y"] + j("y")
-            dx, dy = x - current[0], y - current[1]
-            length = max(1.0, math.hypot(dx, dy))
-            bend = jitter(seed, key, index, "bend", scale=bend_scale)
-            cx = (current[0] + x) / 2 + (-dy / length) * bend
-            cy = (current[1] + y) / 2 + (dx / length) * bend
-            out.append(f"Q {cx:.2f} {cy:.2f} {x:.2f} {y:.2f}")
-            current = (x, y)
+            rough_line_to(command["x"], command["y"], index)
         elif op == "quadratic":
             cx = command["cx"] + j("cx")
             cy = command["cy"] + j("cy")
