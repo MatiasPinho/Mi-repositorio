@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Hash-bound contract for independent visual inspection of rendered scene previews.
 
-This module does not claim to perform vision.  It only verifies that an external
+This module does not claim to perform vision. It only verifies that an external
 vision-capable reviewer explicitly attested to the exact PNG bytes that will be
-finalized.  Capability and independence are asserted by the executor; file/hash
+finalized. Capability and independence are asserted by the executor; file/hash
 binding is deterministic and mechanically enforced here.
 """
 from __future__ import annotations
@@ -18,6 +18,8 @@ SCORE_KEYS = {
     "academic_fidelity",
 }
 SEVERITIES = {"blocking", "major", "minor"}
+ISSUE_KEYS = {"severity", "type", "elements", "problem", "repair"}
+FIGURE_KEYS = {"scene_id", "attempt", "status", "inspected", "scores", "issues"}
 
 
 class VisualReviewError(ValueError):
@@ -42,9 +44,10 @@ def validate_review(review: Any) -> dict[str, Any]:
     if not isinstance(review, dict):
         raise _err("$", "must be an object")
     allowed = {"version", "vision_verified", "reviewer", "figures"}
-    extra = sorted(set(review) - allowed)
-    if extra:
-        raise _err("$", "unknown fields: " + ", ".join(extra))
+    if set(review) != allowed:
+        missing = sorted(allowed - set(review))
+        extra = sorted(set(review) - allowed)
+        raise _err("$", f"must contain exactly {sorted(allowed)}; missing={missing} extra={extra}")
     if review.get("version") != 1:
         raise _err("$.version", "must equal 1")
     if review.get("vision_verified") is not True:
@@ -52,8 +55,9 @@ def validate_review(review: Any) -> dict[str, Any]:
     reviewer = review.get("reviewer")
     if not isinstance(reviewer, dict):
         raise _err("$.reviewer", "must be an object")
-    if set(reviewer) - {"id", "capability", "independent"}:
-        raise _err("$.reviewer", "unknown reviewer fields")
+    reviewer_keys = {"id", "capability", "independent"}
+    if set(reviewer) != reviewer_keys:
+        raise _err("$.reviewer", "must contain exactly id, capability, independent")
     if not isinstance(reviewer.get("id"), str) or not reviewer["id"].strip():
         raise _err("$.reviewer.id", "must identify the reviewer/execution")
     if reviewer.get("capability") != "vision":
@@ -69,10 +73,10 @@ def validate_review(review: Any) -> dict[str, Any]:
         path = f"$.figures[{i}]"
         if not isinstance(row, dict):
             raise _err(path, "must be object")
-        allowed_row = {"scene_id", "attempt", "status", "inspected", "scores", "issues"}
-        extra = sorted(set(row) - allowed_row)
-        if extra:
-            raise _err(path, "unknown fields: " + ", ".join(extra))
+        if set(row) != FIGURE_KEYS:
+            missing = sorted(FIGURE_KEYS - set(row))
+            extra = sorted(set(row) - FIGURE_KEYS)
+            raise _err(path, f"must match figure contract; missing={missing} extra={extra}")
         scene_id = row.get("scene_id")
         if not isinstance(scene_id, str) or not scene_id:
             raise _err(path + ".scene_id", "must be non-empty")
@@ -115,7 +119,7 @@ def validate_review(review: Any) -> dict[str, Any]:
             if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0 or value > 5:
                 raise _err(f"{path}.scores.{key}", "must be 0..5")
             score_norm[key] = float(value)
-        issues = row.get("issues", [])
+        issues = row.get("issues")
         if not isinstance(issues, list):
             raise _err(path + ".issues", "must be an array")
         issue_norm = []
@@ -123,14 +127,16 @@ def validate_review(review: Any) -> dict[str, Any]:
             ipath = f"{path}.issues[{j}]"
             if not isinstance(item, dict):
                 raise _err(ipath, "must be object")
-            if set(item) - {"severity", "type", "elements", "problem", "repair"}:
-                raise _err(ipath, "unknown fields")
+            if set(item) != ISSUE_KEYS:
+                missing = sorted(ISSUE_KEYS - set(item))
+                extra = sorted(set(item) - ISSUE_KEYS)
+                raise _err(ipath, f"must match issue contract; missing={missing} extra={extra}")
             severity = item.get("severity")
             if severity not in SEVERITIES:
                 raise _err(ipath + ".severity", "invalid severity")
             if not isinstance(item.get("type"), str) or not item["type"]:
                 raise _err(ipath + ".type", "required")
-            elements = item.get("elements", [])
+            elements = item.get("elements")
             if not isinstance(elements, list) or any(not isinstance(x, str) or not x for x in elements):
                 raise _err(ipath + ".elements", "must be string ids")
             if not isinstance(item.get("problem"), str) or not item["problem"].strip():
