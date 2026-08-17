@@ -1,0 +1,1 @@
+`pipelines/resumen.md` must load `pipelines/_shared/summary-runtime-optimization.md` immediately after the shared semantic lifecycle.
