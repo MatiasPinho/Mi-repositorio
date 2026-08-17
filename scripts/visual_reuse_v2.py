@@ -6,6 +6,10 @@ current scene spec, registered wide/narrow SVGs and a prior independent PASS all
 still match byte-for-byte. The prior PNG evidence is copied into the new run and
 its PASS row is mechanically rebound to those copied bytes. Normal preview,
 finalize, integrity and finish gates still run afterwards.
+
+Already-registered immutable V1/V2 figures that the plan references without a
+run-local scene_spec are handled by visual_plan_v2 as registered asset reuse and
+are intentionally outside this cross-run scene cache.
 """
 from __future__ import annotations
 
@@ -56,15 +60,21 @@ def _content_base(course: Path, unit_id: str) -> Path:
     return unit_root(course, unit_id) if has_unit_layout(course) else course
 
 
+def _active_scene_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Scenes with a current run-local spec; registered immutable reuse is separate."""
+    return [
+        row for row in rows
+        if row.get("visual_treatment") in visual_plan_v2.DERIVED and not row.get("reuse_registered")
+    ]
+
+
 def _registered_rows(course: Path, unit_id: str, rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]] | None:
     figures = load_registry(course).get("figures", {})
     if not isinstance(figures, dict):
         return None
     base = _content_base(course, unit_id)
     result: dict[str, dict[str, Any]] = {}
-    for row in rows:
-        if row.get("visual_treatment") not in visual_plan_v2.DERIVED:
-            continue
+    for row in _active_scene_rows(rows):
         key = str(row.get("derived_figure_id") or "")
         record = figures.get(key)
         if not isinstance(record, dict) or record.get("origin") != "derived":
@@ -115,7 +125,7 @@ def _matching_prior(
     rows: list[dict[str, Any]],
     registered: dict[str, dict[str, Any]],
 ) -> tuple[Path, dict[str, Any], dict[str, Any]] | None:
-    wanted = {row["scene"]["id"]: row for row in rows if row.get("visual_treatment") in visual_plan_v2.DERIVED}
+    wanted = {row["scene"]["id"]: row for row in _active_scene_rows(rows)}
     if not wanted:
         return None
     for run in _candidate_runs(course, current_run):
@@ -166,16 +176,38 @@ def _matching_prior(
 def prepare(course: Path, unit_value: str, plan_path: Path, review_write: Path) -> dict[str, Any]:
     current_run = plan_path.parent.resolve()
     rows = visual_plan_v2.inspect_plan(course, unit_value, plan_path)
-    derived = [row for row in rows if row.get("visual_treatment") in visual_plan_v2.DERIVED]
+    derived = _active_scene_rows(rows)
+    registered_reuse = [row for row in rows if row.get("reuse_registered")]
     unit_id = str(resolve_unit(course, unit_value).get("unit_id") or "")
     if not derived:
-        return {"version": 1, "ok": True, "all_reused": False, "reason": "no-derived-scenes", "scene_ids": []}
+        return {
+            "version": 1,
+            "ok": True,
+            "all_reused": False,
+            "reason": "no-current-v2-scenes",
+            "scene_ids": [],
+            "registered_reuse_ids": [row["derived_figure_id"] for row in registered_reuse],
+        }
     registered = _registered_rows(course, unit_id, rows)
     if registered is None or set(registered) != {row["scene"]["id"] for row in derived}:
-        return {"version": 1, "ok": True, "all_reused": False, "reason": "registered-scene-or-hash-mismatch", "scene_ids": []}
+        return {
+            "version": 1,
+            "ok": True,
+            "all_reused": False,
+            "reason": "registered-scene-or-hash-mismatch",
+            "scene_ids": [],
+            "registered_reuse_ids": [row["derived_figure_id"] for row in registered_reuse],
+        }
     prior = _matching_prior(course, current_run, rows, registered)
     if prior is None:
-        return {"version": 1, "ok": True, "all_reused": False, "reason": "no-prior-hash-bound-pass", "scene_ids": []}
+        return {
+            "version": 1,
+            "ok": True,
+            "all_reused": False,
+            "reason": "no-prior-hash-bound-pass",
+            "scene_ids": [],
+            "registered_reuse_ids": [row["derived_figure_id"] for row in registered_reuse],
+        }
 
     prior_run, preview, review = prior
     preview_by_id = {row["scene_id"]: row for row in preview["entries"] if isinstance(row, dict) and row.get("scene_id")}
@@ -258,7 +290,6 @@ def prepare(course: Path, unit_value: str, plan_path: Path, review_write: Path) 
         "reviewer": review["reviewer"],
         "figures": seeded_rows,
     }
-    # Validate before exposing it as current-run evidence.
     visual_review.validate_review(seeded_review)
     _write(review_write, seeded_review)
     return {
@@ -268,6 +299,7 @@ def prepare(course: Path, unit_value: str, plan_path: Path, review_write: Path) 
         "reason": "prior-hash-bound-pass-reused",
         "prior_run": str(prior_run),
         "scene_ids": [row["scene"]["id"] for row in derived],
+        "registered_reuse_ids": [row["derived_figure_id"] for row in registered_reuse],
         "review_file": str(review_write),
     }
 
