@@ -37,6 +37,21 @@ def utf8_test_env() -> dict[str, str]:
     return env
 
 
+def _gha_escape(value: str) -> str:
+    """Escape GitHub Actions workflow-command payloads without changing local output."""
+    return value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def _annotate_failure(test_id: str, detail: str) -> None:
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+    compact = detail.strip()[-5000:] or "test process exited non-zero without output"
+    print(
+        f"::error title=Release test failed: {_gha_escape(test_id)}::{_gha_escape(compact)}",
+        flush=True,
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", type=int, default=1, help="1-based first test")
@@ -62,13 +77,15 @@ def main() -> int:
                 env=test_env,
                 timeout=45,
             )
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
             print("  TIMEOUT", flush=True)
+            _annotate_failure(test_id, f"Timed out after {exc.timeout} seconds")
             failed.append(test_id)
             continue
         if cp.returncode != 0:
             print(cp.stdout, end="")
             print(cp.stderr, end="")
+            _annotate_failure(test_id, (cp.stdout or "") + (cp.stderr or ""))
             failed.append(test_id)
         else:
             combined = (cp.stdout or "") + (cp.stderr or "")
