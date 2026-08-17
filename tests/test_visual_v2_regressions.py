@@ -10,7 +10,16 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from scripts import artifact_integrity, code_highlight_v2, scene_figure, scene_pencil, scene_preflight, visual_review
+from scripts import (
+    artifact_integrity,
+    code_highlight_v2,
+    fidelity_constraints,
+    render_study,
+    scene_figure,
+    scene_pencil,
+    scene_preflight,
+    visual_review,
+)
 from tests.test_scene_v2 import free_scene
 
 
@@ -21,6 +30,22 @@ class FirstRealRunRegressionTests(unittest.TestCase):
         report = scene_preflight.preflight_scene(scene)
         self.assertFalse(report["ok"])
         self.assertTrue(any(issue["code"] == "empty-semantic-shape" for issue in report["issues"]))
+
+    def test_arrowhead_cannot_consume_short_connector_shaft(self):
+        scene = free_scene("short-arrow")
+        for variant in ("wide", "narrow"):
+            scene["layouts"][variant]["placements"]["ab"]["commands"] = [
+                {"op": "move", "x": 300, "y": 220},
+                {"op": "line", "x": 314, "y": 220},
+            ]
+        report = scene_preflight.preflight_scene(scene)
+        self.assertFalse(report["ok"])
+        issues = [issue for issue in report["issues"] if issue["code"] == "arrow-shaft-too-short"]
+        self.assertEqual({issue["variant"] for issue in issues}, {"wide", "narrow"})
+        self.assertTrue(all("marker footprint" in issue["message"] for issue in issues))
+
+        baseline = scene_preflight.preflight_scene(free_scene("normal-arrow"))
+        self.assertFalse(any(issue["code"] == "arrow-shaft-too-short" for issue in baseline["issues"]))
 
     def test_long_pencil_edge_is_subdivided_not_ruler_straight(self):
         first = scene_pencil.rough_polyline(
@@ -76,6 +101,76 @@ class FirstRealRunRegressionTests(unittest.TestCase):
         self.assertEqual(rendered.count("syntax-highlighted"), 3)
         self.assertIn("syntax-keyword", rendered)
         self.assertIn("syntax-number", rendered)
+
+    def test_rendered_tables_use_hand_drawn_structural_ink(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / "summary.md"
+            target = root / "summary.html"
+            source.write_text(
+                "# Tabla\n\n| Tipo | Valor |\n|---|---|\n| Entero | 1 |\n| Real | 1.5 |\n",
+                encoding="utf-8",
+            )
+            issues = render_study.render(source, target, "summary", course="Programación", scope="Unidad 1")
+            self.assertEqual(issues, [])
+            html = target.read_text(encoding="utf-8")
+            self.assertIn("CARPETA_HANDDRAWN_STRUCTURES_V1", html)
+            self.assertIn("--notebook-table-frame-a", html)
+            self.assertIn(".table-scroll th:not(:last-child)::after", html)
+            self.assertIn(".table-scroll tbody tr:not(:last-child) > td::before", html)
+            self.assertIn('<div class="table-scroll"><table>', html)
+
+    def test_fidelity_ledger_surfaces_equal_authority_conflict_before_draft(self):
+        slug = "zz-fidelity-ledger-" + uuid.uuid4().hex[:8]
+        course = ROOT / "materias" / slug
+        try:
+            (course / "academico").mkdir(parents=True)
+            academic = {
+                "identity": {"subject": "Fidelity"},
+                "units": [{"id": "U1", "name": "Unidad 1"}],
+                "claims": [
+                    {
+                        "id": "order-a",
+                        "domain": "academic",
+                        "subject": "five-step-method",
+                        "predicate": "codify-position",
+                        "object": "",
+                        "value": 4,
+                        "source_type": "official_course_material",
+                        "source": "slides.pdf",
+                    },
+                    {
+                        "id": "order-b",
+                        "domain": "academic",
+                        "subject": "five-step-method",
+                        "predicate": "codify-position",
+                        "object": "",
+                        "value": 5,
+                        "source_type": "official_course_material",
+                        "source": "notes.pdf",
+                    },
+                ],
+            }
+            (course / "academico" / "academic.json").write_text(json.dumps(academic), encoding="utf-8")
+            report = fidelity_constraints.build_constraints(course, "U1")
+            self.assertTrue(report["ok"], report)
+            self.assertFalse(report["semantic_resolution_ok"])
+            self.assertEqual(report["constraints_count"], 1)
+            row = report["constraints"][0]
+            self.assertEqual(row["status"], "unresolved")
+            self.assertEqual(row["relation"], "contradiction")
+            self.assertIn("do-not-pick-winner", row["handling"])
+            self.assertEqual({item["id"] for item in row["evidence"]}, {"order-a", "order-b"})
+        finally:
+            shutil.rmtree(course, ignore_errors=True)
+
+    def test_summary_pipeline_loads_runtime_contract(self):
+        pipeline = (ROOT / "pipelines" / "resumen.md").read_text(encoding="utf-8")
+        contract = (ROOT / "pipelines" / "_shared" / "summary-runtime-optimization.md").read_text(encoding="utf-8")
+        self.assertIn("summary-runtime-optimization.md", pipeline)
+        self.assertIn("arrow-shaft-too-short", contract)
+        self.assertIn("02-fidelity-constraints.json", contract)
+        self.assertIn("11-publication.json", contract)
 
     def test_identical_scene_preview_reuses_attempt_and_png_hashes(self):
         slug = "zz-v2-reuse-" + uuid.uuid4().hex[:8]
