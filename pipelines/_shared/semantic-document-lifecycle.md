@@ -30,11 +30,18 @@ The canonical filenames below are shared by semantic document pipelines. Owning 
    - if `05-review.json` passes, copy `04-humanized.md` to `06-final.md`;
    - if it fails, preserve evidence, write one targeted `06-repair.md`, review into `07-review.json`, and only on PASS copy to `08-final.md`;
    - do not run a third academic review/repair cycle.
-7. **RENDER CANDIDATE** → produce the exact final `09-rendered.html` required by the owning pipeline. A pipeline may first create `09-rendered-base.html` and apply a deterministic responsive transform, but only `09-rendered.html` is the candidate that proceeds to integrity/publication.
+7. **RENDER CANDIDATE** → produce the exact final `09-rendered.html` required by the owning pipeline. A pipeline may first create `09-rendered-base.html` and apply deterministic transforms, but only `09-rendered.html` is the candidate that proceeds to integrity/publication.
 8. **INTEGRITY GATE** → validate accepted Markdown plus final HTML with the owning pipeline's deterministic integrity command and persist `10-integrity.json`. Do not publish unless `ok: true`.
 9. **BROWSER VISUAL GATE** → run the browser auditor specified by the owning pipeline against final `09-rendered.html`, require `visual-audit/audit.json -> ok: true`, and inspect required screenshot evidence against `rules/evaluation/visual-rubric.md`. For V2 this includes per-scene desktop/mobile crops in addition to document screenshots. Missing Playwright/Chromium or unavailable required screenshots is incomplete visual review, not permission to downgrade the gate.
 10. **ATOMIC PUBLISH** → publish only after all required gates pass. Leave accepted run Markdown and `09-rendered.html` byte-for-byte unchanged. Deterministic rebasing of local image/srcset references is allowed only in published destinations and every rewritten reference must resolve to the same physical asset. The publication report keeps immutable `source_sha256` plus transformed `published_sha256` / destination hashes.
 11. **MARK + FINISH** → mark the published artifact, then finish with `scripts/pipeline_run.py finish`. Owning-pipeline fingerprint/figure/publication checks remain mandatory.
+
+## Late failure / candidate visibility
+A gate controls **publication status**, not whether already-generated work exists.
+- If academic review has accepted the Markdown and/or `09-rendered.html` exists, a later integrity, browser, publication or engine failure must preserve those run-local candidate files.
+- Report the failure explicitly as **ENGINE FAILURE**, **INTEGRITY FAILURE**, **BROWSER AUDIT FAILURE** or **PUBLICATION FAILURE** as appropriate, and also report the exact accepted Markdown and candidate HTML paths that are safe for manual inspection.
+- Clearly label them **reviewed/generated candidate — not published**. Never imply a failed candidate is the canonical published artifact.
+- Do not regenerate the summary merely because a late infrastructure gate failed. Repair the engine outside the active run and resume/re-run from the earliest contractually safe stage.
 
 ## Review-bound visual distinction
 Academic/pedagogical review can judge whether a visual was a good teaching choice from plan/content context. It cannot certify rendered execution without images. When an owning pipeline requires a pre-draft vision review, the visual creator and visual reviewer must be independent executions/contexts and the reviewer must actually receive the rendered previews.
