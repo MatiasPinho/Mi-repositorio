@@ -9,6 +9,7 @@ The owning pipeline remains responsible for academic purpose, scope, artifact ki
 2. Require canonical concepts for the resolved unit. If empty, stop with **NEEDS_INGESTION** before starting the run.
 3. `procesar` may run only as a separate prerequisite action. Never ingest or edit canonical academic/concept/topic knowledge inside an active semantic artifact run.
 4. Prefer the owning pipeline's coarse-grained Study MCP context operations when connected; otherwise use deterministic unit-scoped files plus explicit prerequisites.
+5. Unit-scoped semantic pipelines **write only below the resolved unit root**; explicit cross-unit prerequisites are read-only context and never change the storage boundary.
 
 ## Run boundary
 1. Start a portable run with `scripts/pipeline_run.py start`.
