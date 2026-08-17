@@ -13,7 +13,8 @@ Only genuinely course-wide runs may live under
 - `02-plan.json`: pedagogical/content plan. No polished prose.
 - `02-sketches/<id>.json`: legacy schema-1 structured specs for deterministic graph SVGs.
 - `02-scenes/<id>.json`: schema-2 free scene graph specs for new derived figures.
-- `02-visual-attempts/<scene-id>/<NN>/`: run-local V2 normalized scene, preflight, wide/narrow SVGs and preview PNGs. Failed attempts never enter canonical figure state.
+- `02-visual-preflight-failures/<scene-id>/<NN>/`: run-local scene/preflight evidence for deterministic failures. These failures never consume the three vision-review attempts.
+- `02-visual-attempts/<scene-id>/<NN>/`: run-local V2 normalized scene, passing preflight, wide/narrow SVGs and preview PNGs eligible for independent vision review. Failed reviewed attempts never enter canonical figure state.
 - `02-visual-preview.json`: current V2 preview report bound to `02-plan.json`.
 - `02-visual-review.json`: independent vision review bound to exact preview PNG SHA-256 values.
 - `02-visual-build.json`: deterministic materialization report binding the plan to final registered assets before drafting. V2 build reports also bind preview/review hashes and `vision_verified: true`.
@@ -54,7 +55,13 @@ Pipelines may omit stages that do not apply, but filenames and semantics must st
     "internal_consistency": {"status": "pass", "notes": "Repeated taxonomies, definitions and conditions stay consistent across sections."},
     "example_separation": {"status": "pass", "notes": "Illustrative assumptions remain clearly separate from official rules."}
   },
-  "claim_checks": [],
+  "claim_checks": [
+    {
+      "claim": "Representative high-risk or central claim from the artifact.",
+      "canonical_basis": "Canonical concept, rule or source-backed basis supporting that claim.",
+      "verdict": "supported"
+    }
+  ],
   "academic_issues": [],
   "pedagogy_issues": [],
   "visual_issues": [],
@@ -62,7 +69,7 @@ Pipelines may omit stages that do not apply, but filenames and semantics must st
 }
 ```
 
-Required fidelity-check keys are fixed. `status` is only `pass`, `fail` or `not_applicable`; `not_applicable` needs a concrete reason. Any unsupported high-risk claim requires a failing review and matching issue/repair instruction.
+Required fidelity-check keys are fixed. `status` is only `pass`, `fail` or `not_applicable`; `not_applicable` needs a concrete reason. At least one representative claim check is required by the current academic evaluation policy. Any unsupported high-risk claim requires a failing review and matching issue/repair instruction.
 
 Handoff files are working state and are not automatically student artifacts.
 
@@ -98,9 +105,11 @@ python scripts/venv_exec.py scripts/visual_plan_v2.py preview `
   --write <run-dir>/02-visual-preview.json
 ```
 
+A deterministic preflight failure is preserved under `02-visual-preflight-failures/` and returns no review attempt number. Only scenes that pass preflight are rendered to wide/narrow PNG evidence and consume the next visual-attempt number.
+
 A separate vision-capable reviewer inspects every current wide/narrow PNG and writes `02-visual-review.json` following `contracts/visual-review.schema.json`. The reviewer declaration must state `capability: vision` and `independent: true`. This declaration is an executor assertion; the engine mechanically proves that the review references the current PNG bytes by SHA-256.
 
-If a scene fails, preserve the attempt, repair the scene and preview again. Maximum three reviewed attempts per scene. Failed attempts remain run-local and do not mutate `figures.json`.
+If a reviewed scene fails, preserve the attempt, repair the scene and preview again. Maximum three reviewable/rendered attempts per scene. Failed attempts remain run-local and do not mutate `figures.json`.
 
 After every current scene passes:
 
@@ -113,7 +122,7 @@ python scripts/venv_exec.py scripts/visual_plan_v2.py finalize `
   --write <run-dir>/02-visual-build.json
 ```
 
-Finalization re-renders the SVGs and requires their hashes to equal the reviewed attempt before registration. The V2 build report records `plan_sha256`, `preview_sha256`, `visual_review_sha256`, `vision_verified: true`, final scene hash and both responsive variant hashes.
+Finalization re-renders the SVGs and requires their hashes to equal the reviewed attempt before registration. It preflights every permanent destination before writing and rolls back newly created scene assets if registration fails, so a rejected finalization cannot leave partial canonical assets behind. The V2 build report records `plan_sha256`, `preview_sha256`, `visual_review_sha256`, `vision_verified: true`, final scene hash and both responsive variant hashes.
 
 DRAFT must use the exact wide `asset` returned by the build report. The final renderer upgrades it to responsive `<picture>` markup using the registered narrow companion.
 
@@ -121,9 +130,11 @@ DRAFT must use the exact wide `asset` returned by the build report. The final re
 Existing schema-1 specs remain under `02-sketches/` and validate against `contracts/sketch-figure.schema.json`. Legacy flows continue through `scripts/visual_plan.py`; generator identity/output are not migrated merely because V2 exists.
 
 ## Final V2 binding
-For a V2 run, render accepted Markdown to `09-rendered-base.html`, then apply `scripts/scene_responsive.py` to produce `09-rendered.html`. Validate the final artifact with `scripts/artifact_integrity_v2.py`, which checks plan, preview, independent vision review, scene/variant hashes, registered provenance and responsive HTML. Then run `scripts/visual_audit_v2.py`, which adds per-scene desktop/mobile crops to the normal browser evidence.
+For a V2 run, render accepted Markdown to `09-rendered-base.html`, then apply `scripts/scene_responsive.py` to produce `09-rendered.html`. Validate the final artifact with `scripts/artifact_integrity_v2.py`, which checks plan, preview, independent vision review, scene/variant hashes, registered provenance and responsive HTML. The responsive markup must resolve to the exact registered wide and narrow assets, not merely to any existing files. Then run `scripts/visual_audit_v2.py`, which adds per-scene desktop/mobile crops to the normal browser evidence and records which responsive variant Chromium actually selected at each viewport.
 
-The final integrity gate fails when a planned reinterpretation is omitted, a source asset is substituted, a reviewed scene changes after approval, a narrow asset is missing/broken, or an unplanned V2 scene enters the artifact.
+`pipeline_run.py finish` treats a version-2 visual build as a stronger contract: it requires the exact preview/review hashes, a valid independent hash-bound vision review, V2 integrity markers and the complete desktop/mobile crop set with `wide` selected on desktop and `narrow` selected on mobile.
+
+The final integrity gate fails when a planned reinterpretation is omitted, a source asset is substituted, a reviewed scene changes after approval, a responsive HTML reference differs from its registered reviewed asset, a narrow asset is missing/broken, or an unplanned V2 scene enters the artifact.
 
 ## Plan topic coverage contract
 For unit-scoped summaries, `02-plan.json` records which observed topic ids and explicitly unassigned concepts the plan covers. This is an omission check, not a section template.

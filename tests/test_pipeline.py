@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+from scripts import visual_review
 from scripts.course_layout import sync_units
 from scripts.pipeline_run import review_gate
 
@@ -150,6 +151,106 @@ class PipelineRunTests(unittest.TestCase):
         self.write_visual_gate(run)
         self.write_publication_gate(run, publish_root)
 
+    def upgrade_to_v2_visual_chain(self, run):
+        plan = run / "02-plan.json"
+        plan.write_text(json.dumps({
+            "central_idea": "x",
+            "visuals": [{
+                "concept_id": "c1",
+                "need": "visual_required",
+                "visual_treatment": "reinterpret",
+                "derived_figure_id": "derived:scene-a",
+            }],
+        }), encoding="utf-8")
+
+        wide = run / "review-wide.png"
+        narrow = run / "review-narrow.png"
+        wide.write_bytes(b"review-wide")
+        narrow.write_bytes(b"review-narrow")
+        preview = {
+            "version": 1,
+            "ok": True,
+            "plan_sha256": file_sha(plan),
+            "entries": [{
+                "scene_id": "scene-a",
+                "attempt": 1,
+                "variants": {
+                    "wide": {"png": str(wide), "png_sha256": file_sha(wide)},
+                    "narrow": {"png": str(narrow), "png_sha256": file_sha(narrow)},
+                },
+            }],
+            "preserved": [],
+        }
+        preview_path = run / "02-visual-preview.json"
+        preview_path.write_text(json.dumps(preview), encoding="utf-8")
+        review = {
+            "version": 1,
+            "vision_verified": True,
+            "reviewer": {"id": "vision-test", "capability": "vision", "independent": True},
+            "figures": [{
+                "scene_id": "scene-a",
+                "attempt": 1,
+                "status": "pass",
+                "inspected": [
+                    {"variant": "wide", "file": str(wide), "sha256": file_sha(wide)},
+                    {"variant": "narrow", "file": str(narrow), "sha256": file_sha(narrow)},
+                ],
+                "scores": {key: 5 for key in visual_review.SCORE_KEYS},
+                "issues": [],
+            }],
+        }
+        review_path = run / "02-visual-review.json"
+        review_path.write_text(json.dumps(review), encoding="utf-8")
+        (run / "02-visual-build.json").write_text(json.dumps({
+            "version": 2,
+            "ok": True,
+            "plan_sha256": file_sha(plan),
+            "preview_sha256": file_sha(preview_path),
+            "visual_review_sha256": file_sha(review_path),
+            "vision_verified": True,
+            "entries": [{
+                "concept_id": "c1",
+                "visual_treatment": "reinterpret",
+                "derived_figure_id": "derived:scene-a",
+            }],
+        }), encoding="utf-8")
+        (run / "10-integrity.json").write_text(json.dumps({
+            "ok": True,
+            "visual_v2": True,
+            "vision_verified": True,
+            "planned_scene_count": 1,
+        }), encoding="utf-8")
+
+        audit = run / "visual-audit"
+        figures = audit / "figures"
+        figures.mkdir(parents=True, exist_ok=True)
+        desktop_crop = figures / "scene-a.desktop.png"
+        mobile_crop = figures / "scene-a.mobile.png"
+        desktop_crop.write_bytes(b"desktop-crop")
+        mobile_crop.write_bytes(b"mobile-crop")
+        (audit / "audit.json").write_text(json.dumps({
+            "ok": True,
+            "engine": "chromium-set-content",
+            "visual_system_v2": True,
+            "figure_crops": [
+                {
+                    "id": "scene-a",
+                    "viewport": "desktop",
+                    "file": str(desktop_crop),
+                    "sha256": file_sha(desktop_crop),
+                    "selected_variant": "wide",
+                },
+                {
+                    "id": "scene-a",
+                    "viewport": "mobile",
+                    "file": str(mobile_crop),
+                    "sha256": file_sha(mobile_crop),
+                    "selected_variant": "narrow",
+                },
+            ],
+        }), encoding="utf-8")
+        return wide, narrow
+
     def test_start_records_portable_inputs(self):
         run = self.start("codex")
         manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
@@ -182,6 +283,56 @@ class PipelineRunTests(unittest.TestCase):
         self.assertEqual(manifest["status"], "finished")
         self.assertEqual(manifest["stages"]["visual-audit/audit.json"], "present")
         self.assertEqual(manifest["stages"]["11-publication.json"], "present")
+
+    def test_v2_finish_requires_complete_hash_bound_visual_chain(self):
+        run = self.start()
+        self.write_passing_run(run)
+        plan = run / "02-plan.json"
+        plan.write_text(json.dumps({
+            "central_idea": "x",
+            "visuals": [{
+                "visual_treatment": "reinterpret",
+                "derived_figure_id": "derived:scene-a",
+            }],
+        }), encoding="utf-8")
+        (run / "02-visual-build.json").write_text(json.dumps({
+            "version": 2,
+            "ok": True,
+            "plan_sha256": file_sha(plan),
+            "preview_sha256": "0" * 64,
+            "visual_review_sha256": "0" * 64,
+            "vision_verified": True,
+            "entries": [{
+                "visual_treatment": "reinterpret",
+                "derived_figure_id": "derived:scene-a",
+            }],
+        }), encoding="utf-8")
+        cp = self.run_cmd("finish", "--run", str(run), check=False)
+        self.assertNotEqual(cp.returncode, 0)
+        errors = json.loads(cp.stdout)["errors"]
+        self.assertIn("missing-02-visual-preview.json", errors)
+        self.assertIn("missing-02-visual-review.json", errors)
+        self.assertIn("integrity-v2-marker-missing", errors)
+        self.assertIn("visual-audit-v2-marker-missing", errors)
+
+    def test_complete_v2_visual_chain_can_finish(self):
+        run = self.start()
+        self.write_passing_run(run)
+        self.upgrade_to_v2_visual_chain(run)
+        cp = self.run_cmd("validate", "--run", str(run))
+        self.assertTrue(json.loads(cp.stdout)["ok"], cp.stdout)
+        self.run_cmd("finish", "--run", str(run))
+        manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["status"], "finished")
+
+    def test_v2_visual_chain_rejects_reviewed_png_tamper(self):
+        run = self.start()
+        self.write_passing_run(run)
+        wide, _narrow = self.upgrade_to_v2_visual_chain(run)
+        wide.write_bytes(b"tampered-after-review")
+        cp = self.run_cmd("validate", "--run", str(run), check=False)
+        self.assertNotEqual(cp.returncode, 0)
+        self.assertIn("visual-v2-reviewed-png-changed:scene-a:wide", json.loads(cp.stdout)["errors"])
 
     def test_v4_publication_finishes_inside_resolved_unit(self):
         self.enable_v4_layout()

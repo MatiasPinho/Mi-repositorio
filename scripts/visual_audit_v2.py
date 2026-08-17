@@ -26,6 +26,8 @@ except ImportError:
 
 _IMG_RE = re.compile(r'(<img\b[^>]*\bsrc=")([^"]+)(")', re.I)
 _SRCSET_RE = re.compile(r'(<source\b[^>]*\bsrcset=")([^"]+)(")', re.I)
+_PICTURE_SOURCE_RE = re.compile(r'<source\b[^>]*\bsrcset="([^"]+)"', re.I)
+_PICTURE_IMG_RE = re.compile(r'<img\b[^>]*\bsrc="([^"]+)"', re.I)
 
 
 def sha256(path: Path) -> str:
@@ -71,6 +73,24 @@ def inline_responsive_assets(html_text: str, base_dir: Path) -> str:
 
     text = _IMG_RE.sub(img_replace, html_text)
     return _SRCSET_RE.sub(srcset_replace, text)
+
+
+def _picture_variant_sources(markup: str) -> dict[str, str]:
+    source = _PICTURE_SOURCE_RE.search(markup)
+    image = _PICTURE_IMG_RE.search(markup)
+    if not source or not image:
+        return {}
+    # Carpeta emits exactly one narrow candidate without a width/density descriptor.
+    return {"narrow": source.group(1).strip(), "wide": image.group(1).strip()}
+
+
+def _responsive_selection(markup: str, current_src: str, viewport_name: str, scene_id: str) -> tuple[str, str | None]:
+    sources = _picture_variant_sources(markup)
+    selected = next((variant for variant, src in sources.items() if src == current_src), "unknown")
+    expected = "narrow" if viewport_name == "mobile" else "wide"
+    if selected != expected:
+        return selected, f"{viewport_name}:scene-responsive-variant-mismatch:{scene_id}:{selected}!={expected}"
+    return selected, None
 
 
 def _capture_scene_crops(html_text: str, out_dir: Path) -> tuple[list[dict], list[str]]:
@@ -140,16 +160,24 @@ def _capture_scene_crops(html_text: str, out_dir: Path) -> tuple[list[dict], lis
                 )
                 if not state["complete"] or state["naturalWidth"] <= 0 or state["naturalHeight"] <= 0:
                     issues.append(f"{viewport_name}:scene-image-not-loaded:{scene_id}")
+                selected_variant, selection_issue = _responsive_selection(
+                    str(row.get("html") or ""), str(state.get("currentSrc") or ""), viewport_name, scene_id
+                )
+                if selection_issue:
+                    issues.append(selection_issue)
                 min_width = 260 if viewport_name == "mobile" else 420
                 if state["width"] < min_width:
                     issues.append(f"{viewport_name}:scene-too-small:{scene_id}:{round(state['width'])}")
                 path = crop_dir / f"{scene_id}.{viewport_name}.png"
                 page.locator("#stage").screenshot(path=str(path))
+                current_src = str(state.get("currentSrc") or "")
                 crops.append({
                     "id": scene_id,
                     "viewport": viewport_name,
                     "file": str(path),
                     "sha256": sha256(path),
+                    "selected_variant": selected_variant,
+                    "current_src_sha256": hashlib.sha256(current_src.encode("utf-8")).hexdigest(),
                     "rendered_width": round(float(state["width"]), 2),
                     "rendered_height": round(float(state["height"]), 2),
                     "natural_width": state["naturalWidth"],

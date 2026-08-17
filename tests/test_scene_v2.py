@@ -12,7 +12,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from scripts import scene_figure, scene_preflight, scene_render, scene_responsive, scene_spec, visual_review
+from scripts import artifact_integrity_v2, scene_figure, scene_preflight, scene_render, scene_responsive, scene_spec, visual_audit_v2, visual_review
 from scripts import publish_artifact
 
 
@@ -185,6 +185,50 @@ class SceneV2PureTests(unittest.TestCase):
             self.assertIn('<picture class="study-scene-picture" data-scene-id="free-scene">', transformed)
             self.assertIn('srcset="free-scene-narrow.svg"', transformed)
 
+    def test_html_variant_binding_requires_exact_registered_asset(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            content = root / "content"
+            run = content / "run"
+            assets = content / "assets" / "figures"
+            run.mkdir(parents=True)
+            assets.mkdir(parents=True)
+            wide = assets / "wide.svg"
+            wrong = assets / "wrong.svg"
+            wide.write_bytes(b"approved-wide")
+            wrong.write_bytes(b"also-existing")
+            meta = {
+                "asset": "assets/figures/wide.svg",
+                "asset_sha256": hashlib.sha256(b"approved-wide").hexdigest(),
+            }
+            html_path = run / "page.html"
+            good = artifact_integrity_v2._scene_html_variant_issues(
+                html_path, content, "derived:s", "wide", "../assets/figures/wide.svg", meta
+            )
+            self.assertEqual(good, [])
+            bad = artifact_integrity_v2._scene_html_variant_issues(
+                html_path, content, "derived:s", "wide", "../assets/figures/wrong.svg", meta
+            )
+            self.assertTrue(any(issue.startswith("scene-html-variant-mismatch:") for issue in bad))
+
+    def test_responsive_audit_proves_selected_variant(self):
+        wide = "data:image/svg+xml;base64,V0lERQ=="
+        narrow = "data:image/svg+xml;base64,TkFSUk9X"
+        markup = (
+            '<picture class="study-scene-picture" data-scene-id="s">'
+            f'<source media="(max-width: 48rem)" srcset="{narrow}">'
+            f'<img src="{wide}"></picture>'
+        )
+        selected, issue = visual_audit_v2._responsive_selection(markup, narrow, "mobile", "s")
+        self.assertEqual(selected, "narrow")
+        self.assertIsNone(issue)
+        selected, issue = visual_audit_v2._responsive_selection(markup, wide, "desktop", "s")
+        self.assertEqual(selected, "wide")
+        self.assertIsNone(issue)
+        selected, issue = visual_audit_v2._responsive_selection(markup, wide, "mobile", "s")
+        self.assertEqual(selected, "wide")
+        self.assertIn("scene-responsive-variant-mismatch", issue or "")
+
 
 class SceneV2RegistryTests(unittest.TestCase):
     def setUp(self):
@@ -224,6 +268,20 @@ class SceneV2RegistryTests(unittest.TestCase):
         self.assertTrue(result["ok"], result)
         self.assertEqual(before, (self.course / "conocimiento" / "figures.json").read_bytes())
 
+    def test_preflight_failures_do_not_consume_visual_attempt_budget(self):
+        bad = free_scene("budget-scene")
+        bad["layouts"]["wide"]["placements"]["b"]["x"] = 760
+        for _ in range(3):
+            report = scene_figure.preview_scene(self.course, "U1", bad, self.run)
+            self.assertFalse(report["ok"])
+            self.assertIsNone(report["attempt"])
+        failures = list((self.run / "02-visual-preflight-failures" / "budget-scene").glob("[0-9][0-9]"))
+        self.assertEqual(len(failures), 3)
+        with mock.patch.object(scene_figure, "_screenshot_svg", side_effect=lambda _svg, path, variant: path.write_bytes(variant.encode())):
+            accepted = scene_figure.preview_scene(self.course, "U1", free_scene("budget-scene"), self.run)
+        self.assertTrue(accepted["ok"], accepted)
+        self.assertEqual(accepted["attempt"], 1)
+
     def test_finalize_registers_both_variants_and_exact_retry_is_idempotent(self):
         scene = scene_spec.validate_scene(free_scene())
         preview, review = self._bound(scene)
@@ -242,6 +300,31 @@ class SceneV2RegistryTests(unittest.TestCase):
         changed["layouts"]["wide"]["placements"]["a"]["x"] += 10
         with self.assertRaisesRegex(scene_figure.SceneFigureError, "different scene"):
             scene_figure.finalize_scene(self.course, "U1", changed, preview, review)
+
+    def test_finalize_preflights_all_permanent_asset_collisions(self):
+        scene = scene_spec.validate_scene(free_scene("atomic-collision"))
+        preview, review = self._bound(scene)
+        assets = self.course / "assets" / "figures"
+        narrow = assets / "atomic-collision-narrow.svg"
+        narrow.write_bytes(b"foreign")
+        with self.assertRaisesRegex(scene_figure.SceneFigureError, "asset collision"):
+            scene_figure.finalize_scene(self.course, "U1", scene, preview, review)
+        self.assertFalse((assets / "atomic-collision.scene.json").exists())
+        self.assertFalse((assets / "atomic-collision.svg").exists())
+        self.assertEqual(narrow.read_bytes(), b"foreign")
+
+    def test_finalize_registration_failure_rolls_back_created_assets(self):
+        scene = scene_spec.validate_scene(free_scene("atomic-rollback"))
+        preview, review = self._bound(scene)
+        assets = self.course / "assets" / "figures"
+        with mock.patch.object(scene_figure, "register_derived", side_effect=ValueError("registration failed")):
+            with self.assertRaisesRegex(ValueError, "registration failed"):
+                scene_figure.finalize_scene(self.course, "U1", scene, preview, review)
+        self.assertFalse((assets / "atomic-rollback.scene.json").exists())
+        self.assertFalse((assets / "atomic-rollback.svg").exists())
+        self.assertFalse((assets / "atomic-rollback-narrow.svg").exists())
+        registry = json.loads((self.course / "conocimiento" / "figures.json").read_text(encoding="utf-8"))
+        self.assertNotIn("derived:atomic-rollback", registry.get("figures", {}))
 
 
 class SceneV2PublicationTests(unittest.TestCase):

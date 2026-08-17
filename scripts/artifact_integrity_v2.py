@@ -89,6 +89,30 @@ def _html_scene_sources(html_path: Path) -> dict[str, dict[str, str]]:
     return rows
 
 
+def _scene_html_variant_issues(
+    html_path: Path,
+    content_base: Path,
+    derived_id: str,
+    variant: str,
+    src: str,
+    variant_meta: dict[str, Any],
+) -> list[str]:
+    """Bind final responsive markup to the exact registered reviewed variant."""
+    issues: list[str] = []
+    asset = str(variant_meta.get("asset") or "")
+    expected = (content_base / asset).resolve() if asset else None
+    actual = (html_path.parent / src).resolve()
+    if expected is None or actual != expected:
+        issues.append(f"scene-html-variant-mismatch:{derived_id}:{variant}:{src}")
+        return issues
+    if not actual.is_file():
+        issues.append(f"scene-html-variant-broken:{derived_id}:{variant}:{src}")
+        return issues
+    if sha256(actual) != variant_meta.get("asset_sha256"):
+        issues.append(f"scene-html-variant-hash-mismatch:{derived_id}:{variant}:{src}")
+    return issues
+
+
 def check(
     course: Path,
     md_path: Path,
@@ -186,9 +210,12 @@ def check(
             issues.append(f"scene-responsive-markup-missing:{derived_id}")
         else:
             for variant in ("wide", "narrow"):
-                src = markup[variant]
-                if not (html_path.parent / src).resolve().is_file():
-                    issues.append(f"scene-html-variant-broken:{derived_id}:{variant}:{src}")
+                v = variants.get(variant, {}) if isinstance(variants, dict) else {}
+                issues.extend(
+                    _scene_html_variant_issues(
+                        html_path, content_base, derived_id, variant, markup[variant], v
+                    )
+                )
 
     # A V2 generated scene cannot enter the student artifact without being in this plan/review.
     for used_id in sorted(used):

@@ -65,16 +65,40 @@ def _safe_run_dir(course: Path, run_dir: Path) -> Path:
     return run
 
 
+def _reviewable_attempt_count(root: Path) -> int:
+    """Count rendered preview attempts; deterministic preflight failures do not consume review budget."""
+    if not root.is_dir():
+        return 0
+    count = 0
+    for path in root.iterdir():
+        if not path.is_dir() or not path.name.isdigit():
+            continue
+        if _read_json(path / "preview.json").get("ok") is True:
+            count += 1
+    return count
+
+
 def _next_attempt(run: Path, scene_id: str) -> tuple[int, Path]:
     root = run / "02-visual-attempts" / scene_id
+    existing_slots = sorted(
+        int(path.name) for path in root.iterdir()
+        if path.is_dir() and path.name.isdigit()
+    ) if root.is_dir() else []
+    attempt = _reviewable_attempt_count(root) + 1
+    if attempt > MAX_ATTEMPTS:
+        raise SceneFigureError(f"{scene_id}: maximum {MAX_ATTEMPTS} visual attempts exceeded")
+    slot = (max(existing_slots) + 1) if existing_slots else 1
+    return attempt, root / f"{slot:02d}"
+
+
+def _next_preflight_failure(run: Path, scene_id: str) -> Path:
+    root = run / "02-visual-preflight-failures" / scene_id
     existing = sorted(
         int(path.name) for path in root.iterdir()
         if path.is_dir() and path.name.isdigit()
     ) if root.is_dir() else []
-    attempt = (max(existing) + 1) if existing else 1
-    if attempt > MAX_ATTEMPTS:
-        raise SceneFigureError(f"{scene_id}: maximum {MAX_ATTEMPTS} visual attempts exceeded")
-    return attempt, root / f"{attempt:02d}"
+    slot = (max(existing) + 1) if existing else 1
+    return root / f"{slot:02d}"
 
 
 def _reusable_preview(run: Path, scene: dict[str, Any], unit_id: str) -> dict[str, Any] | None:
@@ -82,7 +106,7 @@ def _reusable_preview(run: Path, scene: dict[str, Any], unit_id: str) -> dict[st
 
     Repair loops often change one scene while every other scene is byte-identical.
     Those unchanged scenes must not be re-rendered, re-screenshot or promoted to a
-    fake new attempt.  SHA-256 is authoritative here; vision is only needed again
+    fake new attempt. SHA-256 is authoritative here; vision is only needed again
     for a scene whose rendered evidence changed.
     """
     root = run / "02-visual-attempts" / scene["id"]
@@ -183,12 +207,34 @@ def preview_scene(course: Path, unit_value: str, scene_value: Any, run_dir: Path
     if cached is not None:
         return cached
 
+    preflight = scene_preflight.preflight_scene(scene)
+    if not preflight["ok"]:
+        failure_dir = _next_preflight_failure(run, scene["id"])
+        failure_dir.mkdir(parents=True, exist_ok=False)
+        scene_path = failure_dir / "scene.json"
+        scene_path.write_bytes(scene_spec.scene_bytes(scene))
+        preflight_path = failure_dir / "preflight.json"
+        _write_json(preflight_path, preflight)
+        report = {
+            "version": 1,
+            "ok": False,
+            "unit_id": unit_id,
+            "scene_id": scene["id"],
+            "scene_sha256": scene_spec.scene_sha256(scene),
+            "scene_file": str(scene_path),
+            "attempt": None,
+            "attempt_dir": str(failure_dir),
+            "reused": False,
+            "preflight": str(preflight_path),
+            "variants": {},
+        }
+        _write_json(failure_dir / "preview.json", report)
+        return report
+
     attempt, attempt_dir = _next_attempt(run, scene["id"])
     attempt_dir.mkdir(parents=True, exist_ok=False)
     scene_path = attempt_dir / "scene.json"
     scene_path.write_bytes(scene_spec.scene_bytes(scene))
-
-    preflight = scene_preflight.preflight_scene(scene)
     _write_json(attempt_dir / "preflight.json", preflight)
 
     narrow_name = f"{scene['id']}-narrow.svg"
@@ -209,15 +255,14 @@ def preview_scene(course: Path, unit_value: str, scene_value: Any, run_dir: Path
             "pencil_metrics": render_report["pencil_metrics"],
         }
 
-    if preflight["ok"]:
-        for variant in scene_spec.VARIANTS:
-            png_path = attempt_dir / f"{variant}.png"
-            _screenshot_svg(Path(variants[variant]["svg"]).read_bytes(), png_path, variant=variant)
-            variants[variant]["png"] = str(png_path)
-            variants[variant]["png_sha256"] = sha256_file(png_path)
+    for variant in scene_spec.VARIANTS:
+        png_path = attempt_dir / f"{variant}.png"
+        _screenshot_svg(Path(variants[variant]["svg"]).read_bytes(), png_path, variant=variant)
+        variants[variant]["png"] = str(png_path)
+        variants[variant]["png_sha256"] = sha256_file(png_path)
     report = {
         "version": 1,
-        "ok": bool(preflight["ok"]),
+        "ok": True,
         "unit_id": unit_id,
         "scene_id": scene["id"],
         "scene_sha256": scene_spec.scene_sha256(scene),
@@ -230,6 +275,12 @@ def preview_scene(course: Path, unit_value: str, scene_value: Any, run_dir: Path
     }
     _write_json(attempt_dir / "preview.json", report)
     return report
+
+
+def _assert_same_or_writable(path: Path, data: bytes) -> None:
+    """Preflight one permanent destination without mutating it."""
+    if path.exists() and path.read_bytes() != data:
+        raise SceneFigureError(f"asset collision; refusing overwrite: {path}")
 
 
 def _same_or_write(path: Path, data: bytes) -> bool:
@@ -252,6 +303,26 @@ def _existing_scene_record(course: Path, key: str, unit_id: str) -> dict[str, An
     if record.get("origin") != "derived" or record_unit_id(course, record) != unit_id:
         raise SceneFigureError(f"existing figure id belongs to incompatible record: {key}")
     return record
+
+
+def _assert_registry_asset_available(
+    course: Path,
+    registry: dict[str, Any],
+    key: str,
+    unit_id: str,
+    asset_rel: str,
+) -> None:
+    figures = registry.get("figures", {}) if isinstance(registry, dict) else {}
+    if not isinstance(figures, dict):
+        raise SceneFigureError("figure registry is invalid")
+    for existing_key, row in figures.items():
+        if existing_key == key or not isinstance(row, dict) or str(row.get("asset") or "") != asset_rel:
+            continue
+        same_owner = not has_unit_layout(course) or record_unit_id(course, row) == unit_id
+        if same_owner:
+            raise SceneFigureError(
+                f"figure asset already registered by {existing_key}; refusing collision: {asset_rel}"
+            )
 
 
 def finalize_scene(
@@ -301,9 +372,10 @@ def finalize_scene(
     narrow_path = asset_dir / narrow_name
     spec_path = asset_dir / f"{scene['id']}.scene.json"
     normalized_bytes = scene_spec.scene_bytes(scene)
-    _same_or_write(spec_path, normalized_bytes)
-    _same_or_write(wide_path, rendered["wide"][0])
-    _same_or_write(narrow_path, rendered["narrow"][0])
+    wide_bytes = rendered["wide"][0]
+    narrow_bytes = rendered["narrow"][0]
+    wide_hash = sha256_bytes(wide_bytes)
+    narrow_hash = sha256_bytes(narrow_bytes)
 
     wide_rel = wide_path.relative_to(base).as_posix()
     narrow_rel = narrow_path.relative_to(base).as_posix()
@@ -317,8 +389,8 @@ def finalize_scene(
         "scene": spec_rel,
         "scene_sha256": scene_spec.scene_sha256(scene),
         "variants": {
-            "wide": {"asset": wide_rel, "asset_sha256": sha256_file(wide_path)},
-            "narrow": {"asset": narrow_rel, "asset_sha256": sha256_file(narrow_path)},
+            "wide": {"asset": wide_rel, "asset_sha256": wide_hash},
+            "narrow": {"asset": narrow_rel, "asset_sha256": narrow_hash},
         },
         "visual_review": {
             "attempt": review_row["attempt"],
@@ -327,29 +399,70 @@ def finalize_scene(
         },
     }
 
+    registry_before = load_registry(course)
     existing = _existing_scene_record(course, key, unit_id)
     if existing is not None:
-        if existing.get("asset") != wide_rel or existing.get("asset_sha256") != sha256_file(wide_path) or existing.get("scene_generation") != metadata:
+        if (
+            existing.get("asset") != wide_rel
+            or existing.get("asset_sha256") != wide_hash
+            or existing.get("scene_generation") != metadata
+        ):
             raise SceneFigureError(f"existing scene registration differs; refusing overwrite: {key}")
-        return {"ok": True, "created": False, "key": key, "record": existing}
+    else:
+        _assert_registry_asset_available(course, registry_before, key, unit_id, wide_rel)
 
-    register_derived(
-        course,
-        scene["id"],
-        unit_id,
-        wide_rel,
-        scene["description"],
-        scene["based_on"],
-        concepts=scene.get("concepts", []),
-        learner_focus=scene.get("learner_focus", []),
-        kind="illustration",
-        role=scene["role"],
-        visual_treatment=scene["visual_treatment"],
-        source_figure_id=scene.get("source_figure_id"),
+    destinations = (
+        (spec_path, normalized_bytes),
+        (wide_path, wide_bytes),
+        (narrow_path, narrow_bytes),
     )
-    registry = load_registry(course)
-    registry["figures"][key]["representation_role"] = scene["representation_role"]
-    registry["figures"][key]["scene_generation"] = metadata
-    save_registry(course, registry)
-    record = load_registry(course)["figures"][key]
-    return {"ok": True, "created": True, "key": key, "record": record}
+    for path, data in destinations:
+        _assert_same_or_writable(path, data)
+
+    created_paths: list[Path] = []
+    try:
+        for path, data in destinations:
+            if _same_or_write(path, data):
+                created_paths.append(path)
+
+        if existing is not None:
+            return {"ok": True, "created": False, "key": key, "record": existing}
+
+        register_derived(
+            course,
+            scene["id"],
+            unit_id,
+            wide_rel,
+            scene["description"],
+            scene["based_on"],
+            concepts=scene.get("concepts", []),
+            learner_focus=scene.get("learner_focus", []),
+            kind="illustration",
+            role=scene["role"],
+            visual_treatment=scene["visual_treatment"],
+            source_figure_id=scene.get("source_figure_id"),
+        )
+        registry = load_registry(course)
+        registry["figures"][key]["representation_role"] = scene["representation_role"]
+        registry["figures"][key]["scene_generation"] = metadata
+        save_registry(course, registry)
+        record = load_registry(course)["figures"][key]
+        return {"ok": True, "created": True, "key": key, "record": record}
+    except Exception as exc:
+        rollback_error: Exception | None = None
+        try:
+            current_registry = load_registry(course)
+            if current_registry != registry_before:
+                save_registry(course, registry_before)
+        except Exception as rollback_exc:  # pragma: no cover - filesystem failure during recovery
+            rollback_error = rollback_exc
+        for path in reversed(created_paths):
+            try:
+                path.unlink(missing_ok=True)
+            except OSError as rollback_exc:  # pragma: no cover - filesystem failure during recovery
+                rollback_error = rollback_error or rollback_exc
+        if rollback_error is not None:
+            raise SceneFigureError(
+                f"{scene['id']}: finalization failed and rollback was incomplete: {rollback_error}"
+            ) from exc
+        raise

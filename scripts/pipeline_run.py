@@ -33,6 +33,7 @@ else:
     )
     from unit_identity import resolve_unit  # noqa: E402
 from scripts.academic_eval import evaluate_review  # noqa: E402
+from scripts.visual_review import VisualReviewError, bind_review_to_preview  # noqa: E402
 
 STAGED = {"resumen", "guia", "repaso"}
 SUMMARY_STAGED = {"resumen", "guia"}
@@ -216,6 +217,74 @@ def _planned_derived_treatments(run: Path) -> dict[str, str]:
     return rows
 
 
+def _validate_v2_visual_chain(run: Path, report: dict[str, Any], errors: list[str]) -> None:
+    """Prove that a V2 build came from the exact independent vision evidence still on disk."""
+    if report.get("vision_verified") is not True:
+        errors.append("visual-v2-build-not-vision-verified")
+
+    plan_path = run / "02-plan.json"
+    preview_path = run / "02-visual-preview.json"
+    review_path = run / "02-visual-review.json"
+    if not preview_path.is_file():
+        errors.append("missing-02-visual-preview.json")
+    if not review_path.is_file():
+        errors.append("missing-02-visual-review.json")
+    if not preview_path.is_file() or not review_path.is_file():
+        return
+
+    if report.get("preview_sha256") != sha(preview_path):
+        errors.append("visual-v2-build-preview-mismatch")
+    if report.get("visual_review_sha256") != sha(review_path):
+        errors.append("visual-v2-build-review-mismatch")
+
+    try:
+        preview = load(preview_path, {})
+        review = load(review_path, {})
+    except (json.JSONDecodeError, OSError):
+        errors.append("visual-v2-preview-or-review-invalid-json")
+        return
+    if not isinstance(preview, dict) or preview.get("ok") is not True:
+        errors.append("visual-v2-preview-failed")
+        return
+    if preview.get("plan_sha256") != sha(plan_path):
+        errors.append("visual-v2-preview-plan-mismatch")
+
+    try:
+        binding = bind_review_to_preview(review, preview)
+    except (VisualReviewError, OSError, ValueError) as exc:
+        errors.append(f"visual-v2-review-invalid:{exc}")
+        return
+
+    normalized = binding.get("review", {})
+    for figure in normalized.get("figures", []) if isinstance(normalized, dict) else []:
+        if not isinstance(figure, dict):
+            continue
+        scene_id = str(figure.get("scene_id") or "")
+        for inspected in figure.get("inspected", []) if isinstance(figure.get("inspected"), list) else []:
+            if not isinstance(inspected, dict):
+                continue
+            variant = str(inspected.get("variant") or "")
+            shot = _resolve_repo_path(inspected.get("file", ""))
+            if not shot.is_file() or sha(shot) != str(inspected.get("sha256") or "").lower():
+                errors.append(f"visual-v2-reviewed-png-changed:{scene_id}:{variant}")
+
+
+def _v2_scene_ids(report: dict[str, Any] | None) -> set[str] | None:
+    if not isinstance(report, dict) or report.get("version") != 2:
+        return None
+    entries = report.get("entries")
+    if not isinstance(entries, list):
+        return set()
+    rows: set[str] = set()
+    for item in entries:
+        if not isinstance(item, dict):
+            continue
+        figure_id = str(item.get("derived_figure_id") or "").strip()
+        if figure_id:
+            rows.add(figure_id.removeprefix("derived:"))
+    return rows
+
+
 def _validate_visual_build_report(run: Path, errors: list[str]) -> dict[str, Any] | None:
     path = run / "02-visual-build.json"
     if not path.is_file():
@@ -229,6 +298,8 @@ def _validate_visual_build_report(run: Path, errors: list[str]) -> dict[str, Any
     if not isinstance(report, dict) or report.get("ok") is not True:
         errors.append("visual-build-failed")
         return None
+    if report.get("version") not in {1, 2}:
+        errors.append("visual-build-version-invalid")
     plan_path = run / "02-plan.json"
     if not plan_path.is_file() or report.get("plan_sha256") != sha(plan_path):
         errors.append("visual-build-plan-mismatch")
@@ -244,6 +315,8 @@ def _validate_visual_build_report(run: Path, errors: list[str]) -> dict[str, Any
     planned = _planned_derived_treatments(run)
     if reported != planned:
         errors.append("visual-build-derived-set-mismatch")
+    if report.get("version") == 2:
+        _validate_v2_visual_chain(run, report, errors)
     return report
 
 
@@ -372,7 +445,12 @@ def _accepted_markdown(run: Path) -> Path:
     return run / "08-final.md"
 
 
-def _validate_visual_audit(run: Path, errors: list[str]) -> None:
+def _validate_visual_audit(
+    run: Path,
+    errors: list[str],
+    *,
+    v2_scene_ids: set[str] | None = None,
+) -> None:
     audit_dir = run / "visual-audit"
     report_path = audit_dir / "audit.json"
     if not report_path.is_file():
@@ -383,7 +461,10 @@ def _validate_visual_audit(run: Path, errors: list[str]) -> None:
     except (json.JSONDecodeError, OSError):
         errors.append("visual-audit-invalid-json")
         return
-    if not isinstance(report, dict) or report.get("ok") is not True:
+    if not isinstance(report, dict):
+        errors.append("visual-audit-invalid")
+        return
+    if report.get("ok") is not True:
         errors.append("visual-audit-failed")
     if report.get("engine") != "chromium-set-content":
         errors.append("visual-audit-wrong-engine")
@@ -391,6 +472,42 @@ def _validate_visual_audit(run: Path, errors: list[str]) -> None:
         shot = audit_dir / name
         if not shot.is_file() or shot.stat().st_size <= 0:
             errors.append(f"missing-visual-screenshot:{name}")
+
+    if v2_scene_ids is None:
+        return
+    if report.get("visual_system_v2") is not True:
+        errors.append("visual-audit-v2-marker-missing")
+    crops = report.get("figure_crops")
+    if not isinstance(crops, list):
+        errors.append("visual-audit-v2-crops-missing")
+        return
+
+    expected = {(scene_id, viewport) for scene_id in v2_scene_ids for viewport in ("desktop", "mobile")}
+    actual: set[tuple[str, str]] = set()
+    for row in crops:
+        if not isinstance(row, dict):
+            errors.append("visual-audit-v2-crop-invalid")
+            continue
+        scene_id = str(row.get("id") or "")
+        viewport = str(row.get("viewport") or "")
+        pair = (scene_id, viewport)
+        if pair in actual:
+            errors.append(f"visual-audit-v2-crop-duplicate:{scene_id}:{viewport}")
+            continue
+        actual.add(pair)
+        if pair not in expected:
+            continue
+        expected_variant = "narrow" if viewport == "mobile" else "wide"
+        if row.get("selected_variant") != expected_variant:
+            errors.append(f"visual-audit-v2-selection-invalid:{scene_id}:{viewport}")
+        crop_file = _resolve_repo_path(row.get("file", ""))
+        if not crop_file.is_file() or sha(crop_file) != row.get("sha256"):
+            errors.append(f"visual-audit-v2-crop-changed:{scene_id}:{viewport}")
+
+    for scene_id, viewport in sorted(expected - actual):
+        errors.append(f"visual-audit-v2-crop-missing:{scene_id}:{viewport}")
+    for scene_id, viewport in sorted(actual - expected):
+        errors.append(f"visual-audit-v2-crop-unexpected:{scene_id}:{viewport}")
 
 
 def _validate_publication(run: Path, manifest: dict[str, Any], errors: list[str]) -> None:
@@ -491,8 +608,10 @@ def validate_run(run: Path) -> dict[str, Any]:
             if not (run / name).is_file():
                 errors.append(f"missing-{name}")
         first_review = run / "05-review.json"
+        build_report: dict[str, Any] | None = None
         if pipeline in SUMMARY_STAGED:
-            _validate_visual_build_report(run, errors)
+            build_report = _validate_visual_build_report(run, errors)
+        v2_scene_ids = _v2_scene_ids(build_report)
         if first_review.is_file():
             first_issues = review_gate(first_review)
             if not first_issues:
@@ -524,9 +643,16 @@ def validate_run(run: Path) -> dict[str, Any]:
             payload = load(integrity, {})
             if not isinstance(payload, dict) or payload.get("ok") is not True:
                 errors.append("integrity-gate-failed")
+            elif v2_scene_ids is not None:
+                if payload.get("visual_v2") is not True:
+                    errors.append("integrity-v2-marker-missing")
+                if payload.get("vision_verified") is not True:
+                    errors.append("integrity-v2-vision-missing")
+                if payload.get("planned_scene_count") != len(v2_scene_ids):
+                    errors.append("integrity-v2-scene-count-mismatch")
 
         _validate_canonical_snapshot(run, errors)
-        _validate_visual_audit(run, errors)
+        _validate_visual_audit(run, errors, v2_scene_ids=v2_scene_ids)
         _validate_publication(run, manifest, errors)
         _validate_engine_snapshot(manifest, errors)
 
