@@ -5,7 +5,8 @@ The staged run lives deeper than the published artifact. Relative image URLs tha
 are valid inside ``.study/runs/<run-id>/`` therefore cannot be copied verbatim to
 ``resumenes/``. Publication deterministically rebases only local image references
 for the destination while keeping the validated run sources byte-for-byte
-immutable.
+immutable. Responsive Visual System V2 ``<source srcset>`` resources participate in
+the same relocation contract as ordinary ``<img src>`` assets.
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 _MD_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)")
 _HTML_IMAGE_RE = re.compile(r'(<img\b[^>]*\bsrc=")([^"]+)(")', re.I)
+_HTML_SRCSET_RE = re.compile(r'(<source\b[^>]*\bsrcset=")([^"]+)(")', re.I)
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -126,20 +128,36 @@ def _rewrite_html_images(
     text = data.decode("utf-8")
     rewrites: list[dict[str, str]] = []
 
-    def replace(match: re.Match[str]) -> str:
-        prefix, src, suffix = match.group(1), match.group(2), match.group(3)
+    def rewrite_one(src: str) -> str:
         resolved = _rebase_local_ref(src, source.parent, destination.parent)
         if resolved is None:
-            return match.group(0)
+            return src
         rebased, target = resolved
         rewrites.append({
             "original": src,
             "published": rebased,
             "target": display_path(target),
         })
-        return f"{prefix}{rebased}{suffix}"
+        return rebased
 
-    return _HTML_IMAGE_RE.sub(replace, text).encode("utf-8"), rewrites
+    def replace_img(match: re.Match[str]) -> str:
+        return f"{match.group(1)}{rewrite_one(match.group(2))}{match.group(3)}"
+
+    def replace_srcset(match: re.Match[str]) -> str:
+        candidates = []
+        for raw in match.group(2).split(","):
+            candidate = raw.strip()
+            if not candidate:
+                continue
+            parts = candidate.split()
+            src = parts[0]
+            descriptor = " " + " ".join(parts[1:]) if len(parts) > 1 else ""
+            candidates.append(rewrite_one(src) + descriptor)
+        return f"{match.group(1)}{', '.join(candidates)}{match.group(3)}"
+
+    text = _HTML_IMAGE_RE.sub(replace_img, text)
+    text = _HTML_SRCSET_RE.sub(replace_srcset, text)
+    return text.encode("utf-8"), rewrites
 
 
 def _verify_published_resources(destination: Path, rewrites: list[dict[str, str]]) -> None:
