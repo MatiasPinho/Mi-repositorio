@@ -22,10 +22,10 @@ if str(ROOT) not in sys.path:
 from study import resolve_course  # noqa: E402
 try:
     from .semantic_claims import resolve_claims
-    from .unit_identity import resolve_unit
+    from .unit_identity import canonical_unit_id, resolve_unit
 except ImportError:
     from semantic_claims import resolve_claims  # type: ignore
-    from unit_identity import resolve_unit  # type: ignore
+    from unit_identity import canonical_unit_id, resolve_unit  # type: ignore
 
 
 def _scope_unit_id(course: Path, scope: str) -> str:
@@ -38,7 +38,7 @@ def _scope_unit_id(course: Path, scope: str) -> str:
 
 
 def _claim_unit_id(claim: dict[str, Any]) -> str:
-    return str(claim.get("unit_id") or claim.get("unit") or "").strip()
+    return canonical_unit_id(claim.get("unit_id") or claim.get("unit") or "")
 
 
 def _minimal_evidence(claim: dict[str, Any]) -> dict[str, Any]:
