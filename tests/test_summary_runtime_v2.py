@@ -65,6 +65,16 @@ class FidelityGuardTests(unittest.TestCase):
         self.assertFalse(report["ok"])
         self.assertTrue(any(issue["code"].startswith("unresolved-conflict-") for issue in report["issues"]))
 
+    def test_editing_error_language_cannot_dismiss_unresolved_evidence(self):
+        text = (
+            "> [!WARNING] El orden importa\n"
+            "> Hay materiales que presentan verificar antes de codificar. La versión oficial y lo explicado en clase presentan el otro orden. "
+            "Si aparece el primero, es un error de edición del material.\n"
+        )
+        report = fidelity_guard.check(text, self.ledger())
+        self.assertFalse(report["ok"], report)
+        self.assertTrue(any(issue["code"] == "unresolved-conflict-dismiss-competing-evidence" for issue in report["issues"]))
+
     def test_neutral_attribution_of_competing_evidence_passes(self):
         text = (
             "> [!WARNING] Conflicto interno del apunte\n"
