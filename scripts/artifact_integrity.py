@@ -18,6 +18,8 @@ from scripts.render_study import validate_caption_comments, validate_images  # n
 from scripts.unit_identity import record_unit_id, resolve_unit  # noqa: E402
 from scripts.visual_plan import artifact_usage_issues  # noqa: E402
 
+_AUTO_PLAN = object()
+
 
 def safe_file(value: str, *, must_exist: bool = True) -> Path:
     path = Path(value)
@@ -58,7 +60,7 @@ def check(
     html_path: Path,
     scope: str,
     artifact_type: str,
-    plan_path: Path | None = None,
+    plan_path: Path | None | object = _AUTO_PLAN,
 ) -> dict[str, Any]:
     issues: list[str] = []
     md_text = md_path.read_text(encoding="utf-8")
@@ -120,17 +122,26 @@ def check(
         issues.append(f"scope-figure-count-too-small:{len(scoped)}<{len(used_registered)}")
 
     visual_plan_count = 0
-    if plan_path is None:
+    resolved_plan: Path | None
+    if plan_path is _AUTO_PLAN:
         adjacent_plan = md_path.parent / "02-plan.json"
-        if adjacent_plan.is_file():
-            plan_path = adjacent_plan
-    if plan_path is not None:
-        plan_path = plan_path.resolve()
-        if not plan_path.is_file():
-            issues.append(f"visual-plan-missing:{plan_path}")
+        resolved_plan = adjacent_plan if adjacent_plan.is_file() else None
+    elif plan_path is None:
+        # Explicit None is a real instruction: the caller owns a different
+        # visual contract (e.g. Visual System V2) and does not want V1 auto-discovery.
+        resolved_plan = None
+    elif isinstance(plan_path, Path):
+        resolved_plan = plan_path
+    else:
+        raise TypeError("plan_path must be Path, None, or omitted")
+
+    if resolved_plan is not None:
+        resolved_plan = resolved_plan.resolve()
+        if not resolved_plan.is_file():
+            issues.append(f"visual-plan-missing:{resolved_plan}")
         else:
             plan_issues, visual_plan_count = artifact_usage_issues(
-                course, scope, plan_path, used_registered
+                course, scope, resolved_plan, used_registered
             )
             issues.extend(plan_issues)
 
@@ -141,7 +152,7 @@ def check(
         "unit_id": unit_id,
         "used_figure_count": len(used_registered),
         "scoped_figure_count": len(scoped),
-        "visual_plan_checked": plan_path is not None,
+        "visual_plan_checked": resolved_plan is not None,
         "planned_visual_count": visual_plan_count,
         "issues": issues,
     }
@@ -161,7 +172,7 @@ def main() -> None:
     course = resolve_course(args.course)
     md = safe_file(args.markdown)
     html = safe_file(args.html)
-    plan = safe_file(args.plan) if args.plan else None
+    plan = safe_file(args.plan) if args.plan else _AUTO_PLAN
     result = check(course, md, html, args.scope, args.type, plan)
     if args.write:
         out = Path(args.write)
