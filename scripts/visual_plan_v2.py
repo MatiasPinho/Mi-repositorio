@@ -113,11 +113,12 @@ def _registered_derived_reuse(
     based_on: list[str],
     source_id: str,
 ) -> dict[str, Any]:
-    """Validate an immutable previously-registered derived figure.
+    """Validate an immutable registered legacy deterministic sketch.
 
-    A rerun may reference an existing V1 sketch or V2 scene without copying its
-    old run-local spec into the new run. This is asset reuse, not a new visual
-    review. New/changed V2 scenes still require a current run-local scene_spec.
+    Legacy V1 derived figures can be reused as immutable registered assets in a
+    mixed V2 run. Registered V2 scenes deliberately cannot use this shortcut:
+    they need a current run-local scene_spec so cross-run PASS reuse can bind the
+    exact current scene plus prior independently reviewed PNG evidence.
     """
     key = derived_key(derived_id)
     match = _registry_match(figures, key)
@@ -144,41 +145,10 @@ def _registered_derived_reuse(
 
     scene_generation = record.get("scene_generation")
     if isinstance(scene_generation, dict) and scene_generation.get("schema_version") == 2:
-        if scene_generation.get("method") != "deterministic-scene-svg":
-            raise VisualPlanV2Error(f"{loc}.registered V2 scene generation metadata invalid")
-        scene_rel = _text(scene_generation.get("scene"))
-        scene_path = (base / scene_rel).resolve() if scene_rel else Path()
-        if not scene_rel or not scene_path.is_file() or sha256(scene_path) != scene_generation.get("scene_sha256"):
-            raise VisualPlanV2Error(f"{loc}.registered V2 scene spec missing or changed")
-        scene = scene_spec.load_scene(scene_path)
-        if derived_key(scene["id"]) != key:
-            raise VisualPlanV2Error(f"{loc}.registered V2 scene id mismatch")
-        if scene["visual_treatment"] != treatment or set(scene["based_on"]) != set(based_on):
-            raise VisualPlanV2Error(f"{loc}.registered V2 scene semantics changed")
-        if treatment == "preserve+derived_sketch" and _text(scene.get("source_figure_id")) != source_id:
-            raise VisualPlanV2Error(f"{loc}.registered V2 scene companion changed")
-        variants = scene_generation.get("variants")
-        if not isinstance(variants, dict):
-            raise VisualPlanV2Error(f"{loc}.registered V2 variants missing")
-        for variant in ("wide", "narrow"):
-            meta = variants.get(variant)
-            if not isinstance(meta, dict) or not _asset_ok(
-                base, _text(meta.get("asset")), meta.get("asset_sha256")
-            ):
-                raise VisualPlanV2Error(f"{loc}.registered V2 {variant} variant missing or changed")
-        review_meta = scene_generation.get("visual_review")
-        if not isinstance(review_meta, dict) or not review_meta.get("wide_png_sha256") or not review_meta.get("narrow_png_sha256"):
-            raise VisualPlanV2Error(f"{loc}.registered V2 review evidence metadata missing")
-        return {
-            "derived_figure_id": key,
-            "based_on": based_on,
-            "reuse_registered": True,
-            "reuse_kind": "v2",
-            "registered_asset": asset,
-            "registered_asset_sha256": _text(record.get("asset_sha256")),
-            "scene_path": scene_path,
-            "scene": scene,
-        }
+        raise VisualPlanV2Error(
+            f"{loc}.scene_spec required for registered V2 reuse; materialize the exact registered "
+            "scene under the current run's 02-scenes/ so prior PASS evidence can be hash-bound"
+        )
 
     generation = record.get("generation")
     if not isinstance(generation, dict) or generation.get("method") != "deterministic-svg":
@@ -386,14 +356,6 @@ def finalize_plan(
                 "reused_registered": True,
                 "reuse_kind": row["reuse_kind"],
             })
-            if row["reuse_kind"] == "v2":
-                generation = record["scene_generation"]
-                output.update({
-                    "scene_sha256": generation["scene_sha256"],
-                    "scene": generation["scene"],
-                    "variants": generation["variants"],
-                    "review_attempt": generation["visual_review"].get("attempt"),
-                })
         else:
             output.update({"asset": row["source_asset"]})
         built.append(output)
