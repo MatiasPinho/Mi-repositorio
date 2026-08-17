@@ -14,10 +14,18 @@ except ImportError:
 
 MIN_DISPLAY_GAP = 7.0
 MAX_DENSITY = 0.74
+MIN_READABLE_ARROW_SHAFT_PX = 9.0
+# scene_render uses refX=10 with markerUnits="strokeWidth". At final display
+# size those ten stroke widths are effectively consumed by each arrowhead.
+ARROWHEAD_CONSUMED_STROKES = 10.0
 
 
 def _display(value: float, profile: scene_pencil.PencilProfile) -> float:
     return value / profile.logical_per_css_px
+
+
+def _polyline_length(points: list[tuple[float, float]]) -> float:
+    return sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(points, points[1:]))
 
 
 def _inside(box: scene_render.Box, canvas: dict[str, float], tol: float = .5) -> bool:
@@ -152,6 +160,22 @@ def preflight_variant(scene_value: Any, variant: str) -> dict[str, Any]:
         points = scene_render.command_points(layout["placements"][eid]["commands"])
         if len(points) < 2:
             continue
+
+        arrowheads = str(element.get("arrowheads") or "none")
+        if arrowheads != "none":
+            display_length = _display(_polyline_length(points), profile)
+            main_width_px = float(profile.display_metrics()["main_width_px"])
+            head_count = 2 if arrowheads == "both" else 1
+            required = head_count * ARROWHEAD_CONSUMED_STROKES * main_width_px + MIN_READABLE_ARROW_SHAFT_PX
+            if display_length < required:
+                add(
+                    "arrow-shaft-too-short",
+                    "error",
+                    [eid],
+                    f"arrow path is only {display_length:.1f}px at final display size; "
+                    f"marker footprint can consume the readable shaft (needs >= {required:.1f}px)",
+                )
+
         exempt = {eid}
         if element["type"] == "connector":
             exempt |= {element["from"], element["to"]}
