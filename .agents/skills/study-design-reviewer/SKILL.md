@@ -17,7 +17,7 @@ Return a compact review with:
 
 Do not praise generic polish. Do not propose a new aesthetic direction unless the current one fundamentally fails the product thesis.
 
-Hard fail when ordinary prose becomes difficult to follow because of layout, low contrast, card soup, broken figures, unreadable captions, horizontal scrolling, or semantic roles that are distinguishishable only by color. For V2 scenes, also hard fail on clipping, crowding, unreadable figure text, ambiguous connections, mobile layouts that require zoom, or a pencil treatment that is effectively invisible at final size.
+Hard fail when ordinary prose becomes difficult to follow because of layout, low contrast, card soup, broken figures, unreadable captions, horizontal scrolling, or semantic roles that are distinguishable only by color. For V2 scenes, also hard fail on clipping, crowding, unreadable figure text, ambiguous connections, mobile layouts that require zoom, or a pencil treatment that is effectively invisible at final size.
 
 ## Reference-fidelity checks
 - The opening lede stays with the H1, not detached below it.
