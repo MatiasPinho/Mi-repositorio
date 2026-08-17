@@ -32,6 +32,7 @@ Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps be
 - Explicit `detallado`, `profundo`, former “guía”, or equivalent wording selects `detailed` while preserving scope and every gate.
 - Detailed mode may add useful explanation/examples but cannot invent syllabus scope or become a transcript rewrite.
 - Record `depth: "standard"|"detailed"` in `02-plan.json`.
+- The published artifact remains the unit's canonical `resumen`; detailed mode changes depth, not the public artifact type.
 
 ## Pipeline-specific RUN specialization
 1. **SCOPE + PREREQUISITE** → resolve course + scope to exactly one stable `unit_id`; summary scope is unit-only. Apply the shared **NEEDS_INGESTION** boundary before starting. If Study MCP is connected, prefer `study_get_unit_context(course, scope)` / `study_list_artifacts(course)` for canonical context. Run the figure migration command only for legacy metadata normalization; it must not reread sources.
