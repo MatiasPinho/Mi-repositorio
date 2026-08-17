@@ -1,11 +1,55 @@
 /* CARPETA_HANDDRAWN_STRUCTURES_V1
    Semantic HTML keeps the document accessible; only visible structure is
    redrawn so tables belong to the same pencil language as scenes/callouts. */
+
+/* Handwritten study typography. These faces are loaded directly so generated
+   artifacts keep the existing offline fallbacks while gaining the intended
+   notebook voice whenever webfonts are available. IBM Plex Mono remains the
+   untouched utility/code face for folios, units, counters and code. */
+@font-face {
+  font-family: "Neucha";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Neucha"),
+    url("https://fonts.gstatic.com/s/neucha/v18/q5uGsou0JOdh94bfvQlt.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Architects Daughter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Architects Daughter"),
+    url("https://fonts.gstatic.com/s/architectsdaughter/v19/KtkxAKiDZI_td1Lkx62xHZHDtgO_Y-bvfY5q4szgE-Q.ttf") format("truetype");
+}
+
 :root {
+  --study-font-body: "Neucha", "Segoe Print", "Comic Sans MS", cursive;
+  --study-font-display: "Architects Daughter", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --study-font-hand: var(--study-font-display);
+
   --notebook-table-frame-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M5 5 C76 2 145 6 219 4 C292 2 360 4 396 7 C399 28 397 67 395 95 C315 98 237 94 158 97 C90 99 28 97 5 93 C2 67 3 30 5 5' fill='none' stroke='black' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
   --notebook-table-frame-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M7 2 C84 0 153 4 225 2 C300 1 365 2 398 5 C400 31 398 65 397 92 C319 96 241 92 161 95 C91 97 29 94 6 90 C3 62 4 27 7 2' fill='none' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
   --notebook-table-grid-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 8' preserveAspectRatio='none'%3E%3Cpath d='M0 4 C48 2.8 93 5.2 139 3.8 C188 2.7 233 5 279 3.6 C323 2.8 363 4.9 400 3.9' fill='none' stroke='black' stroke-width='1.15' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
   --notebook-table-grid-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 400' preserveAspectRatio='none'%3E%3Cpath d='M4 0 C2.9 47 5.1 91 3.7 137 C2.8 184 5 228 3.8 274 C3 318 4.9 360 3.9 400' fill='none' stroke='black' stroke-width='1.15' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+}
+
+/* Architects Daughter is deliberately confined to short, high-salience text.
+   Neucha remains the prose face through --study-font-body. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--study-font-display);
+  font-weight: 400;
+}
+
+figcaption,
+.callout.exam {
+  font-family: var(--study-font-hand);
 }
 
 .table-scroll {
@@ -92,9 +136,9 @@
   background: color-mix(in srgb, var(--study-rule) 18%, var(--study-paper));
 }
 
-/* Summary section labels: replace the technical-looking § counter with a
-   small handwritten notebook subtitle. The semantic h2 and counter remain
-   unchanged; only their presentation changes for summary artifacts. */
+/* Summary section labels: the old § glyph stays gone, but the small technical
+   counter remains IBM Plex Mono while the actual section title uses Architects
+   Daughter. */
 article[data-kind="summary"] .section-head {
   display: block;
   width: min(100%, var(--notebook-measure));
@@ -103,15 +147,14 @@ article[data-kind="summary"] .section-head {
 article[data-kind="summary"] .section-head > .num {
   min-width: 0;
   margin: 0;
-  font-family: var(--study-font-hand);
-  font-size: .9rem;
+  font-family: var(--study-font-utility);
+  font-size: .72rem;
   line-height: var(--notebook-line-pitch);
-  font-weight: 400;
-  letter-spacing: .01em;
+  font-weight: 500;
+  letter-spacing: .055em;
   color: var(--study-accent);
-  font-variant-numeric: normal;
-  transform: rotate(-.45deg);
-  transform-origin: left center;
+  font-variant-numeric: tabular-nums;
+  transform: none;
 }
 
 article[data-kind="summary"] .section-head > .num::before {
