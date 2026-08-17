@@ -2,46 +2,44 @@
 
 This contract applies only when an owning pipeline explicitly loads it. It currently defines the common staged lifecycle for `resumen` and `repaso`.
 
-The owning pipeline remains responsible for its academic purpose, scope details, artifact kind, visual policy, commands and destination paths. Pipeline-specific instructions may add stricter gates or intermediate stages, but they must not skip, weaken or contradict this contract.
+The owning pipeline remains responsible for academic purpose, scope, artifact kind, visual policy, commands and destination paths. Pipeline-specific instructions may add stricter gates or intermediate stages, but must not skip, weaken or contradict this contract.
 
 ## Scope and ingestion boundary
-
-1. Resolve the request to exactly one stable `unit_id` before starting semantic artifact work, following `actions/ARGUMENTS.md` and the owning pipeline's stricter scope rules.
-2. Require canonical concepts for the resolved unit. If canonical concepts are empty, stop with **NEEDS_INGESTION** before starting the run.
-3. `procesar` may run only as a separate prerequisite action when orchestration is available. After successful ingestion, restart the owning pipeline from scope resolution. Never ingest or edit canonical academic/concept/topic knowledge inside an active semantic artifact run.
-4. When Study MCP is connected, prefer the coarse-grained context/artifact operations named by the owning pipeline. Otherwise use the deterministic CLI and only the unit-scoped canonical files plus explicit cross-unit prerequisites.
+1. Resolve the request to exactly one stable `unit_id` before semantic artifact work.
+2. Require canonical concepts for the resolved unit. If empty, stop with **NEEDS_INGESTION** before starting the run.
+3. `procesar` may run only as a separate prerequisite action. Never ingest or edit canonical academic/concept/topic knowledge inside an active semantic artifact run.
+4. Prefer the owning pipeline's coarse-grained Study MCP context operations when connected; otherwise use deterministic unit-scoped files plus explicit prerequisites.
 
 ## Run boundary
-
-1. Start a portable run with `scripts/pipeline_run.py start`; the owning pipeline supplies the exact course, pipeline and scope arguments.
-2. Treat the run snapshot as an isolation boundary. Do not modify `scripts/`, `pipelines/`, `rules/`, `config/`, `contracts/`, `core/`, `design/`, `study_mcp/`, `tests/` or protected root setup files while the run is active.
-3. Do not mutate canonical academic, concept or topic state during the run. Figure mutations are allowed only when the owning pipeline explicitly authorizes them through the deterministic figure tooling and its finish contract.
+1. Start a portable run with `scripts/pipeline_run.py start`.
+2. Treat the run snapshot as an isolation boundary. Do not modify engine/rules/contracts/design/tests while the study run is active.
+3. Do not mutate canonical academic, concept or topic state. Figure mutations are allowed only when the owning pipeline explicitly authorizes reviewed deterministic finalization.
 4. Temporary helper code belongs only under the run's `scratch/` directory.
-5. If a required engine capability is broken, stop and report **ENGINE FAILURE** with the diagnostic. Do not patch the engine inside the active study run and then continue publishing.
+5. If an engine capability is broken, stop with **ENGINE FAILURE**; never patch the engine inside the active run and continue publishing.
 
 ## Common staged lifecycle
+The canonical filenames below are shared by semantic document pipelines. Owning pipelines may add stricter evidence files/stages.
 
-The canonical file names below are shared by the semantic document pipelines. An owning pipeline may add intermediate evidence files, but must preserve this review/publication chain.
-
-1. **PLAN** → write `02-plan.json` from canonical knowledge and the owning pipeline's pedagogical/visual rules. Do not write polished prose during planning.
-2. **OPTIONAL BUILD STAGES** → run any deterministic pre-draft build required by the owning pipeline. Such stages must complete successfully before drafting.
-3. **DRAFT** → write `03-draft.md` from the plan and canonical knowledge. The artifact must satisfy the owning pipeline's audience and scope contract.
-4. **HUMANIZE** → read `vendor/humanizer/SKILL.md` and edit only student-facing prose into `04-humanized.md`. Preserve academic meaning, certainty, semantic callouts and image markup.
-5. **INDEPENDENT REVIEW** → evaluate `04-humanized.md` against canonical state and every rubric/contract required by the owning pipeline. Audit high-risk claims first, then run a separate candidate-vs-candidate consistency pass for repeated definitions, taxonomies/counts, conditions and certainty. Write `05-review.json`. Act as an independent critic: do not justify the writer or inherit its assumptions merely because they appeared in the plan.
+1. **PLAN** → write `02-plan.json` from canonical knowledge. No polished prose.
+2. **OPTIONAL PRE-DRAFT BUILD / REVIEW STAGES** → run deterministic builds and any owning-pipeline review that must complete before drafting. A V2 visual preview plus independent rendered-image review belongs here: perceptual review is not called deterministic merely because its screenshot/hash binding is deterministic.
+3. **DRAFT** → write `03-draft.md` only after mandatory pre-draft stages pass.
+4. **HUMANIZE** → edit only student-facing prose into `04-humanized.md`; preserve academic meaning, certainty, semantic callouts and image markup.
+5. **INDEPENDENT REVIEW** → evaluate `04-humanized.md` against canonical state and every rubric required by the owning pipeline. Audit high-risk claims first, then candidate internal consistency. Write `05-review.json` without inheriting writer justifications.
 6. **ACCEPT OR REPAIR ONCE**:
-   - if `05-review.json` passes, copy `04-humanized.md` to `06-final.md` and use it as the accepted Markdown;
-   - if it fails, preserve the failed candidate/review, write one targeted `06-repair.md`, review that repair independently into `07-review.json`, and only if it passes copy it to `08-final.md` and use that as the accepted Markdown;
+   - if `05-review.json` passes, copy `04-humanized.md` to `06-final.md`;
+   - if it fails, preserve evidence, write one targeted `06-repair.md`, review into `07-review.json`, and only on PASS copy to `08-final.md`;
    - do not run a third academic review/repair cycle.
-7. **RENDER CANDIDATE** → render the exact accepted Markdown to `09-rendered.html` with the owning pipeline's renderer arguments and require its structural check to pass.
-8. **INTEGRITY GATE** → validate the accepted Markdown and rendered HTML with the owning pipeline's deterministic integrity command/tool and persist `10-integrity.json`. Do not publish unless it reports `ok: true`.
-9. **BROWSER VISUAL GATE** → run `scripts/visual_audit.py` against `09-rendered.html`, require exit code 0 and `visual-audit/audit.json -> ok: true`, and inspect at least `visual-audit/desktop.png` and `visual-audit/mobile.png` against `rules/evaluation/visual-rubric.md`. Required lazy images must be force-loaded and verified by the auditor. If browser dependencies are missing or screenshots cannot be inspected, visual review is incomplete: do not claim PASS and do not publish.
-10. **ATOMIC PUBLISH** → publish only after all required gates pass. The publisher must leave the accepted run Markdown and `09-rendered.html` byte-for-byte unchanged. Deterministic rebasing of local image references is allowed only in published destinations; every rewritten reference must resolve to the same physical asset. The publication report must record immutable `source_sha256` plus transformed `published_sha256`/`destination_sha256`. When relocation changes URLs, source and destination hashes need not be equal; require the recorded deterministic transform and destination hash to match instead.
-11. **MARK + FINISH** → mark the published artifact through MCP or the deterministic artifact-state CLI, then finish the run with `scripts/pipeline_run.py finish`. The owning pipeline's finish contract may impose additional fingerprint/figure/publication checks and remains mandatory.
+7. **RENDER CANDIDATE** → produce the exact final `09-rendered.html` required by the owning pipeline. A pipeline may first create `09-rendered-base.html` and apply a deterministic responsive transform, but only `09-rendered.html` is the candidate that proceeds to integrity/publication.
+8. **INTEGRITY GATE** → validate accepted Markdown plus final HTML with the owning pipeline's deterministic integrity command and persist `10-integrity.json`. Do not publish unless `ok: true`.
+9. **BROWSER VISUAL GATE** → run the browser auditor specified by the owning pipeline against final `09-rendered.html`, require `visual-audit/audit.json -> ok: true`, and inspect required screenshot evidence against `rules/evaluation/visual-rubric.md`. For V2 this includes per-scene desktop/mobile crops in addition to document screenshots. Missing Playwright/Chromium or unavailable required screenshots is incomplete visual review, not permission to downgrade the gate.
+10. **ATOMIC PUBLISH** → publish only after all required gates pass. Leave accepted run Markdown and `09-rendered.html` byte-for-byte unchanged. Deterministic rebasing of local image/srcset references is allowed only in published destinations and every rewritten reference must resolve to the same physical asset. Record immutable source and destination hashes.
+11. **MARK + FINISH** → mark the published artifact, then finish with `scripts/pipeline_run.py finish`. Owning-pipeline fingerprint/figure/publication checks remain mandatory.
+
+## Review-bound visual distinction
+Academic/pedagogical review can judge whether a visual was a good teaching choice from plan/content context. It cannot certify rendered execution without images. When an owning pipeline requires a pre-draft vision review, the visual creator and visual reviewer must be independent executions/contexts and the reviewer must actually receive the rendered previews.
 
 ## Environment contract
-
-A complete semantic document run requires the repository-local `.venv` installed by `INSTALAR-STUDY.bat` or the equivalent setup flow. Check readiness with `python scripts/venv_exec.py scripts/setup_env.py check`. Missing `.venv`, Playwright or Chromium is an environment failure, not permission to skip a required gate.
+A complete semantic document run requires the repository-local `.venv` installed by the project setup flow. Check readiness with `python scripts/venv_exec.py scripts/setup_env.py check`. Missing `.venv`, Playwright or Chromium is an environment failure.
 
 ## Context discipline
-
 Do not reread full raw transcripts merely to imitate teacher wording or add volume. Pull raw evidence only when needed to resolve a missing or ambiguous canonical point. Quotes and timestamps remain internal unless exact wording materially matters.
