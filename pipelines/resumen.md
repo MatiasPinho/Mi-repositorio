@@ -26,6 +26,16 @@ Then load only these summary-specific shared rules before semantic work:
 ## SHARED LIFECYCLE
 Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps below specialize that lifecycle for summaries and add summary-only visual stages. They do not replace or weaken any shared review, gate, publication, environment or failure requirement.
 
+## RUNTIME BUDGET
+Quality gates exist to protect the artifact, not to make normal generation unbounded.
+- A standard `/resumen` should normally finish in roughly **10–20 minutes** on a capable hosted model; **30 minutes** is a performance warning and **60+ minutes is a runtime/product failure that must be investigated**, even when the artifact eventually passes.
+- This is an engineering budget, not permission to skip a required fidelity gate.
+- Never ask an AI reviewer to prove a byte/hash fact that deterministic code can prove.
+- Never re-review a scene whose normalized scene SHA and wide/narrow PNG SHA-256 values are unchanged from a previous visual PASS in the same run.
+- Reviewers receive the **minimum evidence packet for their job**. A visual reviewer gets current PNGs, the scene spec, its pedagogical objective/provenance and the visual rubric; it does not explore the whole repository or load unrelated course state. An academic reviewer gets the accepted prose plus compact canonical claims/concepts needed for fidelity; it does not inspect visual geometry already closed by the visual gate unless the academic claim depends on it.
+- Use one visual review batch for all changed scenes. On repair, review only failed/changed scenes. Copy byte-identical prior PASS rows into the current consolidated review mechanically; do not wake another model merely to re-approve identical hashes.
+- Post-render browser auditing is deterministic integration QA. Do not perform a second open-ended vision review of figures that already passed unless the browser audit exposes a new rendered defect.
+
 ## DEPTH
 `resumen` is the single public long-form study-document action.
 - Default depth is `standard`.
@@ -50,9 +60,12 @@ Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps be
    **V2 default for new derived figures:**
    - run `python scripts/venv_exec.py scripts/visual_plan_v2.py preview --course <course> --unit "<scope>" --plan <run-dir>/02-plan.json --write <run-dir>/02-visual-preview.json`;
    - stop on deterministic preflight failure and repair the scene; failed attempts remain run-local and do not touch `figures.json`;
-   - a separate vision-capable reviewer must inspect every current `wide.png` and `narrow.png` against `rules/evaluation/visual-rubric.md`, then write `<run-dir>/02-visual-review.json` following `contracts/visual-review.schema.json`. The reviewer must be an independent execution/context and explicitly declare `capability: vision`, `independent: true`, `vision_verified: true`;
+   - `preview` reuses an existing attempt when the scene and its rendered evidence are byte-identical. `reused: true` means no new attempt was consumed. If that exact evidence already has a PASS in the preceding review file, carry that row forward mechanically;
+   - a separate vision-capable reviewer must inspect every **new or changed** current `wide.png` and `narrow.png` against `rules/evaluation/visual-rubric.md`, then write `<run-dir>/02-visual-review.json` following `contracts/visual-review.schema.json`. The reviewer must be an independent execution/context and explicitly declare `capability: vision`, `independent: true`, `vision_verified: true`;
+   - give the visual reviewer only the changed screenshots, their scene specs, pedagogical objective/provenance and rubric. Do not give it the full repository, full transcript, unrelated concepts, pipeline history or designer justification;
    - a model without image input cannot PASS. Mechanical metrics are not a substitute for rendered inspection;
-   - if review fails, repair and preview again. Maximum three reviewed attempts per scene. The reviewer may require splitting an overloaded visual into multiple derived scenes, with the plan updated before a new current preview is produced;
+   - if review fails, repair only failed scenes and preview again. Maximum three reviewed attempts **per changed scene**. Unchanged PASS scenes keep their previous attempt number and hashes. The reviewer may require splitting an overloaded visual into multiple derived scenes, with the plan updated before a new current preview is produced;
+   - do not use an AI call to compare hashes or to restate an existing PASS. SHA equality is a deterministic operation;
    - after every current scene passes, run `python scripts/venv_exec.py scripts/visual_plan_v2.py finalize --course <course> --unit "<scope>" --plan <run-dir>/02-plan.json --preview <run-dir>/02-visual-preview.json --review <run-dir>/02-visual-review.json --write <run-dir>/02-visual-build.json`;
    - finalization re-renders and compares SVG hashes to the reviewed attempt before collision-safe registration. Source assets remain unchanged.
 
@@ -62,17 +75,22 @@ Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps be
 
 5. **DRAFT** → only after successful visual finalization, write `03-draft.md` from plan, canonical knowledge and `02-visual-build.json`. Use the exact registered `asset` returned by the build. A `reinterpret` uses its derived asset, never its source PNG. `preserve+derived_sketch` uses both members. Place each figure beside its explanation.
 
-6. **REVIEW** → execute the shared independent academic/pedagogical review. `visual_support` here evaluates whether the selected visuals teach the right things and preserve truth; it does **not** replace the pre-draft V2 vision review. Fail if Markdown treatment differs from the plan/build.
+6. **REVIEW** → execute the shared independent academic/pedagogical review. `visual_support` here evaluates whether the selected visuals teach the right things and preserve truth; it does **not** replace the pre-draft V2 vision review. Fail if Markdown treatment differs from the plan/build. Review the high-risk/uncertain claims first and do not reopen closed visual-layout work.
 
 7. **RENDER CANDIDATE** → for V2 runs render the accepted Markdown first to `<run-dir>/09-rendered-base.html`:
    `python scripts/venv_exec.py scripts/render_study.py <accepted-md> <run-dir>/09-rendered-base.html --kind summary --course "<course-display-name>" --scope "<scope>" --check`.
-   Then run `python scripts/venv_exec.py scripts/scene_responsive.py <run-dir>/09-rendered-base.html <run-dir>/09-rendered.html --report <run-dir>/09-responsive.json` so mobile uses the reviewed narrow geometry. A legacy run with no V2 scenes may render directly to `09-rendered.html` as before.
+
+   Complete deterministic syntax colour for explicit code languages next:
+   `python scripts/venv_exec.py scripts/code_highlight_v2.py <run-dir>/09-rendered-base.html <run-dir>/09-rendered-code.html --report <run-dir>/09-code-highlight.json`.
+   Java, BASIC and Prolog are supported in addition to the renderer's existing profiles. Unsupported explicit languages remain readable but are reported as warnings rather than silently pretending to be highlighted.
+
+   Then run `python scripts/venv_exec.py scripts/scene_responsive.py <run-dir>/09-rendered-code.html <run-dir>/09-rendered.html --report <run-dir>/09-responsive.json` so mobile uses the reviewed narrow geometry. A legacy run with no V2 scenes may render directly to `09-rendered.html` as before.
 
 8. **INTEGRITY GATE** → V2 runs use:
    `python scripts/venv_exec.py scripts/artifact_integrity_v2.py --course <course> --markdown <accepted-md> --html <run-dir>/09-rendered.html --scope "<scope>" --type summary --plan <run-dir>/02-plan.json --preview <run-dir>/02-visual-preview.json --review <run-dir>/02-visual-review.json --build <run-dir>/02-visual-build.json --write <run-dir>/10-integrity.json`.
-   This binds plan, scene, reviewed PNG hashes, registered wide/narrow SVG hashes and responsive final HTML. Legacy schema-1-only runs may continue through `study_validate_artifact(..., plan=...)` / `scripts/artifact_integrity.py`.
+   This binds plan, scene, reviewed PNG hashes, registered wide/narrow SVG hashes and responsive final HTML. The V2 gate explicitly disables V1 plan auto-discovery before applying its own visual contract. Legacy schema-1-only runs may continue through `study_validate_artifact(..., plan=...)` / `scripts/artifact_integrity.py`.
 
-9. **BROWSER VISUAL GATE** → V2 runs use `python scripts/venv_exec.py scripts/visual_audit_v2.py <run-dir>/09-rendered.html --out <run-dir>/visual-audit`; legacy runs may use `scripts/visual_audit.py`. Require `audit.json -> ok: true`. Inspect document-level desktop/mobile evidence and every V2 per-scene desktop/mobile crop. The physical notebook reader can hide figures on inactive leaves, so a single screenshot is not enough.
+9. **BROWSER VISUAL GATE** → V2 runs use `python scripts/venv_exec.py scripts/visual_audit_v2.py <run-dir>/09-rendered.html --out <run-dir>/visual-audit`; legacy runs may use `scripts/visual_audit.py`. Require `audit.json -> ok: true`. Inspect document-level desktop/mobile evidence and every V2 per-scene desktop/mobile crop. The physical notebook reader can hide figures on inactive leaves, so a single screenshot is not enough. This is integration evidence, not permission to re-run an open-ended figure reviewer when the reviewed assets are unchanged.
 
 10. **ATOMIC PUBLISH** → after all gates pass, publish the accepted Markdown and final `09-rendered.html` with `scripts/publish_artifact.py`. The publisher rebases both ordinary image refs and V2 responsive `srcset` assets while preserving immutable run-source hashes.
 
