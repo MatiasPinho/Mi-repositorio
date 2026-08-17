@@ -6,6 +6,9 @@
 Load the shared lifecycle first:
 - `pipelines/_shared/semantic-document-lifecycle.md`
 
+Then load the summary runtime optimization contract:
+- `pipelines/_shared/summary-runtime-optimization.md`
+
 Then load only these summary-specific shared rules before semantic work:
 - `rules/academic/source-truth.md`
 - `rules/academic/uncertainty.md`
