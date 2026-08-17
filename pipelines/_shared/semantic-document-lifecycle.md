@@ -23,8 +23,8 @@ The canonical filenames below are shared by semantic document pipelines. Owning 
 1. **PLAN** → write `02-plan.json` from canonical knowledge. No polished prose.
 2. **OPTIONAL PRE-DRAFT BUILD / REVIEW STAGES** → run deterministic builds and any owning-pipeline review that must complete before drafting. A V2 visual preview plus independent rendered-image review belongs here: perceptual review is not called deterministic merely because its screenshot/hash binding is deterministic.
 3. **DRAFT** → write `03-draft.md` only after mandatory pre-draft stages pass.
-4. **HUMANIZE** → edit only student-facing prose into `04-humanized.md`; preserve academic meaning, certainty, semantic callouts and image markup.
-5. **INDEPENDENT REVIEW** → evaluate `04-humanized.md` against canonical state and every rubric required by the owning pipeline. Audit high-risk claims first, then candidate internal consistency. Write `05-review.json` without inheriting writer justifications.
+4. **HUMANIZE** → read `vendor/humanizer/SKILL.md` and edit only student-facing prose into `04-humanized.md`; preserve academic meaning, certainty, semantic callouts and image markup.
+5. **INDEPENDENT REVIEW** → evaluate `04-humanized.md` against canonical state and every rubric required by the owning pipeline. Act as an **independent critic**: audit high-risk claims first, then candidate internal consistency, and write `05-review.json` without inheriting writer justifications.
 6. **ACCEPT OR REPAIR ONCE**:
    - if `05-review.json` passes, copy `04-humanized.md` to `06-final.md`;
    - if it fails, preserve evidence, write one targeted `06-repair.md`, review into `07-review.json`, and only on PASS copy to `08-final.md`;
@@ -32,7 +32,7 @@ The canonical filenames below are shared by semantic document pipelines. Owning 
 7. **RENDER CANDIDATE** → produce the exact final `09-rendered.html` required by the owning pipeline. A pipeline may first create `09-rendered-base.html` and apply a deterministic responsive transform, but only `09-rendered.html` is the candidate that proceeds to integrity/publication.
 8. **INTEGRITY GATE** → validate accepted Markdown plus final HTML with the owning pipeline's deterministic integrity command and persist `10-integrity.json`. Do not publish unless `ok: true`.
 9. **BROWSER VISUAL GATE** → run the browser auditor specified by the owning pipeline against final `09-rendered.html`, require `visual-audit/audit.json -> ok: true`, and inspect required screenshot evidence against `rules/evaluation/visual-rubric.md`. For V2 this includes per-scene desktop/mobile crops in addition to document screenshots. Missing Playwright/Chromium or unavailable required screenshots is incomplete visual review, not permission to downgrade the gate.
-10. **ATOMIC PUBLISH** → publish only after all required gates pass. Leave accepted run Markdown and `09-rendered.html` byte-for-byte unchanged. Deterministic rebasing of local image/srcset references is allowed only in published destinations and every rewritten reference must resolve to the same physical asset. Record immutable source and destination hashes.
+10. **ATOMIC PUBLISH** → publish only after all required gates pass. Leave accepted run Markdown and `09-rendered.html` byte-for-byte unchanged. Deterministic rebasing of local image/srcset references is allowed only in published destinations and every rewritten reference must resolve to the same physical asset. The publication report keeps immutable `source_sha256` plus transformed `published_sha256` / destination hashes.
 11. **MARK + FINISH** → mark the published artifact, then finish with `scripts/pipeline_run.py finish`. Owning-pipeline fingerprint/figure/publication checks remain mandatory.
 
 ## Review-bound visual distinction
