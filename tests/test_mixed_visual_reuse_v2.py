@@ -73,6 +73,58 @@ class MixedVisualReuseV2Tests(unittest.TestCase):
             self.assertEqual(rows[0]["derived_figure_id"], "derived:legacy-one")
             self.assertNotIn("scene_spec", rows[0])
 
+    def test_registered_v2_without_current_scene_spec_is_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            course = Path(td)
+            figures_dir = course / "assets" / "figures"
+            figures_dir.mkdir(parents=True)
+            source_asset = figures_dir / "source-one.png"
+            derived_asset = figures_dir / "v2-one.svg"
+            source_asset.write_bytes(b"source")
+            derived_asset.write_text("<svg>v2</svg>", encoding="utf-8")
+
+            plan = course / "02-plan.json"
+            plan.write_text(json.dumps({
+                "visuals": [{
+                    "concept_id": "concept:c",
+                    "need": "visual_helpful",
+                    "visual_treatment": "preserve+derived_sketch",
+                    "reason": "Reuse a previously reviewed V2 companion",
+                    "fidelity_reason": "Keep the source beside the derived explanation",
+                    "source_figure_id": "source:one",
+                    "derived_figure_id": "derived:v2-one",
+                    "based_on": ["concept:c"],
+                }]
+            }), encoding="utf-8")
+
+            registry = {"figures": {
+                "source:one": {
+                    "origin": "source",
+                    "unit_id": "unidad-1",
+                    "asset": "assets/figures/source-one.png",
+                },
+                "derived:v2-one": {
+                    "origin": "derived",
+                    "unit_id": "unidad-1",
+                    "asset": "assets/figures/v2-one.svg",
+                    "asset_sha256": sha(derived_asset),
+                    "visual_treatment": "preserve+derived_sketch",
+                    "source_figure_id": "source:one",
+                    "based_on": ["concept:c"],
+                    "scene_generation": {
+                        "schema_version": 2,
+                        "method": "deterministic-scene-svg",
+                    },
+                },
+            }}
+
+            with mock.patch.object(visual_plan_v2, "resolve_unit", return_value={"unit_id": "unidad-1"}), \
+                 mock.patch.object(visual_plan_v2, "load_registry", return_value=registry), \
+                 mock.patch.object(visual_plan_v2, "record_unit_id", return_value="unidad-1"), \
+                 mock.patch.object(visual_plan_v2, "has_unit_layout", return_value=False):
+                with self.assertRaisesRegex(visual_plan_v2.VisualPlanV2Error, "scene_spec required for registered V2 reuse"):
+                    visual_plan_v2.inspect_plan(course, "unidad-1", plan)
+
     def test_preview_only_renders_current_scene_not_registered_legacy(self):
         with tempfile.TemporaryDirectory() as td:
             course = Path(td)
