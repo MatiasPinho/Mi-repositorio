@@ -14,7 +14,7 @@ Create or modify the shared visual system under `design/`. Do not style individu
 3. If making a substantial aesthetic change, also read `vendor/frontend-design/SKILL.md` for design-process guidance. Its aesthetic advice is subordinate to this skill's learning/readability constraints.
 4. Make changes only in `design/*.css`; run `python scripts/build_design.py` to regenerate `assets/study-theme.css`.
 5. Render all three stress-test documents under `docs/design-samples/`.
-6. Run `python scripts/visual_audit.py ...` and inspect desktop, tablet, mobile and print screenshots.
+6. Run `python scripts/visual_audit.py ...` for legacy/non-scene documents or `python scripts/visual_audit_v2.py ...` when responsive V2 scenes are present; inspect desktop, tablet, mobile, print and per-scene evidence.
 7. Invoke/use the `study-design-reviewer` rubric against the screenshots. Repair issues before considering the system stable.
 8. Run release tests.
 
@@ -26,7 +26,9 @@ Create or modify the shared visual system under `design/`. Do not style individu
 5. visual character.
 
 ## Fixed product thesis
-The visual direction is **contemporary technical manual / university textbook**. The default is warm paper, dark ink, a narrow prose measure and a stable left gutter that carries section numbers and semantic labels without interrupting the reading line. Figures, tables and code may break wider than prose. The page should feel edited, not app-like. Do not introduce decoration whose meaning cannot be explained.
+The visual direction is the **Carpeta university study notebook**. The default is warm ruled paper, dark ink, a restrained binding/margin cue, practical reading typography, selective marker emphasis and handwritten/pencil accents only where a student would naturally annotate or sketch. The page should feel like carefully edited university notes rather than a dashboard or faux vintage object. Figures, tables and code may break wider than ordinary prose when that improves learning.
+
+The notebook identity is intentional product UI, not decoration to be removed by a reviewer. The historical contemporary-technical-manual direction is repository history, not the active visual target.
 
 ## Hard constraints
 - No per-artifact redesign.
@@ -34,11 +36,11 @@ The visual direction is **contemporary technical manual / university textbook**.
 - No color-only meaning.
 - No full justification.
 - No decorative gradients, glassmorphism, dashboard card grids or animation during normal study reading.
-- Figures are instructional objects and must remain visually close to the explanation they support. Prose measure stays narrower than figure/table/code width, as in technical books.
-- Book identity comes from hierarchy, front matter, measure and rhythm; never from fake paper textures or ornamental flourishes.
-- Course name + artifact type + scope should read like textbook front matter when those metadata are available.
-- Preserve the reference grammar: role labels live in the gutter; concept names live in the body; the first lede belongs under the H1 in the chapter opening; `Unidad N` may be presented editorially as `Capítulo N` while the running line keeps the academic scope intact.
+- Figures are instructional objects and must remain visually close to the explanation they support. Prose measure stays narrower than figure/table/code width.
+- Notebook cues must be systematic and restrained: ruled lines, binding margin/holes and handwriting accents are allowed because they are part of the canonical product grammar; do not add unrelated stickers, scrapbook ornament, fake wear, heavy grain or vintage cosplay.
+- Course name + artifact type + scope should read like coherent notebook/chapter metadata when those values are available.
+- Preserve the reference grammar: stable semantic role labels remain distinct from concept names; the first lede stays with the chapter opening; `Unidad N` may be presented editorially as `Capítulo N` while the running line keeps the academic scope intact.
 - Persistent navigation is artifact-specific: summaries and rapid reviews should not carry sidebar chrome; long guides may use a quiet editorial index.
 - The warm paper/light theme is the default. Dark mode may exist only as an explicit opt-in and must preserve hierarchy and meaning.
-- Do not simulate paper with textures, grain, notebook lines, stickers or vintage effects.
+- Derived pedagogical V2 figures use the shared deterministic pencil renderer. The model may design composition, but not fonts, hex colors, CSS, filters or per-figure visual styling.
 - Webfonts may be used as progressive enhancement when they materially improve long-form reading, but every role must have complete system fallbacks so artifacts remain readable offline. Never bundle font binaries in the project.
