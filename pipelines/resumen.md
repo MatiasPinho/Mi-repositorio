@@ -59,7 +59,7 @@ Visual support is secondary to producing the study document. A normal summary on
 4. **VISUAL BUILD** → before drafting run:
    `python scripts/venv_exec.py scripts/visual_plan_hybrid.py --course <course> --unit "<scope>" --plan <run-dir>/02-plan.json --write <run-dir>/02-visual-build.json`.
 
-   The hybrid materializer validates every visual decision and delegates diagram rows to the established deterministic `scripts/visual_plan.py` / `scripts/sketch_figure.py` behavior. Diagram generation remains collision-safe, idempotent and exact.
+   The hybrid materializer validates every visual decision and delegates diagram rows to the established deterministic `scripts/visual_plan.py` / `scripts/sketch_figure.py` behavior. Diagram generation remains collision-safe, idempotent and exact. The direct compatibility command remains `python scripts/venv_exec.py study.py figures generate-sketch <course> --unit "<scope>" --spec <run-dir>/02-sketches/<id>.json`; never create normal diagrams with an image-generation model.
 
    Illustration rows are different: Carpeta constructs the fixed pencil-style prompt from the small semantic spec, makes one bounded provider call, crops/keys the white working canvas to transparency, wraps the raster as a notebook overlay and collision-safely registers it. Credentials and raw academic source text are never stored in the visual spec.
 
