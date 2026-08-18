@@ -15,13 +15,15 @@ if str(ROOT) not in sys.path:
 
 from study import resolve_course  # noqa: E402
 try:
-    from . import scene_figure, scene_spec, visual_review
+    from . import scene_figure, scene_render, scene_spec, visual_policy, visual_review
     from .course_layout import has_unit_layout, unit_root
     from .figure_assets import derived_key, load_registry
     from .unit_identity import record_unit_id, resolve_unit
 except ImportError:
     import scene_figure  # type: ignore
+    import scene_render  # type: ignore
     import scene_spec  # type: ignore
+    import visual_policy  # type: ignore
     import visual_review  # type: ignore
     from course_layout import has_unit_layout, unit_root  # type: ignore
     from figure_assets import derived_key, load_registry  # type: ignore
@@ -30,6 +32,7 @@ except ImportError:
 NEEDS = {"visual_required", "visual_helpful", "visual_not_needed"}
 TREATMENTS = {"reinterpret", "preserve", "preserve+derived_sketch"}
 DERIVED = {"reinterpret", "preserve+derived_sketch"}
+FINALIZER_ID = "visual-plan-v2-finalize-v2"
 
 
 class VisualPlanV2Error(ValueError):
@@ -38,6 +41,11 @@ class VisualPlanV2Error(ValueError):
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _json_sha(payload: dict[str, Any]) -> str:
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -100,6 +108,41 @@ def _asset_ok(base: Path, asset: str, digest: Any) -> bool:
     if not path.is_file():
         return False
     return not digest or sha256(path) == str(digest)
+
+
+def _assert_registered_v2_scene_is_same_revision(
+    course: Path,
+    unit_id: str,
+    figures: dict[str, Any],
+    *,
+    loc: str,
+    scene: dict[str, Any],
+) -> None:
+    """Keep derived V2 revisions append-only instead of overwriting old pixels.
+
+    Re-reviewing an identical registered scene under a newer policy is allowed.
+    Changing its geometry/semantics under the same id is not: the repaired scene
+    must receive a new id so the old reviewed asset remains immutable history.
+    """
+    key = derived_key(scene["id"])
+    match = _registry_match(figures, key)
+    if match is None:
+        return
+    _, record = match
+    if record.get("origin") != "derived" or record_unit_id(course, record) != unit_id:
+        return
+    generation = record.get("scene_generation")
+    if not isinstance(generation, dict) or generation.get("schema_version") != 2:
+        return
+    old_sha = _text(generation.get("scene_sha256"))
+    new_sha = scene_spec.scene_sha256(scene)
+    if old_sha == new_sha:
+        return
+    suggestion = f"{scene['id']}-r{visual_policy.current_fingerprint()[:8]}"
+    raise VisualPlanV2Error(
+        f"{loc}: registered V2 scene id {scene['id']} already belongs to a different immutable scene; "
+        f"use a new scene id + derived_figure_id for the repair (for example {suggestion})"
+    )
 
 
 def _registered_derived_reuse(
@@ -243,6 +286,9 @@ def inspect_plan(course: Path, unit_value: str, plan_path: Path) -> list[dict[st
                     raise VisualPlanV2Error(f"{loc}.based_on must match scene provenance")
                 if treatment == "preserve+derived_sketch" and scene.get("source_figure_id") != source_id:
                     raise VisualPlanV2Error(f"{loc}.source_figure_id does not match scene companion")
+                _assert_registered_v2_scene_is_same_revision(
+                    course, unit_id, figures, loc=loc, scene=scene
+                )
                 row.update({
                     "derived_figure_id": derived_key(scene["id"]),
                     "scene_spec": spec_rel.as_posix(),
@@ -299,10 +345,174 @@ def preview_plan(course: Path, unit_value: str, plan_path: Path) -> dict[str, An
         "version": 1,
         "ok": all(entry.get("ok") is True for entry in entries),
         "plan_sha256": sha256(plan_path),
+        "visual_policy_sha256": visual_policy.current_fingerprint(),
         "entries": entries,
         "preserved": preserved,
         "reused_registered": reused_registered,
     }
+
+
+def _require_current_policy(preview: dict[str, Any]) -> str:
+    current = visual_policy.current_fingerprint()
+    if preview.get("visual_policy_sha256") != current:
+        raise VisualPlanV2Error("preview visual policy is missing or stale against current figure/rubric rules")
+    return current
+
+
+def _verified_scene_output(
+    course: Path,
+    unit_id: str,
+    row: dict[str, Any],
+    preview_row: dict[str, Any],
+    review_row: dict[str, Any],
+    figures: dict[str, Any],
+) -> dict[str, Any]:
+    scene = row["scene"]
+    scene_id = scene["id"]
+    key = row["derived_figure_id"]
+    record = figures.get(key)
+    if not isinstance(record, dict) or record.get("origin") != "derived":
+        raise VisualPlanV2Error(f"finalized scene not registered: {key}")
+    if record_unit_id(course, record) != unit_id:
+        raise VisualPlanV2Error(f"finalized scene belongs to another unit: {key}")
+    if record.get("visual_treatment") != row["visual_treatment"]:
+        raise VisualPlanV2Error(f"finalized scene treatment mismatch: {key}")
+    if set(map(str, record.get("based_on", []))) != set(map(str, row.get("based_on", []))):
+        raise VisualPlanV2Error(f"finalized scene provenance mismatch: {key}")
+
+    generation = record.get("scene_generation")
+    if not isinstance(generation, dict):
+        raise VisualPlanV2Error(f"finalized scene generation missing: {key}")
+    if generation.get("method") != "deterministic-scene-svg" or generation.get("schema_version") != 2:
+        raise VisualPlanV2Error(f"finalized scene generation invalid: {key}")
+    scene_sha = scene_spec.scene_sha256(scene)
+    if generation.get("scene_sha256") != scene_sha or preview_row.get("scene_sha256") != scene_sha:
+        raise VisualPlanV2Error(f"finalized scene hash mismatch: {key}")
+
+    base = _content_base(course, unit_id)
+    scene_rel = _text(generation.get("scene"))
+    scene_path = (base / scene_rel).resolve() if scene_rel else None
+    if scene_path is None or not scene_path.is_file() or sha256(scene_path) != scene_sha:
+        raise VisualPlanV2Error(f"finalized scene spec missing or changed: {key}")
+
+    narrow_name = f"{scene_id}-narrow.svg"
+    rendered = {
+        "wide": scene_render.render_variant(scene, "wide", narrow_asset=narrow_name)[0],
+        "narrow": scene_render.render_variant(scene, "narrow")[0],
+    }
+    variants = generation.get("variants")
+    if not isinstance(variants, dict):
+        raise VisualPlanV2Error(f"finalized scene variants missing: {key}")
+    for variant in ("wide", "narrow"):
+        rendered_sha = hashlib.sha256(rendered[variant]).hexdigest()
+        preview_variant = preview_row.get("variants", {}).get(variant, {})
+        registered_variant = variants.get(variant, {})
+        if preview_variant.get("svg_sha256") != rendered_sha:
+            raise VisualPlanV2Error(f"{scene_id}:{variant}: finalizer replay differs from reviewed SVG")
+        if not isinstance(registered_variant, dict) or registered_variant.get("asset_sha256") != rendered_sha:
+            raise VisualPlanV2Error(f"{scene_id}:{variant}: registered asset differs from finalizer replay")
+        asset = _text(registered_variant.get("asset"))
+        asset_path = (base / asset).resolve() if asset else None
+        if asset_path is None or not asset_path.is_file() or sha256(asset_path) != rendered_sha:
+            raise VisualPlanV2Error(f"{scene_id}:{variant}: registered finalized asset missing or changed")
+
+    inspected = {
+        item["variant"]: item
+        for item in review_row.get("inspected", [])
+        if isinstance(item, dict) and item.get("variant") in {"wide", "narrow"}
+    }
+    if set(inspected) != {"wide", "narrow"}:
+        raise VisualPlanV2Error(f"{scene_id}: current review bindings incomplete")
+
+    return {
+        "concept_id": row["concept_id"],
+        "visual_treatment": row["visual_treatment"],
+        "source_figure_id": row.get("source_figure_id") or None,
+        "derived_figure_id": key,
+        "asset": record["asset"],
+        "asset_sha256": record["asset_sha256"],
+        "scene_sha256": scene_sha,
+        "scene": scene_rel,
+        "variants": variants,
+        "review_attempt": review_row["attempt"],
+        "review_png_sha256": {
+            "wide": inspected["wide"]["sha256"],
+            "narrow": inspected["narrow"]["sha256"],
+        },
+    }
+
+
+def expected_build_report(
+    course: Path,
+    unit_value: str,
+    plan_path: Path,
+    preview_path: Path,
+    review_path: Path,
+) -> dict[str, Any]:
+    """Reconstruct the only acceptable V2 build report without mutating state."""
+    rows = inspect_plan(course, unit_value, plan_path)
+    preview = _json(preview_path)
+    if preview.get("ok") is not True or preview.get("plan_sha256") != sha256(plan_path):
+        raise VisualPlanV2Error("preview is failed or stale against 02-plan.json")
+    policy_sha = _require_current_policy(preview)
+    review_raw = _json(review_path)
+    binding = visual_review.bind_review_to_preview(review_raw, preview)
+    review = binding["review"]
+    if review.get("visual_policy_sha256") != policy_sha:
+        raise VisualPlanV2Error("review visual policy is stale")
+    review_by_id = {item["scene_id"]: item for item in review["figures"]}
+    preview_by_id = {item["scene_id"]: item for item in preview["entries"]}
+    figures = load_registry(course).get("figures", {})
+    if not isinstance(figures, dict):
+        raise VisualPlanV2Error("figure registry invalid during finalization replay")
+    unit_id = _text(resolve_unit(course, unit_value).get("unit_id"))
+    if not unit_id:
+        raise VisualPlanV2Error(f"could not resolve unit: {unit_value}")
+
+    built: list[dict[str, Any]] = []
+    for row in rows:
+        if row["visual_treatment"] in DERIVED and not row.get("reuse_registered"):
+            scene_id = row["scene"]["id"]
+            if scene_id not in preview_by_id or scene_id not in review_by_id:
+                raise VisualPlanV2Error(f"finalized current scene missing preview/review: {scene_id}")
+            built.append(_verified_scene_output(
+                course, unit_id, row, preview_by_id[scene_id], review_by_id[scene_id], figures
+            ))
+        elif row.get("reuse_registered"):
+            record = figures.get(row["derived_figure_id"])
+            if not isinstance(record, dict):
+                raise VisualPlanV2Error(f"registered figure disappeared during finalize: {row['derived_figure_id']}")
+            built.append({
+                "concept_id": row["concept_id"],
+                "visual_treatment": row["visual_treatment"],
+                "source_figure_id": row.get("source_figure_id") or None,
+                "derived_figure_id": row["derived_figure_id"],
+                "asset": record["asset"],
+                "asset_sha256": record.get("asset_sha256"),
+                "reused_registered": True,
+                "reuse_kind": row["reuse_kind"],
+            })
+        else:
+            built.append({
+                "concept_id": row["concept_id"],
+                "visual_treatment": row["visual_treatment"],
+                "source_figure_id": row.get("source_figure_id") or None,
+                "asset": row["source_asset"],
+            })
+
+    report: dict[str, Any] = {
+        "version": 2,
+        "ok": True,
+        "producer": FINALIZER_ID,
+        "plan_sha256": sha256(plan_path),
+        "preview_sha256": sha256(preview_path),
+        "visual_review_sha256": sha256(review_path),
+        "visual_policy_sha256": policy_sha,
+        "vision_verified": True,
+        "entries": built,
+    }
+    report["finalization_attestation_sha256"] = _json_sha(report)
+    return report
 
 
 def finalize_plan(
@@ -316,6 +526,7 @@ def finalize_plan(
     preview = _json(preview_path)
     if preview.get("ok") is not True or preview.get("plan_sha256") != sha256(plan_path):
         raise VisualPlanV2Error("preview is failed or stale against 02-plan.json")
+    _require_current_policy(preview)
     review_raw = _json(review_path)
     binding = visual_review.bind_review_to_preview(review_raw, preview)
     review = binding["review"]
@@ -323,51 +534,22 @@ def finalize_plan(
     preview_by_id = {row["scene_id"]: row for row in preview["entries"]}
     figures = load_registry(course).get("figures", {})
 
-    built = []
     for row in rows:
-        output = {
-            "concept_id": row["concept_id"],
-            "visual_treatment": row["visual_treatment"],
-            "source_figure_id": row.get("source_figure_id") or None,
-        }
         if row["visual_treatment"] in DERIVED and not row.get("reuse_registered"):
             scene_id = row["scene"]["id"]
-            result = scene_figure.finalize_scene(
+            scene_figure.finalize_scene(
                 course, unit_value, row["scene"], preview_by_id[scene_id], review_by_id[scene_id]
             )
-            record = result["record"]
-            output.update({
-                "derived_figure_id": result["key"],
-                "asset": record["asset"],
-                "asset_sha256": record["asset_sha256"],
-                "scene_sha256": record["scene_generation"]["scene_sha256"],
-                "scene": record["scene_generation"]["scene"],
-                "variants": record["scene_generation"]["variants"],
-                "review_attempt": record["scene_generation"]["visual_review"]["attempt"],
-            })
         elif row.get("reuse_registered"):
             record = figures.get(row["derived_figure_id"])
             if not isinstance(record, dict):
                 raise VisualPlanV2Error(f"registered figure disappeared during finalize: {row['derived_figure_id']}")
-            output.update({
-                "derived_figure_id": row["derived_figure_id"],
-                "asset": record["asset"],
-                "asset_sha256": record.get("asset_sha256"),
-                "reused_registered": True,
-                "reuse_kind": row["reuse_kind"],
-            })
-        else:
-            output.update({"asset": row["source_asset"]})
-        built.append(output)
-    return {
-        "version": 2,
-        "ok": True,
-        "plan_sha256": sha256(plan_path),
-        "preview_sha256": sha256(preview_path),
-        "visual_review_sha256": sha256(review_path),
-        "vision_verified": True,
-        "entries": built,
-    }
+
+    # Build is generated only after the mutating finalizer succeeded, then
+    # reconstructed from canonical state. Integrity performs the same pure
+    # reconstruction later, so hand-writing a superficially plausible JSON is
+    # not a substitute for successful finalization.
+    return expected_build_report(course, unit_value, plan_path, preview_path, review_path)
 
 
 def _path(value: str, *, must_exist: bool = True) -> Path:
