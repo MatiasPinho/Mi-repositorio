@@ -13,11 +13,11 @@ Only genuinely course-wide runs may live under
 - `02-plan.json`: pedagogical/content plan. No polished prose.
 - `02-sketches/<id>.json`: legacy schema-1 structured specs for deterministic graph SVGs.
 - `02-scenes/<id>.json`: schema-2 free scene graph specs for new derived figures.
-- `02-visual-preflight-failures/<scene-id>/<NN>/`: run-local scene/preflight evidence for deterministic failures. These failures never consume the three vision-review attempts.
-- `02-visual-attempts/<scene-id>/<NN>/`: run-local V2 normalized scene, passing preflight, wide/narrow SVGs and preview PNGs eligible for independent vision review. Failed reviewed attempts never enter canonical figure state.
-- `02-visual-preview.json`: current V2 preview report bound to `02-plan.json`.
-- `02-visual-review.json`: independent vision review bound to exact preview PNG SHA-256 values.
-- `02-visual-build.json`: deterministic materialization report binding the plan to final registered assets before drafting. V2 build reports also bind preview/review hashes and `vision_verified: true`.
+- `02-visual-preflight-failures/<scene-id>/<NN>/`: run-local scene/preflight evidence for deterministic failures. These failures do not consume a vision-review attempt.
+- `02-visual-attempts/<scene-id>/<NN>/`: run-local V2 normalized scene, passing preflight, wide/narrow SVGs and preview PNGs eligible for independent vision review. New summary runs create at most two reviewable attempts per scene.
+- `02-visual-preview.json`: current V2 preview report bound to the current `02-plan.json`.
+- `02-visual-review.json`: independent vision review bound to exact preview PNG SHA-256 values. It may contain an empty `figures` array only when the current preview set is empty after failed visuals were deliberately omitted from the final plan.
+- `02-visual-build.json`: deterministic materialization report binding the final plan to registered assets before drafting. V2 build reports also bind preview/review hashes and `vision_verified: true`.
 - `03-draft.md`: first student-facing draft.
 - `04-humanized.md`: Humanizer output.
 - `05-review.json`: independent academic fidelity + pedagogy review; `visual_support` evaluates visual selection, not V2 perceptual execution.
@@ -105,13 +105,15 @@ python scripts/venv_exec.py scripts/visual_plan_v2.py preview `
   --write <run-dir>/02-visual-preview.json
 ```
 
-A deterministic preflight failure is preserved under `02-visual-preflight-failures/` and returns no review attempt number. Only scenes that pass preflight are rendered to wide/narrow PNG evidence and consume the next visual-attempt number.
+A deterministic preflight failure is preserved under `02-visual-preflight-failures/` and returns no review attempt number. Only scenes that pass preflight are rendered to wide/narrow PNG evidence.
 
-A separate vision-capable reviewer inspects every current wide/narrow PNG and writes `02-visual-review.json` following `contracts/visual-review.schema.json`. The reviewer declaration must state `capability: vision` and `independent: true`. This declaration is an executor assertion; the engine mechanically proves that the review references the current PNG bytes by SHA-256.
+A separate vision-capable reviewer inspects every current wide/narrow PNG and writes `02-visual-review.json` following `contracts/visual-review.schema.json`. The reviewer declaration must state `capability: vision` and `independent: true`. The engine mechanically proves that the review references the current PNG bytes by SHA-256.
 
-If a reviewed scene fails, preserve the attempt, repair the scene and preview again. Maximum three reviewable/rendered attempts per scene. Failed attempts remain run-local and do not mutate `figures.json`.
+A scene gets one initial reviewed attempt. If it fails, repair only that scene once and preview/review the changed evidence one final time. New runs allow at most two reviewable/rendered attempts per scene. There is no third review.
 
-After every current scene passes:
+If a scene still fails after attempt 2, remove that visual from the current plan (`visual_not_needed` for this run and no derived scene fields), rerun preview against the updated plan, carry unchanged PASS rows mechanically, and continue. A failed pedagogical illustration is omitted rather than blocking the textual summary. If every V2 scene is omitted, the current preview/review scene sets are both empty and finalization may continue with no V2 scene entries.
+
+After every scene still present in the final plan passes:
 
 ```powershell
 python scripts/venv_exec.py scripts/visual_plan_v2.py finalize `
@@ -122,19 +124,19 @@ python scripts/venv_exec.py scripts/visual_plan_v2.py finalize `
   --write <run-dir>/02-visual-build.json
 ```
 
-Finalization re-renders the SVGs and requires their hashes to equal the reviewed attempt before registration. It preflights every permanent destination before writing and rolls back newly created scene assets if registration fails, so a rejected finalization cannot leave partial canonical assets behind. The V2 build report records `plan_sha256`, `preview_sha256`, `visual_review_sha256`, `vision_verified: true`, final scene hash and both responsive variant hashes.
+Finalization re-renders the surviving SVGs and requires their hashes to equal the reviewed attempt before registration. It preflights every permanent destination before writing and rolls back newly created scene assets if registration fails. The V2 build report records `plan_sha256`, `preview_sha256`, `visual_review_sha256`, `vision_verified: true`, final scene hashes and responsive variant hashes.
 
-DRAFT must use the exact wide `asset` returned by the build report. The final renderer upgrades it to responsive `<picture>` markup using the registered narrow companion.
+DRAFT uses only the exact surviving assets returned by the final build report. The final renderer upgrades wide scene assets to responsive `<picture>` markup using the registered narrow companion. The prose must remain understandable when a visual was omitted.
 
 ### Legacy schema 1 handoff
 Existing schema-1 specs remain under `02-sketches/` and validate against `contracts/sketch-figure.schema.json`. Legacy flows continue through `scripts/visual_plan.py`; generator identity/output are not migrated merely because V2 exists.
 
 ## Final V2 binding
-For a V2 run, render accepted Markdown to `09-rendered-base.html`, then apply `scripts/scene_responsive.py` to produce `09-rendered.html`. Validate the final artifact with `scripts/artifact_integrity_v2.py`, which checks plan, preview, independent vision review, scene/variant hashes, registered provenance and responsive HTML. The responsive markup must resolve to the exact registered wide and narrow assets, not merely to any existing files. Then run `scripts/visual_audit_v2.py`, which adds per-scene desktop/mobile crops to the normal browser evidence and records which responsive variant Chromium actually selected at each viewport.
+For a V2 run, render accepted Markdown to `09-rendered-base.html`, then apply `scripts/scene_responsive.py` to produce `09-rendered.html`. Validate the final artifact with `scripts/artifact_integrity_v2.py`, which checks the final plan, preview, independent vision review, scene/variant hashes, registered provenance and responsive HTML. Omitted failed scenes are no longer planned visuals and therefore are not required by final integrity.
 
-`pipeline_run.py finish` treats a version-2 visual build as a stronger contract: it requires the exact preview/review hashes, a valid independent hash-bound vision review, V2 integrity markers and the complete desktop/mobile crop set with `wide` selected on desktop and `narrow` selected on mobile.
+Then run `scripts/visual_audit_v2.py`, which adds per-scene desktop/mobile crops to the normal browser evidence and records which responsive variant Chromium selected. This is integration QA, not another open-ended visual redesign cycle.
 
-The final integrity gate fails when a planned reinterpretation is omitted, a source asset is substituted, a reviewed scene changes after approval, a responsive HTML reference differs from its registered reviewed asset, a narrow asset is missing/broken, or an unplanned V2 scene enters the artifact.
+`pipeline_run.py finish` requires exact preview/review hashes, V2 integrity markers and complete browser evidence for every surviving planned V2 scene.
 
 ## Plan topic coverage contract
 For unit-scoped summaries, `02-plan.json` records which observed topic ids and explicitly unassigned concepts the plan covers. This is an omission check, not a section template.
@@ -147,4 +149,4 @@ Derived visuals remain namespaced as `derived:<id>` with `origin: derived`, stab
 
 Schema-1 generated records keep their existing `generation` object and hashes. Schema-2 records add `scene_generation` metadata with deterministic scene renderer identity, scene SHA, wide/narrow asset hashes and the reviewed attempt. Existing schema-1 data remains valid unchanged.
 
-`pipeline_run.py start` stores an immutable `01-figures.json` snapshot. Finish rejects source edits/removals and unplanned canonical figure mutations while permitting the append-only derived records declared in the plan/build report.
+`pipeline_run.py start` stores an immutable `01-figures.json` snapshot. Finish rejects source edits/removals and unplanned canonical figure mutations while permitting append-only derived records declared in the final plan/build report.
