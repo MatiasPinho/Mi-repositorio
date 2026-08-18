@@ -10,6 +10,7 @@ from unittest import mock
 
 from scripts import (
     run_engine_guard,
+    scene_figure,
     scene_spec,
     visual_plan_v2,
     visual_policy,
@@ -53,9 +54,11 @@ class VisualPedagogyContractTests(unittest.TestCase):
 
         self.assertIn("rules/visual/figures.md", pipeline)
         self.assertIn("rules/evaluation/visual-rubric.md", pipeline)
-        self.assertIn("scripts/visual_scene_policy_guard.py", pipeline)
-        self.assertIn("hard pre-preview design failure", pipeline)
         self.assertIn("generic-box-substitution", pipeline)
+        self.assertNotIn("scripts/visual_scene_policy_guard.py", pipeline)
+        self.assertIn("There is no third visual review", pipeline)
+        self.assertIn("omit that figure", pipeline)
+        self.assertEqual(scene_figure.MAX_ATTEMPTS, 2)
 
     def test_cross_run_visual_pass_is_invalidated_when_visual_policy_changes(self):
         with tempfile.TemporaryDirectory() as td:
@@ -115,6 +118,27 @@ class VisualPedagogyContractTests(unittest.TestCase):
             with self.assertRaisesRegex(visual_review.VisualReviewError, "policy"):
                 visual_review.bind_review_to_preview(review, preview)
 
+    def test_empty_review_binds_only_to_empty_preview(self):
+        policy = visual_policy.current_fingerprint()
+        review = {
+            "version": 1,
+            "vision_verified": True,
+            "visual_policy_sha256": policy,
+            "reviewer": {"id": "vision-empty", "capability": "vision", "independent": True},
+            "figures": [],
+        }
+        empty_preview = {"visual_policy_sha256": policy, "entries": []}
+        binding = visual_review.bind_review_to_preview(review, empty_preview)
+        self.assertTrue(binding["ok"])
+        self.assertEqual(binding["bindings"], [])
+
+        nonempty_preview = {
+            "visual_policy_sha256": policy,
+            "entries": [{"scene_id": "still-present", "attempt": 1, "scene_sha256": "a" * 64}],
+        }
+        with self.assertRaisesRegex(visual_review.VisualReviewError, "scene set"):
+            visual_review.bind_review_to_preview(review, nonempty_preview)
+
     def test_changed_registered_v2_scene_requires_new_append_only_id(self):
         scene = scene_spec.validate_scene(free_scene("registered-scene"))
         changed = copy.deepcopy(scene)
@@ -135,7 +159,7 @@ class VisualPedagogyContractTests(unittest.TestCase):
                     Path("."), "unidad-1", figures, loc="visuals[0]", scene=changed
                 )
 
-    def test_policy_stale_registered_scene_is_rejected_before_preview(self):
+    def test_policy_stale_registered_scene_guard_remains_available_for_maintenance(self):
         scene = scene_spec.validate_scene(free_scene("stale-scene"))
         scene_sha = scene_spec.scene_sha256(scene)
         rows = [{
@@ -176,19 +200,6 @@ class VisualPedagogyContractTests(unittest.TestCase):
                     report["issues"][0]["code"],
                     "registered-v2-composition-stale-under-current-policy",
                 )
-                self.assertEqual(
-                    report["issues"][0]["required_action"],
-                    "reconsider-composition-and-create-new-append-only-revision",
-                )
-
-                with mock.patch.object(
-                    visual_scene_policy_guard,
-                    "_matching_current_policy_pass",
-                    return_value=True,
-                ):
-                    current_report = visual_scene_policy_guard.check(Path(td), "unidad-1", plan)
-                self.assertTrue(current_report["ok"])
-                self.assertEqual(current_report["issues"], [])
 
     def test_build_integrity_replays_finalizer_instead_of_trusting_ok_json(self):
         integrity = (ROOT / "scripts" / "artifact_integrity_v2.py").read_text(encoding="utf-8")
@@ -216,8 +227,6 @@ class VisualPedagogyContractTests(unittest.TestCase):
             marker = run / run_engine_guard.VIOLATION_FILE
             self.assertTrue(marker.is_file())
 
-            # Even if the live engine now matches the original snapshot, the
-            # historical violation remains fatal for this run.
             with mock.patch.object(run_engine_guard, "snapshot_issues", return_value=[]):
                 with self.assertRaisesRegex(run_engine_guard.EngineGuardError, "already invalidated"):
                     run_engine_guard.guard_run(run, command=["pipeline_run.py", "finish", str(run)])
