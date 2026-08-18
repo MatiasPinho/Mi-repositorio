@@ -29,7 +29,7 @@ Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps be
 ## RUNTIME BOUNDARY
 Visual support must not turn summary generation into an open-ended graphics session.
 - Exact diagrams stay on the compact deterministic schema-1 path; the model never authors raw SVG or explicit coordinate scenes.
-- Optional generated illustrations use one compact semantic spec and one bounded provider call; there is no independent per-illustration vision-review loop.
+- Optional generated illustrations use one compact semantic spec and one bounded provider call. There is no independent per-illustration vision-review loop.
 - A provider outage never justifies repeated image retries or weaker academic prose.
 - `visual_not_needed` remains a pedagogical decision, never a runtime shortcut.
 - A standard run beyond roughly 30 minutes is a performance warning; 60+ minutes is a product/runtime failure.
