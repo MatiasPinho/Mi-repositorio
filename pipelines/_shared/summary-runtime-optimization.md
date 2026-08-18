@@ -33,9 +33,20 @@ Rules:
 
 Therefore, if four registered legacy figures are reused and one new V2 scene is added, the expected visual work is **one previewed/reviewed scene, not five**.
 
-A previously registered **V2** scene is different: do not treat registry metadata alone as a new visual PASS. Materialize the exact registered scene JSON into the current run's `02-scenes/` and use the hash-bound cross-run PASS path below.
+A previously registered **V2** scene is different: registry metadata alone is never a new visual PASS. Before any V2 cross-run reuse or preview, run the policy-composition guard:
 
-Registered V2 ids are immutable revisions. An identical scene may be re-reviewed under a newer policy without changing its id. If repair changes scene semantics or geometry, create a **new scene id + `derived_figure_id`** and register that revision append-only. Never overwrite an older registered V2 scene merely because a new rubric now prefers a different drawing.
+```bash
+python scripts/venv_exec.py scripts/visual_scene_policy_guard.py \
+  --course <course> --unit "<scope>" \
+  --plan <run-dir>/02-plan.json \
+  --write <run-dir>/02-visual-policy-guard.json
+```
+
+`ok: false` is a hard **pre-preview** design failure. If a byte-identical registered V2 composition has no independent PASS under the current visual policy, the old scene is only historical reference. Reconsider the concept from canonical knowledge under the current `figures.md` + `visual-rubric.md`, create a **new scene id + `derived_figure_id`**, update the plan and rerun the guard. Do not send the stale composition to vision merely to ask whether the new policy still likes it.
+
+This is deliberately stronger than invalidating only the old PASS: a policy change means the old composition itself is no longer the default candidate. It prevents a stale generic-box scene from being mechanically re-presented to a new reviewer. Registered V2 ids remain immutable append-only history; changed geometry/semantics always use a new revision id.
+
+Only when `02-visual-policy-guard.json -> ok: true` may an exact registered V2 scene be materialized into the current run for cross-run PASS reuse.
 
 ### B. Cross-run V2 visual PASS reuse
 A rerun may reuse a previous V2 visual PASS only when the current scene spec and registered wide/narrow SVG assets are byte-identical to evidence from a previous independent PASS **and the visual pedagogy/review policy is unchanged**.
@@ -46,7 +57,7 @@ The policy has two bindings:
 
 Changing either rule invalidates the old perceptual PASS even if scene and PNG bytes stayed identical. Do not copy an old review and merely replace its policy hash; that is a new-policy review and requires current independent vision inspection.
 
-When the plan intentionally reuses an already-reviewed V2 scene, materialize the exact registered scene JSON into the current run's `02-scenes/` instead of redesigning it. Then, before normal preview, run:
+When the policy-composition guard has passed and the plan intentionally reuses an already-reviewed V2 scene, materialize the exact registered scene JSON into the current run's `02-scenes/`. Then, before normal preview, run:
 
 ```bash
 python scripts/venv_exec.py scripts/visual_reuse_v2.py \
@@ -99,7 +110,7 @@ python scripts/venv_exec.py scripts/fidelity_guard.py \
 If the first academic review requires `06-repair.md`, run the same guard against the repaired Markdown before the second/final review. Never send a candidate with a known deterministic fidelity violation to another model.
 
 ## Surgical retries
-- Visual repair: only failed/changed scenes are repaired and reviewed; byte-identical PASS rows are carried forward mechanically only while the visual policy is unchanged. A changed already-registered V2 scene gets a new append-only id rather than overwriting history.
+- Visual repair: only failed/changed scenes are repaired and reviewed; byte-identical PASS rows are carried forward mechanically only while the visual policy is unchanged. A policy-stale registered V2 composition is redesigned under a new append-only id **before preview**; a changed already-registered V2 scene is never overwritten.
 - Academic repair: edit only cited sentences/sections. The second review gets the repaired candidate, first-review findings, the fidelity ledger and canonical support for the failed claims. Do not repeat repository exploration, visual review or humanization of unchanged prose.
 - Browser audit remains deterministic integration QA, not another open-ended vision pass.
 
