@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 
 from study import resolve_course  # noqa: E402
 try:
-    from . import artifact_integrity, scene_spec, visual_plan_v2, visual_review
+    from . import artifact_integrity, scene_spec, visual_plan_v2, visual_policy, visual_review
     from .course_layout import has_unit_layout, unit_root
     from .figure_assets import load_registry
     from .unit_identity import record_unit_id, resolve_unit
@@ -24,6 +24,7 @@ except ImportError:
     import artifact_integrity  # type: ignore
     import scene_spec  # type: ignore
     import visual_plan_v2  # type: ignore
+    import visual_policy  # type: ignore
     import visual_review  # type: ignore
     from course_layout import has_unit_layout, unit_root  # type: ignore
     from figure_assets import load_registry  # type: ignore
@@ -174,11 +175,18 @@ def check(
     preview = _json(preview_path)
     review = _json(review_path)
     build = _json(build_path)
+    current_policy_sha = visual_policy.current_fingerprint()
     if preview.get("ok") is not True or preview.get("plan_sha256") != sha256(plan_path):
         issues.append("visual-v2-preview-missing-failed-or-stale")
+    if preview.get("visual_policy_sha256") != current_policy_sha:
+        issues.append("visual-v2-preview-policy-stale")
     try:
-        visual_review.bind_review_to_preview(review, preview)
+        binding = visual_review.bind_review_to_preview(review, preview)
+        normalized_review = binding["review"]
+        if normalized_review.get("visual_policy_sha256") != current_policy_sha:
+            issues.append("visual-v2-review-policy-stale")
     except Exception as exc:
+        normalized_review = {}
         issues.append(f"visual-v2-review-invalid:{exc}")
     if build.get("ok") is not True or build.get("version") != 2 or build.get("vision_verified") is not True:
         issues.append("visual-v2-build-invalid")
@@ -189,12 +197,37 @@ def check(
             issues.append("visual-v2-build-preview-stale")
         if build.get("visual_review_sha256") != sha256(review_path):
             issues.append("visual-v2-build-review-stale")
+        if build.get("visual_policy_sha256") != current_policy_sha:
+            issues.append("visual-v2-build-policy-stale")
+        if build.get("producer") != visual_plan_v2.FINALIZER_ID:
+            issues.append("visual-v2-build-producer-invalid")
+
+    # Do not trust a hand-written `ok: true` build. Re-run the finalizer's pure
+    # verification path from current plan + reviewed PNGs + deterministic SVG
+    # rendering + canonical registry/assets and require the report to match
+    # exactly. If finalize never succeeded for a new/repaired scene, replay
+    # cannot reconstruct the claimed build.
+    try:
+        expected_build = visual_plan_v2.expected_build_report(
+            course, scope, plan_path, preview_path, review_path
+        )
+    except Exception as exc:
+        expected_build = None
+        issues.append(f"visual-v2-finalizer-replay-failed:{exc}")
+    if expected_build is not None and build != expected_build:
+        issues.append("visual-v2-build-not-finalizer-equivalent")
 
     used, used_issues = _used_ids(course, scope, md_path)
     issues.extend(used_issues)
     figures = load_registry(course).get("figures", {})
     html_scenes = _html_scene_sources(html_path)
     planned_scene_ids: set[str] = set()
+
+    review_by_id = {
+        str(item.get("scene_id") or ""): item
+        for item in normalized_review.get("figures", [])
+        if isinstance(item, dict) and item.get("scene_id")
+    } if isinstance(normalized_review, dict) else {}
 
     for row in rows:
         treatment = row["visual_treatment"]
@@ -249,6 +282,23 @@ def check(
             if not asset or not path.is_file() or sha256(path) != v.get("asset_sha256"):
                 issues.append(f"scene-variant-missing-or-changed:{derived_id}:{variant}")
         scene_id = canonical["id"]
+        current_review = review_by_id.get(scene_id)
+        if isinstance(current_review, dict):
+            reviewed = {
+                item.get("variant"): item
+                for item in current_review.get("inspected", [])
+                if isinstance(item, dict)
+            }
+            if set(reviewed) == {"wide", "narrow"}:
+                record_review = generation.get("visual_review", {})
+                if isinstance(record_review, dict):
+                    # PNG bytes may be re-reviewed under a new policy without
+                    # mutating the immutable registry row. If the bytes differ,
+                    # however, this record cannot stand in for the current PASS.
+                    for variant in ("wide", "narrow"):
+                        key = f"{variant}_png_sha256"
+                        if record_review.get(key) != reviewed[variant].get("sha256"):
+                            issues.append(f"scene-review-png-mismatch:{derived_id}:{variant}")
         markup = html_scenes.get(scene_id)
         if not markup:
             issues.append(f"scene-responsive-markup-missing:{derived_id}")
@@ -268,10 +318,21 @@ def check(
             issues.append(f"unplanned-reviewed-scene-used:{used_id}")
 
     result = dict(base)
+    policy_or_review_failure = any(
+        issue.startswith((
+            "visual-v2-preview-policy-",
+            "visual-v2-review-policy-",
+            "visual-v2-review-invalid",
+            "visual-v2-build-policy-",
+            "visual-v2-finalizer-replay-",
+            "visual-v2-build-not-finalizer-",
+        ))
+        for issue in issues
+    )
     result.update({
         "ok": not issues,
         "visual_v2": True,
-        "vision_verified": not any(issue.startswith("visual-v2-review-invalid") for issue in issues),
+        "vision_verified": not policy_or_review_failure,
         "planned_scene_count": len(planned_scene_ids),
         "issues": issues,
     })
