@@ -291,7 +291,6 @@ class HybridPipelineContractTests(unittest.TestCase):
         self.assertIn("visual_medium: illustration", rules)
         self.assertIn("never `visual_required`", rules)
         self.assertIn("never generate the whole study page as an image", rules)
-        self.assertIn("stable concept-based", rules.lower() if "stable concept-based" in rules.lower() else "stable concept-based")
 
 
 if __name__ == "__main__":
