@@ -2,10 +2,10 @@
 """Seed a new V2 summary run from an older exact hash-bound visual PASS.
 
 This is a cross-run cache, not a new review. It only reuses evidence when the
-current scene spec, registered wide/narrow SVGs and a prior independent PASS all
-still match byte-for-byte. The prior PNG evidence is copied into the new run and
-its PASS row is mechanically rebound to those copied bytes. Normal preview,
-finalize, integrity and finish gates still run afterwards.
+current scene spec, registered wide/narrow SVGs, the active visual pedagogy
+policy and a prior independent PASS all still match. The prior PNG evidence is
+copied into the new run and its PASS row is mechanically rebound to those copied
+bytes. Normal preview, finalize, integrity and finish gates still run afterwards.
 
 Already-registered immutable V1/V2 figures that the plan references without a
 run-local scene_spec are handled by visual_plan_v2 as registered asset reuse and
@@ -39,6 +39,11 @@ except ImportError:
     from figure_assets import load_registry  # type: ignore
     from unit_identity import record_unit_id, resolve_unit  # type: ignore
 
+VISUAL_POLICY_FILES = (
+    "rules/visual/figures.md",
+    "rules/evaluation/visual-rubric.md",
+)
+
 
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -54,6 +59,40 @@ def _read(path: Path) -> dict[str, Any]:
 def _write(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _current_visual_policy() -> dict[str, str]:
+    """Hash only the rules that define figure composition/review semantics."""
+    return {rel: _sha(ROOT / rel) for rel in VISUAL_POLICY_FILES}
+
+
+def _prior_visual_policy(run: Path) -> dict[str, str] | None:
+    """Read policy hashes captured when a real pipeline run started.
+
+    Production runs always have manifest.json + engine_snapshot. A missing
+    manifest is tolerated for synthetic/unit-test fixtures; a present but
+    incomplete manifest is treated as stale and therefore cannot authorize
+    cross-run reuse.
+    """
+    manifest_path = run / "manifest.json"
+    if not manifest_path.is_file():
+        return None
+    try:
+        manifest = _read(manifest_path)
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
+        return {}
+    snapshot = manifest.get("engine_snapshot")
+    if not isinstance(snapshot, dict):
+        return {}
+    return {
+        rel: str(snapshot.get(rel) or "")
+        for rel in VISUAL_POLICY_FILES
+    }
+
+
+def _visual_policy_matches_current(run: Path) -> bool:
+    prior = _prior_visual_policy(run)
+    return prior is None or prior == _current_visual_policy()
 
 
 def _content_base(course: Path, unit_id: str) -> Path:
@@ -129,6 +168,8 @@ def _matching_prior(
     if not wanted:
         return None
     for run in _candidate_runs(course, current_run):
+        if not _visual_policy_matches_current(run):
+            continue
         try:
             preview = _read(run / "02-visual-preview.json")
             review_raw = _read(run / "02-visual-review.json")
