@@ -62,7 +62,7 @@ Exact diagrams remain auditable through compact structured specs and determinist
 - violates the registered spec/asset hash contract;
 - relies on generated image pixels to express exact structure.
 
-The old schema-2 free-composition engine may still be tested/used for historical compatibility, but its independent scene-review protocol is no longer a required gate for the active `/resumen` hybrid path.
+The old schema-2 free-composition engine may still be tested/used for historical compatibility, but its independent scene-review protocol is no longer a required gate for the active summary hybrid path.
 
 ## General hard failures
 - broken image paths in the published artifact;
