@@ -23,7 +23,7 @@ class HybridPipelineContractTests(unittest.TestCase):
         self.assertIn("scripts/code_highlight_v2.py", pipeline)
         self.assertNotIn("scripts/visual_plan_v2.py preview", pipeline)
         self.assertNotIn("scripts/scene_responsive.py <run-dir>", pipeline)
-        self.assertIn("not in the normal `/resumen` critical path", figures)
+        self.assertIn("not the default or required path for new `/resumen` visuals", figures)
         self.assertIn("handdrawn-structures.css", renderer)
 
     def test_generated_pixels_cannot_be_required_academic_evidence(self):
