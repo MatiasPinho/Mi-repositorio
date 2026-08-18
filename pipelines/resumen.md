@@ -80,7 +80,7 @@ A study agent may repair run-local candidate data, but it must never repair the 
    - after the remaining current scenes pass, run `python scripts/venv_exec.py scripts/visual_plan_v2.py finalize --course <course> --unit "<scope>" --plan <run-dir>/02-plan.json --preview <run-dir>/02-visual-preview.json --review <run-dir>/02-visual-review.json --write <run-dir>/02-visual-build.json`;
    - finalization re-renders and compares hashes before collision-safe registration. It remains the only valid producer of `02-visual-build.json`.
 
-   **Legacy V1 only:** old schema-1 material may continue through `scripts/visual_plan.py` / `study_generate_sketch_figure` unchanged.
+   **Legacy V1 only:** old schema-1 material may continue through `scripts/visual_plan.py`, `study_generate_sketch_figure` / `study.py figures generate-sketch` unchanged. This compatibility path does not enter the V2 review loop.
 
    A visual that exhausts its review budget is omitted; it is not a reason to abandon the summary. A genuine engine/finalizer failure remains a run blocker.
 
