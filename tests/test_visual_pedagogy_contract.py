@@ -22,10 +22,20 @@ class VisualPedagogyContractTests(unittest.TestCase):
         self.assertIn("There is no minimum element count", figures)
         self.assertIn("Graphic richness never permits invented detail", figures)
 
+        self.assertIn("## Representational fit", figures)
+        self.assertIn("simplified iconic/schematic sketch", figures)
+        self.assertIn("CPU may read as a chip package with pins", figures)
+        self.assertIn("not named templates", figures)
+        self.assertIn("more explanatory drawing, spatial structure and visual cues", figures)
+        self.assertIn("avoid **generic-box substitution**", figures)
+
         self.assertIn("the drawing itself carries explanatory work", rubric)
+        self.assertIn("### Representational fit inside `pedagogical_value`", rubric)
+        self.assertIn("plain box labeled `CPU`", rubric)
         self.assertIn("score `pedagogical_value <= 3`", rubric)
+        self.assertIn("The repair should improve the drawing/structure, **not add more prose**", rubric)
         self.assertIn("Do **not** penalize boxes merely for being boxes", rubric)
-        self.assertIn("Never demand extra visual detail that is not supported by provenance", rubric)
+        self.assertIn("Never demand decorative realism, unsupported internals", rubric)
 
         self.assertIn("rules/visual/figures.md", pipeline)
         self.assertIn("rules/evaluation/visual-rubric.md", pipeline)
