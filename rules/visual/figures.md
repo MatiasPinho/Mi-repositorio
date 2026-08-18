@@ -13,6 +13,17 @@ This is a semantic treatment rule, not a blanket image filter. A notebook sketch
 
 Good candidates include architecture/block diagrams, process/state diagrams, memory maps, hierarchies, timelines, scheduling diagrams, flowcharts, spatial comparisons and other relationships that become clearer when seen. Do not include decorative illustrations, logos, cover art, duplicate visuals or screenshots that add no instructional information.
 
+## Graphic explanatory density
+A derived figure should prefer **visual encoding of the idea** over prose merely arranged inside containers. If the learner can understand a mechanism, component, flow, hierarchy, state change, comparison or relationship by seeing it, represent that structure graphically instead of reducing the scene to titled boxes with short paragraphs.
+
+Use the scene graph freely to expose the concept itself: simplified objects/components, internal parts, paths, arrows, branches, cycles, layers, regions, relative position, state transitions, small worked visual examples and other supported spatial relationships. Text should normally label or clarify the visual structure rather than carry nearly all of the teaching by itself.
+
+For comparisons, do not default mechanically to a symmetric grid of labeled boxes. Ask whether each compared item has a useful micro-diagram, internal structure, flow, example or distinctive visual relationship that can make the contrast visible. A comparison of programming paradigms, for example, may show a linear jump, structured control branches, facts/rules leading to a query, or an object split into data and actions instead of four prose cards. These are examples of visual reasoning, not required templates.
+
+Boxes, regions and containers remain fully valid when containment, grouping, boundaries or architecture are themselves meaningful. A simple scene is also correct when the concept is genuinely simple. There is no minimum element count and no requirement to make figures busy.
+
+Graphic richness never permits invented detail. Only visualize components and relationships supported by canonical knowledge/provenance. When the source supports only a high-level abstraction, keep the drawing high-level rather than decorating it with plausible but unsupported parts.
+
 ## Treatment decision
 After deciding that a visual is required or helpful, record exactly one `visual_treatment` in the plan:
 
