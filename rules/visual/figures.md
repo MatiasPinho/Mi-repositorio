@@ -65,6 +65,8 @@ For every major concept explicitly decide one of:
 
 Do not force a fixed number of figures. One concept may need several scenes when splitting produces a substantially clearer explanation.
 
+`visual_not_needed` must be chosen **only because prose genuinely teaches that concept as well or better without a figure**. It must never be selected to reduce runtime, token use, review calls or implementation effort. Runtime optimization happens after this pedagogical decision. A useful `visual_required` / `visual_helpful` figure may be omitted later only when the bounded visual workflow actually fails; that failure is not a reason to classify similar future concepts as visually unnecessary.
+
 For every selected visual record treatment, reason and provenance. `preserve` / `preserve+derived_sketch` require `source_figure_id` and `fidelity_reason`. A derived figure requires a namespaced id plus non-empty `based_on`.
 
 ## Visual System V2 — free AI composition
@@ -85,12 +87,14 @@ For each new derived scene:
 
 1. write `02-scenes/<id>.json` using `contracts/scene-figure.schema.json`;
 2. run `scripts/visual_plan_v2.py preview`, which validates the scene and performs deterministic geometry preflight before producing run-local wide/narrow previews;
-3. have a separate vision-capable reviewer inspect both PNG previews using `rules/evaluation/visual-rubric.md` and write `02-visual-review.json` bound to exact screenshot SHA-256 values;
-4. on visual failure, repair the scene and preview again; maximum three reviewed attempts per scene;
-5. run `scripts/visual_plan_v2.py finalize` only after PASS. Finalization re-renders the SVGs, proves their hashes match the reviewed attempt and only then registers the wide/narrow assets;
-6. draft student prose only after all selected derived scenes have been finalized;
-7. after normal HTML rendering, run `scripts/scene_responsive.py` so narrow geometry is selected on mobile;
-8. validate with `scripts/artifact_integrity_v2.py` and audit the final HTML with `scripts/visual_audit_v2.py`.
+3. if deterministic preflight cites a concrete mechanical defect, repair only that defect. Once preflight passes, the scene creator does **not** inspect or subjectively review its own preview; hand it directly to the independent vision reviewer;
+4. have a separate vision-capable reviewer inspect both PNG previews using `rules/evaluation/visual-rubric.md` and write `02-visual-review.json` bound to exact screenshot SHA-256 values;
+5. on visual failure, repair the failed scene once from the review findings, run deterministic preview/preflight again, and send the changed evidence directly to one final independent review. New runs allow at most two reviewed attempts per scene;
+6. if the second reviewed attempt still fails, omit that scene from the current summary plan and continue. There is no third review and a failed illustration must not block the textual summary;
+7. run `scripts/visual_plan_v2.py finalize` only after every scene still present in the final plan has PASS. Finalization re-renders the SVGs, proves their hashes match the reviewed attempt and only then registers the wide/narrow assets;
+8. draft student prose from the final surviving visual set;
+9. after normal HTML rendering, run `scripts/scene_responsive.py` so narrow geometry is selected on mobile;
+10. validate with `scripts/artifact_integrity_v2.py` and audit the final HTML with `scripts/visual_audit_v2.py`.
 
 Failed attempts live only under the run's `02-visual-attempts/` tree. They never mutate `figures.json` or canonical assets.
 
@@ -98,6 +102,8 @@ The V2 renderer keeps the SVG canvas transparent. The notebook paper belongs to 
 
 ## Independent vision boundary
 Mechanical checks are necessary but cannot establish perceptual quality. A Python report can prove geometry, hashes and file identity; it cannot prove that a model actually saw an image.
+
+The scene creator is not its own reviewer. After a preview passes deterministic preflight, the creator must not open the PNG/SVG to run a private quality pass, score its own work, polish by eye or redesign before the independent review. The only creator-side pre-review correction is a targeted response to a deterministic preflight failure.
 
 A visual PASS therefore requires `vision_verified: true`, reviewer `capability: vision`, `independent: true`, and exact wide/narrow screenshot hashes. A model without image input must return an incomplete visual state, never PASS. The executor assertion of vision capability is explicit; the screenshot binding is mechanically verified.
 
