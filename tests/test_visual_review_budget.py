@@ -8,6 +8,8 @@ from unittest import mock
 
 from scripts import scene_figure, visual_plan_v2
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class VisualReviewBudgetTests(unittest.TestCase):
     def test_third_reviewable_attempt_is_rejected_by_engine(self):
@@ -54,6 +56,22 @@ class VisualReviewBudgetTests(unittest.TestCase):
             self.assertEqual(report["entries"], [])
             self.assertEqual(report["preserved"], [])
             self.assertEqual(report["reused_registered"], [])
+
+    def test_runtime_contract_prevents_cost_driven_visual_avoidance_and_creator_self_review(self):
+        runtime = (ROOT / "pipelines" / "_shared" / "summary-runtime-optimization.md").read_text(encoding="utf-8")
+        figures = (ROOT / "rules" / "visual" / "figures.md").read_text(encoding="utf-8")
+
+        self.assertIn("Visual selection is pedagogical, not a runtime shortcut", runtime)
+        self.assertIn("Never choose it merely to save tokens, time, review work or tool calls", runtime)
+        self.assertIn("one creative pass before independent review", runtime)
+        self.assertIn("must **not inspect its own preview PNG/SVG", runtime)
+        self.assertIn("There is no third visual review", runtime)
+
+        self.assertIn("must be chosen **only because prose genuinely teaches that concept as well or better without a figure**", figures)
+        self.assertIn("must never be selected to reduce runtime, token use, review calls or implementation effort", figures)
+        self.assertIn("the scene creator does **not** inspect or subjectively review its own preview", figures)
+        self.assertIn("at most two reviewed attempts per scene", figures)
+        self.assertNotIn("maximum three reviewed attempts per scene", figures)
 
 
 if __name__ == "__main__":
