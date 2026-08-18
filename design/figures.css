@@ -1,5 +1,5 @@
-/* Figures are study objects inside the notebook. Source images are not filtered;
-   only their placement and caption take on notebook cues. */
+/* Figures are study objects inside the notebook. The image itself is never
+   stylized or filtered; only its placement and caption take on notebook cues. */
 figure {
   counter-increment: study-figure;
   width: min(100%, var(--notebook-wide));
@@ -18,14 +18,6 @@ figure.study-sketch .plate {
   background: transparent;
   padding: 0;
 }
-/* Generated conceptual illustrations use a white working canvas, then visually
-   merge their graphite into the real notebook sheet. Exact labels/relations
-   remain HTML or deterministic SVG, never pixels inside this image. */
-figure:has(img[src*=".illustration."]) .plate {
-  border: 0;
-  background: transparent;
-  padding: 0;
-}
 figure img {
   display: block;
   width: auto;
@@ -38,10 +30,6 @@ figure.study-sketch img {
   max-height: none;
   margin-inline: 0;
 }
-figure:has(img[src*=".illustration."]) img {
-  mix-blend-mode: multiply;
-  max-height: min(46vh, 520px);
-}
 @media print {
   /* Keep tall overlays together and legible on paper without turning them
      back into a framed plate. */
@@ -50,9 +38,6 @@ figure:has(img[src*=".illustration."]) img {
     max-width: 100%;
     max-height: 170mm;
     margin-inline: auto;
-  }
-  figure:has(img[src*=".illustration."]) img {
-    max-height: 105mm;
   }
 }
 figcaption {
