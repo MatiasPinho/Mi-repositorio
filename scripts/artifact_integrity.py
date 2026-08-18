@@ -16,7 +16,7 @@ from scripts.figure_assets import load_registry, registry_issues  # noqa: E402
 from scripts.course_layout import has_unit_layout, unit_root  # noqa: E402
 from scripts.render_study import validate_caption_comments, validate_images  # noqa: E402
 from scripts.unit_identity import record_unit_id, resolve_unit  # noqa: E402
-from scripts.visual_plan import artifact_usage_issues  # noqa: E402
+from scripts.visual_plan_hybrid import artifact_usage_issues  # noqa: E402
 
 _AUTO_PLAN = object()
 
@@ -127,8 +127,6 @@ def check(
         adjacent_plan = md_path.parent / "02-plan.json"
         resolved_plan = adjacent_plan if adjacent_plan.is_file() else None
     elif plan_path is None:
-        # Explicit None is a real instruction: the caller owns a different
-        # visual contract (e.g. Visual System V2) and does not want V1 auto-discovery.
         resolved_plan = None
     elif isinstance(plan_path, Path):
         resolved_plan = plan_path
