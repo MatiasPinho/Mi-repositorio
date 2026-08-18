@@ -1,6 +1,6 @@
 # Summary runtime optimization contract
 
-This contract is loaded only by `pipelines/resumen.md`. Its purpose is to reduce avoidable model work without weakening academic fidelity.
+This contract is loaded only by `pipelines/resumen.md`. Its purpose is to reduce avoidable model work without weakening academic fidelity or pedagogical visual selection.
 
 ## Published artifact truth
 A finished historical run is not proof that a summary is currently published. Before stopping because a summary supposedly already exists, run:
@@ -19,15 +19,37 @@ Only `published: true` means the current Markdown+HTML pair exists under the res
 - `02-visual-build.json` must come from the deterministic finalizer; integrity reconstructs it independently.
 - Never patch engine code during an active study run.
 
-## Visual work budget
-The AI remains free to choose the semantic composition and drawing of a schema-2 scene. Runtime is controlled by limiting review loops, not by restricting that creative freedom.
+## Visual selection is pedagogical, not a runtime shortcut
+Runtime optimization begins **after** the planner decides whether a visual materially improves learning.
 
+- `visual_not_needed` is a pedagogical judgment. Never choose it merely to save tokens, time, review work or tool calls.
+- If a concept is spatial, structural, causal, temporal, relational or physically recognizable and a figure would materially improve understanding, keep `visual_required` / `visual_helpful` exactly as the visual rules require.
+- Do not downgrade a planned useful visual pre-emptively because V2 work may be expensive.
+- A selected figure may be omitted only after a cited deterministic preflight problem cannot be fixed with the allowed targeted correction, or after it exhausts the reviewed visual budget below.
+- A post-failure omission is a runtime fallback for that run, not evidence that the concept was pedagogically better without a visual and not a precedent for future PLAN decisions.
+
+## Visual work budget
+The AI remains free to choose the semantic composition and drawing of a schema-2 scene. Runtime is controlled by limiting creator/reviewer loops, not by restricting that creative freedom or suppressing useful figures.
+
+### Creator boundary
+The scene creator gets **one creative pass before independent review**.
+
+1. Author the scene from canonical knowledge, its pedagogical objective and the visual rules.
+2. Run deterministic preview/preflight.
+3. If preflight reports a concrete mechanical defect, make only a targeted correction for that cited defect and rerun preflight. Do not turn preflight repair into subjective redesign or polishing.
+4. Once deterministic preflight passes, the creator must **not inspect its own preview PNG/SVG for subjective quality, score it, polish it, redesign it because it changed its mind, or perform a private visual-review loop**.
+5. Hand the passing preview directly to the independent vision reviewer.
+
+The creator and reviewer responsibilities are intentionally separate: the creator draws; deterministic code checks objective breakage; the independent reviewer judges perceptual/pedagogical quality.
+
+### Independent review boundary
 For each current V2 scene:
-1. Render the initial preview after deterministic preflight.
-2. Run one independent vision-review batch for all new/changed scenes.
-3. If a scene fails, allow exactly one model-authored repair of that failed scene and one final vision review of the changed evidence.
-4. There is no third visual review. New runs may create at most two reviewable/rendered attempts per scene.
-5. If a scene still fails after the final review, omit that scene from the current summary plan and continue with the remaining visuals. A failed optional illustration must not prevent production of the textual summary.
+1. Run one independent vision-review batch for all new/changed scenes.
+2. If a scene fails, allow exactly one model-authored repair of that failed scene using the review findings, then preview/preflight the changed scene.
+3. The repair author again does not self-review the repaired preview; after preflight passes it goes directly to the final independent review.
+4. Run one final vision review of changed repaired evidence.
+5. There is no third visual review. New runs may create at most two reviewable/rendered attempts per scene.
+6. If a scene still fails after the final review, omit that scene from the current summary plan and continue with the remaining visuals. A failed illustration must not prevent production of the textual summary.
 
 Unchanged PASS scenes are carried forward mechanically. Do not re-render or re-review them.
 
@@ -72,7 +94,7 @@ python scripts/venv_exec.py scripts/fidelity_guard.py \
 `ok: false` is a hard pre-review failure. Repair only the cited wording before spending an academic-review call. If the first academic review requires `06-repair.md`, run the same guard on the repair before the second/final review.
 
 ## Surgical retries
-- Visual: at most one repair round; only failed/changed scenes are touched. After the second reviewed attempt, omit remaining failed scenes and continue. No third review.
+- Visual: one creator pass, no subjective creator self-review, then at most one reviewer-directed repair round. After the second reviewed attempt, omit remaining failed scenes and continue. No third review.
 - Academic: edit only cited sentences/sections. The second review gets the repaired candidate, first-review findings, fidelity constraints and complete canonical support for the failed/high-risk claims. Do not repeat visual review or humanization of unchanged prose.
 - Browser audit is deterministic integration QA, not another open-ended vision pass.
 
@@ -97,4 +119,4 @@ python scripts/venv_exec.py scripts/run_timing.py \
 Use the report for stage timings; do not estimate them from memory.
 
 ## Runtime target
-A standard summary on a capable hosted model targets roughly 10–20 minutes. Thirty minutes is a performance warning; sixty minutes or more is a product/runtime failure. These targets never justify weakening academic fidelity.
+A standard summary on a capable hosted model targets roughly 10–20 minutes. Thirty minutes is a performance warning; sixty minutes or more is a product/runtime failure. These targets never justify weakening academic fidelity or omitting a pedagogically useful visual during PLAN.
