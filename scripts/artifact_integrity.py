@@ -16,7 +16,7 @@ from scripts.figure_assets import load_registry, registry_issues  # noqa: E402
 from scripts.course_layout import has_unit_layout, unit_root  # noqa: E402
 from scripts.render_study import validate_caption_comments, validate_images  # noqa: E402
 from scripts.unit_identity import record_unit_id, resolve_unit  # noqa: E402
-from scripts.visual_plan import artifact_usage_issues  # noqa: E402
+from scripts.visual_plan_hybrid import artifact_usage_issues  # noqa: E402
 
 
 def safe_file(value: str, *, must_exist: bool = True) -> Path:
