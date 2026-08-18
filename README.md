@@ -46,6 +46,27 @@ PDFs · apuntes · transcripciones · material de clase
 | **Simulacro** | Practicar con una evaluación basada en la materia. |
 | **Estado** | Consultar progreso, evaluaciones y material pendiente de actualizar. |
 
+Carpeta se organiza alrededor de **nueve acciones**. La referencia completa de uso está en [`docs/public-actions.md`](docs/public-actions.md).
+
+<details>
+<summary>Uso con agentes</summary>
+
+Las mismas acciones están disponibles como comandos de Claude Code y skills de Codex:
+
+- `/procesar` · `$procesar`
+- `/aprender` · `$aprender`
+- `/estudiar` · `$estudiar`
+- `/resumen` · `$resumen`
+- `/repaso` · `$repaso`
+- `/preguntas` · `$preguntas`
+- `/quiz` · `$quiz`
+- `/simulacro` · `$simulacro`
+- `/estado` · `$estado`
+
+Ejemplo de resumen detallado: `/resumen Programacion-I "Unidad 1" detallado`.
+
+</details>
+
 ## Experiencia visual
 
 Carpeta está pensada para que el material generado también sea cómodo de estudiar. Los resúmenes, repasos y quizzes tienen una presentación visual cuidada, con soporte para figuras, tablas, código y distintos tipos de contenido académico.
