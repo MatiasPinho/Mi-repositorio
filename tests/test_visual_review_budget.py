@@ -59,7 +59,11 @@ class VisualReviewBudgetTests(unittest.TestCase):
 
     def test_runtime_contract_prevents_cost_driven_visual_avoidance_and_creator_self_review(self):
         runtime = (ROOT / "pipelines" / "_shared" / "summary-runtime-optimization.md").read_text(encoding="utf-8")
+        pipeline = (ROOT / "pipelines" / "resumen.md").read_text(encoding="utf-8")
         figures = (ROOT / "rules" / "visual" / "figures.md").read_text(encoding="utf-8")
+        docs = (ROOT / "docs" / "visual-system-v2.md").read_text(encoding="utf-8")
+
+        self.assertIn("summary-runtime-optimization.md", pipeline)
 
         self.assertIn("Visual selection is pedagogical, not a runtime shortcut", runtime)
         self.assertIn("Never choose it merely to save tokens, time, review work or tool calls", runtime)
@@ -72,6 +76,12 @@ class VisualReviewBudgetTests(unittest.TestCase):
         self.assertIn("the scene creator does **not** inspect or subjectively review its own preview", figures)
         self.assertIn("at most two reviewed attempts per scene", figures)
         self.assertNotIn("maximum three reviewed attempts per scene", figures)
+
+        self.assertIn("creator does **not** inspect, score or visually polish its own PNG/SVG", docs)
+        self.assertIn("at most **two reviewed attempts per scene**", docs)
+        self.assertIn("There is no third visual review", docs)
+        self.assertIn("must not open its own passing preview to run a private quality pass", docs)
+        self.assertNotIn("At most three reviewed attempts", docs)
 
 
 if __name__ == "__main__":
