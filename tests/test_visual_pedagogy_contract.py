@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import copy
+import hashlib
 import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from scripts import visual_reuse_v2
+from scripts import run_engine_guard, scene_spec, visual_plan_v2, visual_policy, visual_reuse_v2, visual_review
+from tests.test_scene_v2 import free_scene
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -57,6 +61,98 @@ class VisualPedagogyContractTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertFalse(visual_reuse_v2._visual_policy_matches_current(run))
+
+    def test_review_cannot_rebind_old_png_pass_to_new_visual_policy(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            wide = root / "wide.png"
+            narrow = root / "narrow.png"
+            wide.write_bytes(b"wide")
+            narrow.write_bytes(b"narrow")
+            policy = visual_policy.current_fingerprint()
+            preview = {
+                "visual_policy_sha256": policy,
+                "entries": [{
+                    "scene_id": "policy-scene",
+                    "scene_sha256": "c" * 64,
+                    "attempt": 1,
+                    "variants": {
+                        "wide": {"png": str(wide), "png_sha256": hashlib.sha256(b"wide").hexdigest()},
+                        "narrow": {"png": str(narrow), "png_sha256": hashlib.sha256(b"narrow").hexdigest()},
+                    },
+                }],
+            }
+            review = {
+                "version": 1,
+                "vision_verified": True,
+                "visual_policy_sha256": "0" * 64,
+                "reviewer": {"id": "old-review", "capability": "vision", "independent": True},
+                "figures": [{
+                    "scene_id": "policy-scene",
+                    "attempt": 1,
+                    "status": "pass",
+                    "inspected": [
+                        {"variant": "wide", "file": str(wide), "sha256": hashlib.sha256(b"wide").hexdigest()},
+                        {"variant": "narrow", "file": str(narrow), "sha256": hashlib.sha256(b"narrow").hexdigest()},
+                    ],
+                    "scores": {key: 5 for key in visual_review.SCORE_KEYS},
+                    "issues": [],
+                }],
+            }
+            with self.assertRaisesRegex(visual_review.VisualReviewError, "policy"):
+                visual_review.bind_review_to_preview(review, preview)
+
+    def test_changed_registered_v2_scene_requires_new_append_only_id(self):
+        scene = scene_spec.validate_scene(free_scene("registered-scene"))
+        changed = copy.deepcopy(scene)
+        changed["layouts"]["wide"]["placements"]["a"]["x"] += 20
+        figures = {
+            "derived:registered-scene": {
+                "origin": "derived",
+                "unit_id": "unidad-1",
+                "scene_generation": {
+                    "schema_version": 2,
+                    "scene_sha256": scene_spec.scene_sha256(scene),
+                },
+            }
+        }
+        with mock.patch.object(visual_plan_v2, "record_unit_id", return_value="unidad-1"):
+            with self.assertRaisesRegex(visual_plan_v2.VisualPlanV2Error, "use a new scene id"):
+                visual_plan_v2._assert_registered_v2_scene_is_same_revision(
+                    Path("."), "unidad-1", figures, loc="visuals[0]", scene=changed
+                )
+
+    def test_build_integrity_replays_finalizer_instead_of_trusting_ok_json(self):
+        integrity = (ROOT / "scripts" / "artifact_integrity_v2.py").read_text(encoding="utf-8")
+        finalizer = (ROOT / "scripts" / "visual_plan_v2.py").read_text(encoding="utf-8")
+        self.assertIn("expected_build_report", finalizer)
+        self.assertIn("finalization_attestation_sha256", finalizer)
+        self.assertIn("expected_build_report", integrity)
+        self.assertIn("visual-v2-build-not-finalizer-equivalent", integrity)
+
+    def test_engine_mutation_marker_is_sticky_after_engine_is_restored(self):
+        with tempfile.TemporaryDirectory() as td:
+            run = Path(td) / ".study" / "runs" / "r1"
+            run.mkdir(parents=True)
+            (run / "manifest.json").write_text(
+                json.dumps({"status": "running", "engine_snapshot": {"scripts/x.py": "a" * 64}}),
+                encoding="utf-8",
+            )
+            with mock.patch.object(
+                run_engine_guard,
+                "snapshot_issues",
+                return_value=["engine-modified:scripts/artifact_integrity_v2.py"],
+            ):
+                with self.assertRaises(run_engine_guard.EngineGuardError):
+                    run_engine_guard.guard_run(run, command=["artifact_integrity_v2.py", str(run)])
+            marker = run / run_engine_guard.VIOLATION_FILE
+            self.assertTrue(marker.is_file())
+
+            # Even if the live engine now matches the original snapshot, the
+            # historical violation remains fatal for this run.
+            with mock.patch.object(run_engine_guard, "snapshot_issues", return_value=[]):
+                with self.assertRaisesRegex(run_engine_guard.EngineGuardError, "already invalidated"):
+                    run_engine_guard.guard_run(run, command=["pipeline_run.py", "finish", str(run)])
 
     def test_synthetic_run_without_manifest_keeps_fixture_compatibility(self):
         with tempfile.TemporaryDirectory() as td:
