@@ -28,19 +28,42 @@ Source assets are never restyled or overwritten.
 
 Academic semantics live once in `elements`. `layouts.wide` and `layouts.narrow` contain geometry only and must place the same element set. This allows a five-step process to be horizontal on wide screens and vertical on mobile without creating two contradictory academic scenes.
 
+## Visual selection is pedagogical
+
+Runtime limits do not decide whether a concept deserves a figure. `visual_not_needed` is valid only when prose genuinely teaches the concept as well or better without one. It must not be used to save tokens, time, review calls or implementation effort.
+
+A useful `visual_required` / `visual_helpful` figure may be omitted later only when the bounded visual workflow actually fails. That omission is a fallback for the current run, not evidence that future summaries should avoid the figure.
+
 ## Pipeline
 
 New V2 derived figures follow this lifecycle:
 
-1. PLAN writes `02-scenes/<id>.json`.
-2. `visual_plan_v2.py preview` validates the scene, runs deterministic geometry preflight and creates run-local wide/narrow SVG + PNG attempts.
-3. A separate vision-capable reviewer inspects both PNGs using `rules/evaluation/visual-rubric.md` and writes `02-visual-review.json` bound to exact PNG hashes.
-4. Failed attempts are repaired and previewed again. At most three reviewed attempts are allowed per scene.
-5. `visual_plan_v2.py finalize` mechanically verifies review bindings, re-renders the SVGs, requires identical hashes to the reviewed attempt and only then registers immutable wide/narrow assets.
-6. Drafting begins only after all planned derived scenes are finalized.
-7. `scene_responsive.py` upgrades final V2 image markup to `<picture>` so the browser uses the independently designed narrow asset on mobile.
-8. `artifact_integrity_v2.py` binds plan, preview, vision review, registered scene/variant hashes and final responsive HTML.
-9. `visual_audit_v2.py` reuses the normal browser audit and additionally captures every published V2 scene at desktop and mobile sizes.
+1. PLAN writes `02-scenes/<id>.json`. The creator gets one creative pass from canonical knowledge, the pedagogical objective and the visual rules.
+2. `visual_plan_v2.py preview` validates the scene and runs deterministic geometry preflight before creating run-local wide/narrow SVG + PNG evidence.
+3. If preflight cites a concrete mechanical defect, the creator may make a targeted correction for that defect. Preflight repair must not become a subjective polishing/redesign loop.
+4. Once preflight passes, the creator does **not** inspect, score or visually polish its own PNG/SVG. The passing evidence goes directly to a separate vision-capable reviewer.
+5. The independent reviewer inspects the current wide/narrow PNGs using `rules/evaluation/visual-rubric.md` and writes `02-visual-review.json` bound to exact PNG hashes.
+6. If a scene fails that review, repair only the failed scene once from the reviewer findings, run deterministic preview/preflight again and send the changed evidence directly to one final independent review. The repair author does not self-review the repaired preview.
+7. New runs allow at most **two reviewed attempts per scene**: the initial review and one repaired review. There is no third visual review.
+8. If the second reviewed attempt still fails, omit that scene from the current summary plan and continue. A failed illustration must not block the textual summary.
+9. `visual_plan_v2.py finalize` mechanically verifies review bindings, re-renders the surviving SVGs, requires identical hashes to the reviewed attempt and only then registers immutable wide/narrow assets.
+10. Drafting begins after the bounded visual build completes with the surviving visual set.
+11. `scene_responsive.py` upgrades final V2 image markup to `<picture>` so the browser uses the independently designed narrow asset on mobile.
+12. `artifact_integrity_v2.py` binds plan, preview, vision review, registered scene/variant hashes and final responsive HTML.
+13. `visual_audit_v2.py` reuses the normal browser audit and additionally captures every published V2 scene at desktop and mobile sizes. This is integration QA and must not reopen visual design.
+
+Failed attempts live only under the run's `02-visual-attempts/` tree. They never mutate `figures.json` or canonical assets.
+
+## Creator versus reviewer
+
+The scene creator and the visual reviewer have deliberately separate responsibilities:
+
+- **creator:** decides what to draw and composes the scene;
+- **deterministic preflight:** checks objective breakage such as invalid geometry, clipping/bounds and other machine-verifiable defects;
+- **independent reviewer:** judges perceptual and pedagogical visual quality;
+- **repair:** exists only in response to cited preflight or reviewer findings, never because the creator privately changed its mind.
+
+The creator must not open its own passing preview to run a private quality pass before official review. This avoids hidden `draw → inspect → polish → inspect → redesign` loops that consume model time/tokens without advancing the formal review lifecycle.
 
 ## Deterministic versus perceptual guarantees
 
