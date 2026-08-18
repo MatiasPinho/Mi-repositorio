@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
 from pathlib import Path
+
+from scripts import visual_reuse_v2
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,6 +29,28 @@ class VisualPedagogyContractTests(unittest.TestCase):
 
         self.assertIn("rules/visual/figures.md", pipeline)
         self.assertIn("rules/evaluation/visual-rubric.md", pipeline)
+
+    def test_cross_run_visual_pass_is_invalidated_when_visual_policy_changes(self):
+        with tempfile.TemporaryDirectory() as td:
+            run = Path(td)
+            current = visual_reuse_v2._current_visual_policy()
+            (run / "manifest.json").write_text(
+                json.dumps({"engine_snapshot": current}),
+                encoding="utf-8",
+            )
+            self.assertTrue(visual_reuse_v2._visual_policy_matches_current(run))
+
+            stale = dict(current)
+            stale[visual_reuse_v2.VISUAL_POLICY_FILES[0]] = "0" * 64
+            (run / "manifest.json").write_text(
+                json.dumps({"engine_snapshot": stale}),
+                encoding="utf-8",
+            )
+            self.assertFalse(visual_reuse_v2._visual_policy_matches_current(run))
+
+    def test_synthetic_run_without_manifest_keeps_fixture_compatibility(self):
+        with tempfile.TemporaryDirectory() as td:
+            self.assertTrue(visual_reuse_v2._visual_policy_matches_current(Path(td)))
 
 
 if __name__ == "__main__":
