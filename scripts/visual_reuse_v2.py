@@ -27,22 +27,20 @@ if str(ROOT) not in sys.path:
 
 from study import resolve_course  # noqa: E402
 try:
-    from . import scene_spec, visual_plan_v2, visual_review
+    from . import scene_spec, visual_plan_v2, visual_policy, visual_review
     from .course_layout import has_unit_layout, unit_root
     from .figure_assets import load_registry
     from .unit_identity import record_unit_id, resolve_unit
 except ImportError:
     import scene_spec  # type: ignore
     import visual_plan_v2  # type: ignore
+    import visual_policy  # type: ignore
     import visual_review  # type: ignore
     from course_layout import has_unit_layout, unit_root  # type: ignore
     from figure_assets import load_registry  # type: ignore
     from unit_identity import record_unit_id, resolve_unit  # type: ignore
 
-VISUAL_POLICY_FILES = (
-    "rules/visual/figures.md",
-    "rules/evaluation/visual-rubric.md",
-)
+VISUAL_POLICY_FILES = visual_policy.VISUAL_POLICY_FILES
 
 
 def _sha(path: Path) -> str:
@@ -63,7 +61,7 @@ def _write(path: Path, payload: Any) -> None:
 
 def _current_visual_policy() -> dict[str, str]:
     """Hash only the rules that define figure composition/review semantics."""
-    return {rel: _sha(ROOT / rel) for rel in VISUAL_POLICY_FILES}
+    return visual_policy.current_policy()
 
 
 def _prior_visual_policy(run: Path) -> dict[str, str] | None:
@@ -167,11 +165,14 @@ def _matching_prior(
     wanted = {row["scene"]["id"]: row for row in _active_scene_rows(rows)}
     if not wanted:
         return None
+    current_policy_sha = visual_policy.current_fingerprint()
     for run in _candidate_runs(course, current_run):
         if not _visual_policy_matches_current(run):
             continue
         try:
             preview = _read(run / "02-visual-preview.json")
+            if preview.get("visual_policy_sha256") != current_policy_sha:
+                continue
             review_raw = _read(run / "02-visual-review.json")
             binding = visual_review.bind_review_to_preview(review_raw, preview)
         except (OSError, UnicodeError, json.JSONDecodeError, ValueError, visual_review.VisualReviewError):
@@ -328,6 +329,7 @@ def prepare(course: Path, unit_value: str, plan_path: Path, review_write: Path) 
     seeded_review = {
         "version": 1,
         "vision_verified": True,
+        "visual_policy_sha256": visual_policy.current_fingerprint(),
         "reviewer": review["reviewer"],
         "figures": seeded_rows,
     }
