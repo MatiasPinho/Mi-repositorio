@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
-from scripts import fidelity_guard, run_timing, scene_spec, summary_presence, visual_reuse_v2, visual_review
+from scripts import fidelity_guard, run_timing, scene_spec, summary_presence, visual_policy, visual_reuse_v2, visual_review
 from tests.test_scene_v2 import free_scene
 
 
@@ -133,6 +133,7 @@ class CrossRunVisualReuseTests(unittest.TestCase):
             narrow_svg = b"approved-narrow-svg"
             wide_png = b"approved-wide-png"
             narrow_png = b"approved-narrow-png"
+            policy_sha = visual_policy.current_fingerprint()
 
             assets = course / "assets" / "figures"
             assets.mkdir(parents=True)
@@ -166,11 +167,18 @@ class CrossRunVisualReuseTests(unittest.TestCase):
                     "narrow": {"svg": str(old_narrow_svg), "svg_sha256": sha_bytes(narrow_svg), "png": str(old_narrow_png), "png_sha256": sha_bytes(narrow_png)},
                 },
             }
-            (prior / "02-visual-preview.json").write_text(json.dumps({"version": 1, "ok": True, "entries": [preview_entry], "preserved": []}), encoding="utf-8")
+            (prior / "02-visual-preview.json").write_text(json.dumps({
+                "version": 1,
+                "ok": True,
+                "visual_policy_sha256": policy_sha,
+                "entries": [preview_entry],
+                "preserved": [],
+            }), encoding="utf-8")
             scores = {key: 5 for key in visual_review.SCORE_KEYS}
             prior_review = {
                 "version": 1,
                 "vision_verified": True,
+                "visual_policy_sha256": policy_sha,
                 "reviewer": {"id": "prior-vision", "capability": "vision", "independent": True},
                 "figures": [{
                     "scene_id": "cross-run",
@@ -223,6 +231,7 @@ class CrossRunVisualReuseTests(unittest.TestCase):
             self.assertEqual(report["scene_ids"], ["cross-run"])
             seeded = json.loads(review_write.read_text(encoding="utf-8"))
             self.assertEqual(seeded["reviewer"]["id"], "prior-vision")
+            self.assertEqual(seeded["visual_policy_sha256"], policy_sha)
             self.assertEqual(seeded["figures"][0]["attempt"], 1)
             new_preview = json.loads((current / "02-visual-attempts" / "cross-run" / "01" / "preview.json").read_text(encoding="utf-8"))
             self.assertTrue(new_preview["reused_cross_run"])
