@@ -8,7 +8,15 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from scripts import run_engine_guard, scene_spec, visual_plan_v2, visual_policy, visual_reuse_v2, visual_review
+from scripts import (
+    run_engine_guard,
+    scene_spec,
+    visual_plan_v2,
+    visual_policy,
+    visual_reuse_v2,
+    visual_review,
+    visual_scene_policy_guard,
+)
 from tests.test_scene_v2 import free_scene
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,12 +45,17 @@ class VisualPedagogyContractTests(unittest.TestCase):
         self.assertIn("### Representational fit inside `pedagogical_value`", rubric)
         self.assertIn("plain box labeled `CPU`", rubric)
         self.assertIn("score `pedagogical_value <= 3`", rubric)
+        self.assertIn("`generic-box-substitution`", rubric)
+        self.assertIn("generic-box substitution is a blocking representational failure", rubric)
         self.assertIn("The repair should improve the drawing/structure, **not add more prose**", rubric)
         self.assertIn("Do **not** penalize boxes merely for being boxes", rubric)
         self.assertIn("Never demand decorative realism, unsupported internals", rubric)
 
         self.assertIn("rules/visual/figures.md", pipeline)
         self.assertIn("rules/evaluation/visual-rubric.md", pipeline)
+        self.assertIn("scripts/visual_scene_policy_guard.py", pipeline)
+        self.assertIn("hard pre-preview design failure", pipeline)
+        self.assertIn("generic-box-substitution", pipeline)
 
     def test_cross_run_visual_pass_is_invalidated_when_visual_policy_changes(self):
         with tempfile.TemporaryDirectory() as td:
@@ -121,6 +134,61 @@ class VisualPedagogyContractTests(unittest.TestCase):
                 visual_plan_v2._assert_registered_v2_scene_is_same_revision(
                     Path("."), "unidad-1", figures, loc="visuals[0]", scene=changed
                 )
+
+    def test_policy_stale_registered_scene_is_rejected_before_preview(self):
+        scene = scene_spec.validate_scene(free_scene("stale-scene"))
+        scene_sha = scene_spec.scene_sha256(scene)
+        rows = [{
+            "scene": scene,
+            "derived_figure_id": "derived:stale-scene",
+            "visual_treatment": "reinterpret",
+        }]
+        registry = {
+            "figures": {
+                "derived:stale-scene": {
+                    "origin": "derived",
+                    "unit_id": "unidad-1",
+                    "scene_generation": {
+                        "schema_version": 2,
+                        "scene_sha256": scene_sha,
+                    },
+                }
+            }
+        }
+        with tempfile.TemporaryDirectory() as td:
+            plan = Path(td) / "02-plan.json"
+            plan.write_text("{}\n", encoding="utf-8")
+            patches = (
+                mock.patch.object(visual_scene_policy_guard.visual_plan_v2, "inspect_plan", return_value=rows),
+                mock.patch.object(visual_scene_policy_guard, "resolve_unit", return_value={"unit_id": "unidad-1"}),
+                mock.patch.object(visual_scene_policy_guard, "load_registry", return_value=registry),
+                mock.patch.object(visual_scene_policy_guard, "record_unit_id", return_value="unidad-1"),
+            )
+            with patches[0], patches[1], patches[2], patches[3]:
+                with mock.patch.object(
+                    visual_scene_policy_guard,
+                    "_matching_current_policy_pass",
+                    return_value=False,
+                ):
+                    report = visual_scene_policy_guard.check(Path(td), "unidad-1", plan)
+                self.assertFalse(report["ok"])
+                self.assertEqual(
+                    report["issues"][0]["code"],
+                    "registered-v2-composition-stale-under-current-policy",
+                )
+                self.assertEqual(
+                    report["issues"][0]["required_action"],
+                    "reconsider-composition-and-create-new-append-only-revision",
+                )
+
+                with mock.patch.object(
+                    visual_scene_policy_guard,
+                    "_matching_current_policy_pass",
+                    return_value=True,
+                ):
+                    current_report = visual_scene_policy_guard.check(Path(td), "unidad-1", plan)
+                self.assertTrue(current_report["ok"])
+                self.assertEqual(current_report["issues"], [])
 
     def test_build_integrity_replays_finalizer_instead_of_trusting_ok_json(self):
         integrity = (ROOT / "scripts" / "artifact_integrity_v2.py").read_text(encoding="utf-8")
