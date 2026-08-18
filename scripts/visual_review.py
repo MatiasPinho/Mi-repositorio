@@ -55,6 +55,11 @@ def validate_review(review: Any, *, require_policy: bool = False) -> dict[str, A
     parser compatibility exists only for old synthetic unit fixtures that call
     this helper directly; every real preview binding passes ``require_policy``
     or is identified as a real scene by ``bind_review_to_preview`` below.
+
+    ``figures`` may be empty only as a structural handoff. Binding decides whether
+    that is valid by requiring the reviewed scene set to equal the current preview
+    scene set exactly. This supports a summary that deliberately omitted every V2
+    scene after exhausting the bounded visual-review budget.
     """
     if not isinstance(review, dict):
         raise _err("$", "must be an object")
@@ -86,8 +91,8 @@ def validate_review(review: Any, *, require_policy: bool = False) -> dict[str, A
     if reviewer.get("independent") is not True:
         raise _err("$.reviewer.independent", "designer self-review cannot finalize")
     figures = review.get("figures")
-    if not isinstance(figures, list) or not figures:
-        raise _err("$.figures", "must contain at least one reviewed scene")
+    if not isinstance(figures, list):
+        raise _err("$.figures", "must be an array")
     normalized = []
     seen: set[str] = set()
     for i, row in enumerate(figures):
@@ -105,6 +110,8 @@ def validate_review(review: Any, *, require_policy: bool = False) -> dict[str, A
             raise _err(path + ".scene_id", "duplicate review")
         seen.add(scene_id)
         attempt = row.get("attempt")
+        # Keep parser compatibility with historical attempt-3 evidence. New
+        # previews are capped in scene_figure.MAX_ATTEMPTS and cannot create 3.
         if isinstance(attempt, bool) or not isinstance(attempt, int) or not (1 <= attempt <= 3):
             raise _err(path + ".attempt", "must be integer 1..3")
         status = row.get("status")
