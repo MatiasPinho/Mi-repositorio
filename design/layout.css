@@ -293,7 +293,7 @@ article::after {
   body { background: var(--study-paper); }
   .study-shell { padding: 0; }
   .study-grid,
-  .study-grid.without-toc { display: block; }
+  .study-grid.with-toc { display: block; }
   article {
     --notebook-paper-padding-start: 3.45rem;
     --notebook-paper-padding-end: 1.2rem;
