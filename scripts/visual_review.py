@@ -30,6 +30,14 @@ def _err(path: str, message: str) -> VisualReviewError:
     return VisualReviewError(f"{path}: {message}")
 
 
+def _valid_sha256(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(c in "0123456789abcdef" for c in value.lower())
+    )
+
+
 def load_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -43,7 +51,7 @@ def load_json(path: Path) -> dict[str, Any]:
 def validate_review(review: Any) -> dict[str, Any]:
     if not isinstance(review, dict):
         raise _err("$", "must be an object")
-    allowed = {"version", "vision_verified", "reviewer", "figures"}
+    allowed = {"version", "vision_verified", "visual_policy_sha256", "reviewer", "figures"}
     if set(review) != allowed:
         missing = sorted(allowed - set(review))
         extra = sorted(set(review) - allowed)
@@ -52,6 +60,9 @@ def validate_review(review: Any) -> dict[str, Any]:
         raise _err("$.version", "must equal 1")
     if review.get("vision_verified") is not True:
         raise _err("$.vision_verified", "must be true; metrics-only review cannot pass")
+    policy_sha = review.get("visual_policy_sha256")
+    if not _valid_sha256(policy_sha):
+        raise _err("$.visual_policy_sha256", "must be a SHA-256 hex digest")
     reviewer = review.get("reviewer")
     if not isinstance(reviewer, dict):
         raise _err("$.reviewer", "must be an object")
@@ -105,7 +116,7 @@ def validate_review(review: Any) -> dict[str, Any]:
             if not isinstance(item.get("file"), str) or not item["file"]:
                 raise _err(ipath + ".file", "must be non-empty")
             digest = item.get("sha256")
-            if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest.lower()):
+            if not _valid_sha256(digest):
                 raise _err(ipath + ".sha256", "must be a SHA-256 hex digest")
             inspected_norm.append(dict(item))
         if variants != {"wide", "narrow"}:
@@ -160,6 +171,7 @@ def validate_review(review: Any) -> dict[str, Any]:
     return {
         "version": 1,
         "vision_verified": True,
+        "visual_policy_sha256": str(policy_sha).lower(),
         "reviewer": {"id": reviewer["id"].strip(), "capability": "vision", "independent": True},
         "figures": normalized,
     }
@@ -167,6 +179,11 @@ def validate_review(review: Any) -> dict[str, Any]:
 
 def bind_review_to_preview(review_value: Any, preview_report: dict[str, Any]) -> dict[str, Any]:
     review = validate_review(review_value)
+    expected_policy = preview_report.get("visual_policy_sha256") if isinstance(preview_report, dict) else None
+    if not _valid_sha256(expected_policy):
+        raise VisualReviewError("preview report has no valid visual_policy_sha256")
+    if review["visual_policy_sha256"] != str(expected_policy).lower():
+        raise VisualReviewError("visual review policy does not match current preview policy")
     entries = preview_report.get("entries") if isinstance(preview_report, dict) else None
     if not isinstance(entries, list):
         raise VisualReviewError("preview report has no entries")
@@ -198,4 +215,10 @@ def bind_review_to_preview(review_value: Any, preview_report: dict[str, Any]) ->
             if not path.is_file():
                 raise VisualReviewError(f"{scene_id}:{variant}: reviewed screenshot missing: {path}")
         bindings.append({"scene_id": scene_id, "attempt": row["attempt"], "status": "pass"})
-    return {"ok": True, "vision_verified": True, "bindings": bindings, "review": review}
+    return {
+        "ok": True,
+        "vision_verified": True,
+        "visual_policy_sha256": review["visual_policy_sha256"],
+        "bindings": bindings,
+        "review": review,
+    }
