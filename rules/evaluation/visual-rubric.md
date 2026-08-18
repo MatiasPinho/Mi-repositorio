@@ -21,9 +21,13 @@ The reviewer scores 0–5 for exactly these dimensions:
 - `density`: information fits the available space; split the figure if that is clearly better;
 - `composition`: visual weight and empty space look deliberate rather than accidental auto-layout;
 - `pencil_fidelity`: the figure itself visibly reads as hand-drawn notebook ink/pencil at final size. Boxes, arrows, dividers and geometric forms must have perceptible stroke wander/overdraw and must **not** read as ruler-straight diagram-editor vectors merely placed on notebook paper;
-- `pedagogical_value`: the visual makes understanding easier than prose alone;
+- `pedagogical_value`: the visual makes understanding easier than prose alone by encoding useful structure, mechanism, relationship, state, flow, comparison or spatial intuition rather than merely decorating text;
 - `responsive`: both wide and narrow compositions work independently, with no mobile zoom dependency;
 - `academic_fidelity`: every visual assertion preserves canonical meaning and analogies are not presented as source truth.
+
+For `pedagogical_value`, specifically inspect whether the drawing itself carries explanatory work. When a scene is mostly a grid/row of titled boxes whose contents are short prose paraphrases, ask whether replacing the entire figure with those labels as ordinary text would lose meaningful understanding. If the answer is no **and** the supported concept offered a real graphical opportunity (mechanism, internal parts, flow, state change, relationship, hierarchy, spatial contrast or useful micro-example), score `pedagogical_value <= 3`, which prevents PASS. Prefer scenes where the learner can *see* the distinction or mechanism.
+
+Do **not** penalize boxes merely for being boxes. Containers are appropriate when boundaries, grouping, architecture, memory regions, layers or containment are themselves part of the concept, and a genuinely simple concept may deserve a genuinely simple figure. Never demand extra visual detail that is not supported by provenance.
 
 PASS requires every score >= 4 and no `blocking` or `major` issue.
 
