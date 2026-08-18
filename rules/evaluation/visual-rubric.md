@@ -27,7 +27,18 @@ The reviewer scores 0–5 for exactly these dimensions:
 
 For `pedagogical_value`, specifically inspect whether the drawing itself carries explanatory work. When a scene is mostly a grid/row of titled boxes whose contents are short prose paraphrases, ask whether replacing the entire figure with those labels as ordinary text would lose meaningful understanding. If the answer is no **and** the supported concept offered a real graphical opportunity (mechanism, internal parts, flow, state change, relationship, hierarchy, spatial contrast or useful micro-example), score `pedagogical_value <= 3`, which prevents PASS. Prefer scenes where the learner can *see* the distinction or mechanism.
 
-Do **not** penalize boxes merely for being boxes. Containers are appropriate when boundaries, grouping, architecture, memory regions, layers or containment are themselves part of the concept, and a genuinely simple concept may deserve a genuinely simple figure. Never demand extra visual detail that is not supported by provenance.
+### Representational fit inside `pedagogical_value`
+Also judge whether the chosen visual form matches the kind of concept being taught. This is not a new score dimension; it is part of `pedagogical_value`.
+
+- For a **physical/tangible/recognizable component** whose canonical evidence supports a simple recognizable form (for example CPU/chip, RAM, disk, monitor, keyboard or device), prefer a simplified iconic/schematic object sketch over a generic titled rectangle when that makes the concept easier to grasp. A plain box labeled `CPU` should not receive full pedagogical credit merely because the label is correct if the scene could safely show a recognizable chip-like form.
+- For a **process, sequence or state change**, prefer visible flow, cycle, path, transition or ordering rather than independent prose cards.
+- For an **architecture/system**, prefer meaningful spatial arrangement, layers, buses, connections, boundaries or nesting when those relationships are supported.
+- For a **comparison**, prefer micro-structure or visual cues that make the distinctions visible rather than parallel text blocks alone.
+- For **historical/staged evolution**, prefer an explicit temporal progression when chronology is the point.
+
+If the concept offers one of these clear representation opportunities, the evidence supports it, and the scene still substitutes generic labeled boxes with no meaningful visual encoding, score `pedagogical_value <= 3`. The repair should improve the drawing/structure, **not add more prose**.
+
+Do **not** penalize boxes merely for being boxes. Containers are appropriate when boundaries, grouping, architecture, memory regions, layers or containment are themselves part of the concept, and a genuinely simple concept may deserve a genuinely simple figure. A rectangular physical object may also legitimately be rectangular. Never demand decorative realism, unsupported internals or extra visual detail that is not supported by provenance.
 
 PASS requires every score >= 4 and no `blocking` or `major` issue.
 
