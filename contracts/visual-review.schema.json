@@ -4,10 +4,11 @@
   "title": "Independent vision review binding",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "vision_verified", "reviewer", "figures"],
+  "required": ["version", "vision_verified", "visual_policy_sha256", "reviewer", "figures"],
   "properties": {
     "version": {"const": 1},
     "vision_verified": {"const": true},
+    "visual_policy_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
     "reviewer": {
       "type": "object",
       "additionalProperties": false,
