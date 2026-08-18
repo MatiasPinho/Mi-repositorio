@@ -14,7 +14,7 @@ Only `published: true` means the current Markdown+HTML pair exists under the res
 
 ## Deterministic before model work
 - Use code for hashes, asset identity, bounds, collisions, responsive identity and other objective checks.
-- A deterministic preflight failure consumes no vision-review attempt.
+- A deterministic preflight failure consumes no vision-review attempt. This includes the established `arrow-shaft-too-short` guard for arrow/connector paths whose marker would consume the readable shaft at final display size.
 - Never ask a model to compare hashes or re-approve byte-identical evidence.
 - `02-visual-build.json` must come from the deterministic finalizer; integrity reconstructs it independently.
 - Never patch engine code during an active study run.
