@@ -13,54 +13,44 @@ python scripts/venv_exec.py scripts/summary_presence.py \
 Only `published: true` means the current Markdown+HTML pair exists under the resolved unit's `resumenes/` directory. Historical runs, registered figures and old publication reports are cache/evidence only.
 
 ## Deterministic before model work
-- Use code for hashes, asset identity, bounds, collisions, responsive identity and other objective checks.
-- A deterministic preflight failure consumes no vision-review attempt. This includes the established `arrow-shaft-too-short` guard for arrow/connector paths whose marker would consume the readable shaft at final display size.
+- Use code for hashes, asset identity, collisions, registration, image cleanup and other objective checks.
 - Never ask a model to compare hashes or re-approve byte-identical evidence.
-- `02-visual-build.json` must come from the deterministic finalizer; integrity reconstructs it independently.
+- `02-visual-build.json` must come from `scripts/visual_plan_hybrid.py`; do not hand-write it.
 - Never patch engine code during an active study run.
+- Exact registered diagram or illustration reuse is mechanical and must not spend a model/provider call.
 
 ## Visual selection is pedagogical, not a runtime shortcut
 Runtime optimization begins **after** the planner decides whether a visual materially improves learning.
 
-- `visual_not_needed` is a pedagogical judgment. Never choose it merely to save tokens, time, review work or tool calls.
+- `visual_not_needed` is a pedagogical judgment. Never choose it merely to save tokens, time, provider work or implementation effort.
 - If a concept is spatial, structural, causal, temporal, relational or physically recognizable and a figure would materially improve understanding, keep `visual_required` / `visual_helpful` exactly as the visual rules require.
-- Do not downgrade a planned useful visual pre-emptively because V2 work may be expensive.
-- A selected figure may be omitted only after a cited deterministic preflight problem cannot be fixed with the allowed targeted correction, or after it exhausts the reviewed visual budget below.
+- A selected optional illustration may be omitted only after the bounded provider/fallback path fails.
 - A post-failure omission is a runtime fallback for that run, not evidence that the concept was pedagogically better without a visual and not a precedent for future PLAN decisions.
 
-## Visual work budget
-The AI remains free to choose the semantic composition and drawing of a schema-2 scene. Runtime is controlled by limiting creator/reviewer loops, not by restricting that creative freedom or suppressing useful figures.
+## Active hybrid visual budget
+The summary model does semantic planning, not graphic production.
 
-### Creator boundary
-The scene creator gets **one creative pass before independent review**.
+### Deterministic diagrams
+Use `visual_medium: diagram` whenever exact structure, order, topology, direction, chronology, label or quantity matters. The model writes only the compact schema-1 semantic sketch spec. `scripts/visual_plan.py` remains the deterministic diagram backend and `scripts/visual_plan_hybrid.py` dispatches to it.
 
-1. Author the scene from canonical knowledge, its pedagogical objective and the visual rules.
-2. Run deterministic preview/preflight.
-3. If preflight reports a concrete mechanical defect, make only a targeted correction for that cited defect and rerun preflight. Do not turn preflight repair into subjective redesign or polishing.
-4. Once deterministic preflight passes, the creator must **not inspect its own preview PNG/SVG for subjective quality, score it, polish it, redesign it because it changed its mind, or perform a private visual-review loop**.
-5. Hand the passing preview directly to the independent vision reviewer.
+Do not author raw SVG, explicit coordinate-heavy scenes, separate wide/narrow geometry or visual-review repair loops.
 
-The creator and reviewer responsibilities are intentionally separate: the creator draws; deterministic code checks objective breakage; the independent reviewer judges perceptual/pedagogical quality.
+### Generated illustrations
+Use `visual_medium: illustration` only for optional physical/recognition support and only with `visual_helpful`.
 
-### Independent review boundary
-For each current V2 scene:
-1. Run one independent vision-review batch for all new/changed scenes.
-2. If a scene fails, allow exactly one model-authored repair of that failed scene using the review findings, then preview/preflight the changed scene.
-3. The repair author again does not self-review the repaired preview; after preflight passes it goes directly to the final independent review.
-4. Run one final vision review of changed repaired evidence.
-5. There is no third visual review. New runs may create at most two reviewable/rendered attempts per scene.
-6. If a scene still fails after the final review, omit that scene from the current summary plan and continue with the remaining visuals. A failed illustration must not prevent production of the textual summary.
+The planner writes a compact semantic illustration object. Carpeta constructs the provider prompt, applies the fixed pencil style, performs one bounded provider request, crops/keys the white background to transparency and registers the resulting notebook overlay.
 
-Unchanged PASS scenes are carried forward mechanically. Do not re-render or re-review them.
+Runtime rules:
+1. one provider request per new illustration spec;
+2. zero provider calls for exact registered reuse;
+3. no independent per-illustration vision-review/regeneration loop;
+4. if the provider is unavailable, make at most one run-local fallback decision: switch to a deterministic diagram only when the same supported meaning is naturally diagrammable, otherwise omit that optional illustration for the run;
+5. a generated-image failure never blocks or weakens the textual academic summary.
 
-A deterministic preflight failure may be repaired, but do not enter an open-ended geometry loop. If a scene cannot be made mechanically renderable with a targeted repair, omit it from the current summary instead of repeatedly redesigning it.
+Browser audit is final integration QA, not an illustration-refinement session.
 
-## V2 reuse
-A prior V2 PASS may be reused only when the current scene bytes, permanent wide/narrow SVG hashes and active visual-policy fingerprint are identical to the prior independently reviewed evidence. In that exact case use `scripts/visual_reuse_v2.py` and do not call a vision model.
-
-A visual-policy change invalidates the old PASS for reuse, but it does not by itself force the old composition to be redesigned before anyone sees it. The exact scene may be previewed under the current policy and judged in the normal single review batch. If it fails and must change, use a new append-only scene id for the repaired geometry; never overwrite an already registered V2 revision.
-
-Legacy V1 registered deterministic sketches remain immutable reusable assets and stay outside V2 vision review.
+## Why this boundary exists
+The retired free-composition V2 experiment remains available in the repository for compatibility/testing, but it is not in the normal `/resumen` critical path. New summaries must not spend model time authoring large scene-graph geometry, responsive wide/narrow variants or per-scene independent visual-review loops before prose drafting.
 
 ## Fidelity risk ledger before prose
 Before drafting, run:
@@ -94,9 +84,9 @@ python scripts/venv_exec.py scripts/fidelity_guard.py \
 `ok: false` is a hard pre-review failure. Repair only the cited wording before spending an academic-review call. If the first academic review requires `06-repair.md`, run the same guard on the repair before the second/final review.
 
 ## Surgical retries
-- Visual: one creator pass, no subjective creator self-review, then at most one reviewer-directed repair round. After the second reviewed attempt, omit remaining failed scenes and continue. No third review.
-- Academic: edit only cited sentences/sections. The second review gets the repaired candidate, first-review findings, fidelity constraints and complete canonical support for the failed/high-risk claims. Do not repeat visual review or humanization of unchanged prose.
-- Browser audit is deterministic integration QA, not another open-ended vision pass.
+- Visual: no open-ended retries. Deterministic diagrams are idempotent; a new illustration gets one provider call and at most one fallback decision.
+- Academic: edit only cited sentences/sections. The second review gets the repaired candidate, first-review findings, fidelity constraints and complete canonical support for the failed/high-risk claims. Do not regenerate unchanged visuals or re-humanize unchanged prose.
+- Browser audit is deterministic integration QA, not another generation/review pass.
 
 ## Publication handoff
 Use the exact report path required by finish:
