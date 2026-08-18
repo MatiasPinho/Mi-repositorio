@@ -24,6 +24,25 @@ Boxes, regions and containers remain fully valid when containment, grouping, bou
 
 Graphic richness never permits invented detail. Only visualize components and relationships supported by canonical knowledge/provenance. When the source supports only a high-level abstraction, keep the drawing high-level rather than decorating it with plausible but unsupported parts.
 
+## Representational fit
+Before composing a derived scene, choose the visual form that naturally matches the kind of concept being taught. **Do not use a generic labeled rectangle as the default stand-in for something that has a useful recognizable form, process shape or spatial structure.** The scene graph is a drawing vocabulary, not a box-diagram template.
+
+Prefer these families when they improve understanding:
+
+- **Physical, tangible or recognizable components** — CPU/chip, RAM module, disk, monitor, keyboard, device, bus, network node, printer and similar objects should prefer a **simplified iconic/schematic sketch** whose silhouette or small set of supported parts makes the object recognizable. It can remain extremely simple and hand-drawn; it does not need realism. For example, a CPU may read as a chip package with pins and only the supported internal labels, rather than a plain box titled `CPU`.
+- **Processes, sequences and state changes** — instruction cycles, syscalls, scheduling, context switches, lifecycles and pipelines should prefer flows, cycles, transitions, paths or state structures that make movement/order visible.
+- **Architectures and systems** — hardware/software architectures, layers, memory/CPU/E/S relationships and subsystem layouts should prefer meaningful spatial arrangement, boundaries, buses, connections, nesting or layers.
+- **Comparisons and categories** — prefer internal visual cues, micro-diagrams, distinctive structure or relationships that make the contrast visible instead of repeating prose in parallel cards.
+- **Historical progressions and staged evolution** — prefer timelines, milestones or another explicit temporal progression when chronology is the teaching point.
+
+These are representation heuristics, **not named templates**. The model remains free to invent a different composition when it teaches the canonical concept better.
+
+Object likeness must come from supported geometry and relationships, not decorative invention. A recognizable sketch may use silhouette, repeated small parts, connectors, relative position or other simple cues, but it must not hallucinate technical internals merely to look richer. If evidence only supports a high-level component, draw a high-level recognizable abstraction.
+
+Do not solve this rule by adding more prose inside the figure. The intended improvement is **more explanatory drawing, spatial structure and visual cues**, with text kept to labels and short clarifications.
+
+Boxes remain valid when a box is actually meaningful: containment, memory regions, layers, modules, boundaries, grouping or a genuinely rectangular physical object. The rule is to avoid **generic-box substitution**, not geometry itself.
+
 ## Treatment decision
 After deciding that a visual is required or helpful, record exactly one `visual_treatment` in the plan:
 
