@@ -32,6 +32,8 @@ Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps be
 Quality gates protect the artifact; they must not turn normal summary generation into an unbounded visual-design session.
 - A standard `resumen` should normally finish in roughly **10–20 minutes** on a capable hosted model; **30 minutes** is a performance warning and **60+ minutes is a runtime/product failure**.
 - Never ask an AI reviewer to prove byte/hash facts that deterministic code can prove.
+- Visual selection remains pedagogical: never choose `visual_not_needed` merely to save tokens, time, reviews or tool work.
+- The scene creator gets one creative pass before official review. Once deterministic preflight passes, the creator must not open/inspect its own preview for subjective scoring, polishing or redesign.
 - Use one visual review batch for all new/changed scenes.
 - A failed scene gets **one repair round and one final review only**. New runs may create at most **two reviewable attempts per scene**. There is no third visual review.
 - If a scene still fails after that final review, omit that figure from the current summary plan and continue. A failed illustration must not block production of the textual summary.
@@ -57,7 +59,7 @@ A study agent may repair run-local candidate data, but it must never repair the 
 
 2. **START RUN** → `python scripts/venv_exec.py scripts/pipeline_run.py start --course <course-folder> --pipeline resumen --scope "<scope>"`. The run records deterministic fingerprints of engine and canonical inputs. Figure mutation is allowed only after reviewed visual finalization.
 
-3. **PLAN** → write `02-plan.json`, including `depth`. Use canonical knowledge to decide ordering, examples, traps and omissions. For every major concept decide `visual_required`, `visual_helpful` or `visual_not_needed`; for every selected visual record treatment, reason and provenance. `source-first` selects evidence, not final pixels. `preserve` / `preserve+derived_sketch` require a concrete `fidelity_reason`.
+3. **PLAN** → write `02-plan.json`, including `depth`. Use canonical knowledge to decide ordering, examples, traps and omissions. For every major concept decide `visual_required`, `visual_helpful` or `visual_not_needed`; for every selected visual record treatment, reason and provenance. This decision is pedagogical, not a runtime shortcut: never downgrade a useful figure to `visual_not_needed` merely to avoid V2 work. `source-first` selects evidence, not final pixels. `preserve` / `preserve+derived_sketch` require a concrete `fidelity_reason`.
 
    For a **new derived pedagogical figure**, design a schema-2 scene under `<run-dir>/02-scenes/<id>.json` and reference it with `scene_spec`. The model owns semantic composition and geometry; Carpeta owns SVG/CSS/colors/fonts, deterministic rendering and validation. Academic elements are declared once and wide/narrow layouts change geometry only. Do not write polished prose or raw SVG here.
 
@@ -65,18 +67,21 @@ A study agent may repair run-local candidate data, but it must never repair the 
 
    Existing schema-1 figures remain supported under `<run-dir>/02-sketches/` for backward compatibility.
 
-4. **VISUAL BUILD** → build selected visuals with a strict review budget.
+4. **VISUAL BUILD** → build selected visuals with a strict creator/reviewer budget.
 
    **V2 default for new derived figures:**
    - if an exact prior V2 scene has an exact PASS under the **same active visual policy**, cross-run PASS reuse may be attempted according to `summary-runtime-optimization.md`; otherwise continue normally without treating the old PASS as current evidence;
+   - the creator authors each current scene once from canonical knowledge, its pedagogical objective and the visual rules;
    - run `python scripts/venv_exec.py scripts/visual_plan_v2.py preview --course <course> --unit "<scope>" --plan <run-dir>/02-plan.json --write <run-dir>/02-visual-preview.json`;
-   - deterministic preflight checks objective renderability/geometry before vision. Repair a cited mechanical failure surgically; do not enter an open-ended redesign loop. If a scene cannot be made mechanically renderable with a targeted repair, omit that scene from the plan and continue;
+   - deterministic preflight checks objective renderability/geometry before vision. Repair only a cited mechanical failure surgically; do not enter subjective redesign/polishing. If a scene cannot be made mechanically renderable with the allowed targeted correction, omit that scene from the plan and continue;
+   - **creator boundary:** once a scene passes deterministic preflight, the creator must not open or inspect its own PNG/SVG to judge visual quality, score it, polish it, redesign it because it changed its mind, or run any private visual-review loop. Send the passing preview directly to the independent reviewer;
    - a separate vision-capable reviewer inspects all **new or changed** wide/narrow PNGs once, in one batch, against `rules/evaluation/visual-rubric.md`, and writes `02-visual-review.json` following `contracts/visual-review.schema.json`;
    - the reviewer receives only current screenshots, scene specs, pedagogical objective/provenance and the rubric. It does not explore the repository or pipeline history;
    - `generic-box-substitution` remains a blocking representational defect for recognizable concepts when a safe schematic depiction is available. The AI is still free to choose how to draw the concept;
-   - if the first review fails any scene, repair **only those failed scenes once**. If changing an already-registered scene, use a new append-only id. Preview again; unchanged PASS scenes reuse their existing attempt/hashes;
+   - if the first review fails any scene, repair **only those failed scenes once**, using the reviewer findings. If changing an already-registered scene, use a new append-only id. Preview/preflight the changed scene again; unchanged PASS scenes reuse their existing attempt/hashes;
+   - **repair boundary:** after the repaired scene passes deterministic preflight, the repair author again must not inspect/polish the rendered evidence by eye. Send it directly to the final independent review;
    - run one **final** vision review only for changed repaired evidence. This is the second and last reviewable attempt for a scene;
-   - if a scene still fails after the second reviewed attempt, remove that visual from the current `02-plan.json` (mark it `visual_not_needed` for this run and remove its derived scene fields), rerun preview so remaining scenes bind to the updated plan, carry unchanged PASS rows mechanically, and continue. **Do not attempt a third review.** If all V2 scenes are omitted, use an empty current review handoff bound to the empty preview set and continue;
+   - if a scene still fails after the second reviewed attempt, remove that visual from the current `02-plan.json` (mark it `visual_not_needed` for this run and remove its derived scene fields), rerun preview so remaining scenes bind to the updated plan, carry unchanged PASS rows mechanically, and continue. **Do not attempt a third review.** This omission is a runtime fallback, not a future PLAN precedent. If all V2 scenes are omitted, use an empty current review handoff bound to the empty preview set and continue;
    - after the remaining current scenes pass, run `python scripts/venv_exec.py scripts/visual_plan_v2.py finalize --course <course> --unit "<scope>" --plan <run-dir>/02-plan.json --preview <run-dir>/02-visual-preview.json --review <run-dir>/02-visual-review.json --write <run-dir>/02-visual-build.json`;
    - finalization re-renders and compares hashes before collision-safe registration. It remains the only valid producer of `02-visual-build.json`.
 
