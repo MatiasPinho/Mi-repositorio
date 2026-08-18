@@ -237,7 +237,8 @@ def materialize_plan(course: Path, unit_value: str, plan_path: Path) -> dict[str
         built.append(output)
 
     return {
-        "version": 2,
+        "version": 1,
+        "visual_system": "hybrid-v1",
         "ok": not unavailable,
         "unit_id": unit_id,
         "plan_sha256": sha256(plan_path),
