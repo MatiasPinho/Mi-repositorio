@@ -1,6 +1,6 @@
 # Visual-learning reviewer rubric
 
-`visual_support` remains the academic/pedagogical score: did the artifact choose useful visuals, preserve source truth and place them where they help learning? It does **not** certify that a generated figure is visually well executed.
+`visual_support` is the academic/pedagogical score: did the artifact choose useful visuals, preserve source truth and place them where they help learning?
 
 Score `visual_support` from 0–5.
 
@@ -10,85 +10,79 @@ A 5 means either:
 
 Lower the score when a structural/spatial/process concept is explained with dense prose despite a useful visual opportunity; figures are decorative, duplicated or irrelevant; captions do not say what to notice; figure and explanation are far apart; source-first is misused as a pixel-preservation shortcut; or `preserve+derived_sketch` adds no simpler mental model.
 
-## Visual System V2 execution gate
-A schema-2 derived scene additionally requires a separate **independent vision review** of its actual `wide` and `narrow` preview PNGs before it can be registered. This is a pass/fail execution gate, not an average that can be hidden inside `visual_support`.
+## Hybrid representational fit
+The active summary visual system chooses among deterministic diagrams, optional generated illustrations and preserved source figures. Judge whether the medium matches the teaching job.
 
-The reviewer scores 0–5 for exactly these dimensions:
-- `legibility`: every label is readable without zoom and nothing is clipped;
-- `spacing`: elements do not look collapsed, accidentally attached or needlessly cramped;
-- `hierarchy`: the first thing to inspect and the intended reading structure are clear;
-- `connections`: arrows/routes are traceable, unambiguous and do not run through text or unrelated objects;
-- `density`: information fits the available space; split the figure if that is clearly better;
-- `composition`: visual weight and empty space look deliberate rather than accidental auto-layout;
-- `pencil_fidelity`: the figure itself visibly reads as hand-drawn notebook ink/pencil at final size. Boxes, arrows, dividers and geometric forms must have perceptible stroke wander/overdraw and must **not** read as ruler-straight diagram-editor vectors merely placed on notebook paper;
-- `pedagogical_value`: the visual makes understanding easier than prose alone by encoding useful structure, mechanism, relationship, state, flow, comparison or spatial intuition rather than merely decorating text;
-- `responsive`: both wide and narrow compositions work independently, with no mobile zoom dependency;
-- `academic_fidelity`: every visual assertion preserves canonical meaning and analogies are not presented as source truth.
+- **Exact structure** — flows, cycles, timelines, hierarchies, architectures, state changes, buses, algorithms and other order/topology-bearing concepts should use deterministic diagrams or exact source evidence.
+- **Physical recognition** — CPU package, RAM module, disk, keyboard, monitor, printer and similar recognizable objects may use a simple generated pencil illustration when likeness itself helps the learner.
+- **Precision-sensitive evidence** — screenshots, charts, notation-heavy figures, formulas, geometry, circuits and exact layouts should remain preserved when reconstruction risks information loss.
 
-For `pedagogical_value`, specifically inspect whether the drawing itself carries explanatory work. When a scene is mostly a grid/row of titled boxes whose contents are short prose paraphrases, ask whether replacing the entire figure with those labels as ordinary text would lose meaningful understanding. If the answer is no **and** the supported concept offered a real graphical opportunity (mechanism, internal parts, flow, state change, relationship, hierarchy, spatial contrast or useful micro-example), score `pedagogical_value <= 3`, which prevents PASS. Prefer scenes where the learner can *see* the distinction or mechanism.
+A generated illustration is supporting recognition only. It must never be the sole carrier of an exact academic relationship, label, quantity, chronology, formula or topology.
 
-### Representational fit inside `pedagogical_value`
-Also judge whether the chosen visual form matches the kind of concept being taught. This is not a new score dimension; it is part of `pedagogical_value`.
+## Graphic explanatory value
+Inspect whether the visual itself carries useful explanatory work.
 
-- For a **physical/tangible/recognizable component** whose canonical evidence supports a simple recognizable form (for example CPU/chip, RAM, disk, monitor, keyboard or device), prefer a simplified iconic/schematic object sketch over a generic titled rectangle when that makes the concept easier to grasp. A plain box labeled `CPU` should not receive full pedagogical credit merely because the label is correct if the scene could safely show a recognizable chip-like form.
-- For a **process, sequence or state change**, prefer visible flow, cycle, path, transition or ordering rather than independent prose cards.
-- For an **architecture/system**, prefer meaningful spatial arrangement, layers, buses, connections, boundaries or nesting when those relationships are supported.
-- For a **comparison**, prefer micro-structure or visual cues that make the distinctions visible rather than parallel text blocks alone.
-- For **historical/staged evolution**, prefer an explicit temporal progression when chronology is the point.
+When a deterministic diagram is mostly a grid/row of titled boxes whose contents are short prose paraphrases, ask whether replacing the entire figure with ordinary text would lose meaningful understanding. If the answer is no **and** the concept offered a real graphical opportunity (mechanism, internal parts, flow, state change, relationship, hierarchy, spatial contrast or useful micro-example), lower `visual_support`.
 
-If the concept offers one of these clear representation opportunities, the evidence supports it, and the scene still substitutes generic labeled boxes with no meaningful visual encoding, score `pedagogical_value <= 3`. The repair should improve the drawing/structure, **not add more prose**.
+For a **physical/tangible/recognizable component**, a generic titled rectangle should not receive full pedagogical credit when a simple recognizable illustration would safely improve the mental model. A plain box labeled `CPU` is an example of **generic-box substitution** when the concept is being represented physically rather than as a logical subsystem.
 
-For **tangible or recognizable objects**, generic-box substitution is a blocking representational failure, not a stylistic preference. If the canonical evidence safely supports an object-level schematic and the primary representation is still only a generic rectangle/card with the object's name and textual sublabels, record a `blocking` issue with the message/code `generic-box-substitution` and keep `pedagogical_value <= 3`. Examples include a CPU shown only as a rectangle labeled `CPU`, RAM shown only as a generic `Memoria` box, or E/S represented only by an `E/S` box when simple chip/module/device-like cues are available. A valid repair adds recognizable silhouette/parts/relationships supported by provenance; adding prose inside the same rectangle is not a repair.
+For a **process, sequence or state change**, prefer visible flow, cycle, path, transition or ordering rather than independent prose cards.
 
-Do **not** penalize boxes merely for being boxes. Containers are appropriate when boundaries, grouping, architecture, memory regions, layers or containment are themselves part of the concept, and a genuinely simple concept may deserve a genuinely simple figure. A rectangular physical object may also legitimately be rectangular when the drawing includes enough object-level cues to represent the thing rather than serving as a generic text container. Never demand decorative realism, unsupported internals or extra visual detail that is not supported by provenance.
+For an **architecture/system**, prefer meaningful spatial arrangement, layers, buses, connections, boundaries or nesting when those relationships are supported.
 
-PASS requires every score >= 4 and no `blocking` or `major` issue.
+For **historical/staged evolution**, prefer an explicit deterministic temporal progression when chronology is the point.
 
-Hard fail a V2 scene for any of the following:
-- unreadable text or clipping;
-- any semantic shape/container that visibly renders empty or unexplained;
-- visible crowding or elements stuck together without deliberate meaning;
-- ambiguous connection origin/destination;
-- arrow/path through text, through its own label, or through unrelated semantic content;
-- **generic-box substitution** for a tangible/recognizable object when canonical evidence supports a simple recognizable schematic form;
-- missing or invented academic relationship;
-- mobile/narrow figure that only works by shrinking the wide scene or requiring zoom;
-- pencil treatment effectively invisible at final size;
-- geometric boxes/arrows/lines that still look mechanically perfect, ruler-straight or like clean diagram-editor SVG rather than drawn strokes;
-- missing element-level provenance;
-- reviewed screenshot missing or changed;
-- reviewed scene/spec/asset hash differs from the finalized one;
-- `vision_verified != true`;
-- reviewer does not explicitly declare `capability: vision` and `independent: true`.
+Do **not** penalize boxes merely for being boxes. Containers are appropriate when boundaries, grouping, architecture, memory regions, layers or containment are themselves part of the concept. Never demand decorative realism or unsupported internals.
 
-A model without image input can never emit visual PASS. Structural metrics may be PASS while perceptual inspection remains `UNVERIFIED`; the overall visual state is incomplete until a vision-capable reviewer actually inspects both PNGs.
+## Generated illustration boundary
+Generated illustrations do not get a separate open-ended image-review cycle.
 
-## Review economy
-The vision gate is strict but narrow. Give the reviewer only the current screenshots, scene spec, pedagogical objective/provenance and this rubric. Do not load unrelated repository/course context.
+During normal academic review, verify only semantic appropriateness from the plan/metadata:
+- the illustration is `visual_helpful`, not `visual_required`;
+- its purpose is recognition/support rather than exact evidence;
+- its compact semantic spec has provenance;
+- exact facts remain in prose, deterministic diagrams or preserved source evidence.
 
-If a scene already passed and its normalized scene SHA plus both PNG SHA-256 values are unchanged, that PASS remains valid within the same run. Carry the exact prior row forward mechanically. Do **not** spend another vision call re-inspecting byte-identical evidence. On a repair cycle, inspect only changed/failed scenes.
+During the final rendered-browser audit, reject an illustration only for an obvious integration or truth problem such as:
+- broken/missing image;
+- unreadable or misleading generated text/labels inside the pixels;
+- a subject that is plainly unrelated to its caption/concept;
+- clipping, extreme blur or effectively blank output;
+- opaque pasted white card that breaks the notebook integration;
+- a generated image being used where exact topology/chronology/labels are required.
+
+A style preference alone does not trigger regeneration. If a generated illustration fails final QA, omit that optional visual for the run rather than starting an unbounded prompt/review loop.
+
+## Deterministic diagram boundary
+Exact diagrams remain auditable through compact structured specs and deterministic SVG generation. Hard fail when a diagram:
+- invents or drops an academic relationship;
+- has ambiguous direction/order where direction/order matters;
+- contains unreadable labels or clipping;
+- substitutes a source asset when the plan says `reinterpret`;
+- violates the registered spec/asset hash contract;
+- relies on generated image pixels to express exact structure.
+
+The old schema-2 free-composition engine may still be tested/used for historical compatibility, but its independent scene-review protocol is no longer a required gate for the active `/resumen` hybrid path.
 
 ## General hard failures
 - broken image paths in the published artifact;
 - any rendered image fails to decode (`complete != true`, `naturalWidth == 0` or `naturalHeight == 0`);
 - unreadable/missing alt text for an essential figure;
 - a derived figure changes academic meaning, drops meaningful relations or invents unsupported content;
-- `02-plan.json` says `reinterpret` but the final artifact omits the reviewed derived asset or substitutes its source asset;
+- `02-plan.json` says `reinterpret` but the final artifact omits the planned derived asset or substitutes its source asset;
 - a `preserve` decision lacks `fidelity_reason`, or `preserve+derived_sketch` omits either member;
-- a derived sketch carries opaque paper/background pixels instead of using the document's real notebook surface;
-- a rendered artifact is published without a successful browser audit;
-- the final response claims visual PASS without actual rendered screenshot evidence.
+- a generated notebook overlay carries opaque paper/background pixels instead of using the document's real notebook surface;
+- a rendered artifact is published without a successful browser audit.
 
 ## Rendered-browser evidence
-Legacy/non-scene artifacts use `scripts/visual_audit.py`. Artifacts containing V2 responsive scenes use `scripts/visual_audit_v2.py`, which runs the normal document audit and also writes desktop/mobile crops for every scene under `visual-audit/figures/`.
+Use `scripts/visual_audit.py` for the active hybrid summary path. The browser auditor must force images to load/decode, reject horizontal content overflow and require the complete Playwright/Chromium environment. HTML-string, registry and path checks are integrity evidence, not substitutes for rendered integration checks.
 
-The browser auditor must force images to load/decode, reject horizontal content overflow and require the complete Playwright/Chromium environment. HTML-string, registry and path checks are integrity evidence, not substitutes for visual inspection.
-
-Inspect at least desktop and mobile document screenshots for hierarchy/integration. For V2, also inspect every per-scene desktop/mobile crop because the physical notebook reader can hide figures on inactive leaves. This final audit checks integration; it does not reopen already hash-bound figure review unless the final browser render introduces a new visible defect.
+Inspect at least desktop and mobile document screenshots for hierarchy/integration. This final audit checks the artifact as the learner sees it; it is not an image-generation refinement loop.
 
 ## Design-system fidelity
 - student Markdown expresses semantic roles, never local styling;
 - no inline colors, custom HTML cards or per-course visual inventions;
 - the normal page remains a Carpeta university-study notebook rather than a dashboard;
 - canonical ruled paper/binding cues are intentional product grammar;
+- the Neucha/Architects Daughter notebook typography, hand-drawn tables, captions and other visual-system improvements remain part of the document renderer;
 - visual novelty must not compete with the concept hierarchy.
