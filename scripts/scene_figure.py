@@ -27,7 +27,9 @@ except ImportError:
     from figure_assets import derived_key, load_registry, register_derived, save_registry  # type: ignore
     from unit_identity import resolve_unit, record_unit_id  # type: ignore
 
-MAX_ATTEMPTS = 3
+# One initial rendered review plus one repaired review. Historical review JSON can
+# still describe an old attempt 3, but no new summary run can create one.
+MAX_ATTEMPTS = 2
 
 
 class SceneFigureError(ValueError):
