@@ -128,6 +128,35 @@ def build_prompt(spec_value: Any) -> str:
     )
 
 
+def _local_env_value(name: str) -> str:
+    """Read one exact secret key from ignored local env files without dependencies."""
+    for path in (ROOT / ".env.local", ROOT / ".env"):
+        if not path.is_file():
+            continue
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            continue
+        for raw in lines:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[7:].lstrip()
+            key, sep, value = line.partition("=")
+            if not sep or key.strip() != name:
+                continue
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+                value = value[1:-1]
+            return value.strip()
+    return ""
+
+
+def _credential(name: str) -> str:
+    return os.environ.get(name, "").strip() or _local_env_value(name)
+
+
 def _multipart(fields: dict[str, str]) -> tuple[bytes, str]:
     boundary = f"----carpeta-{uuid.uuid4().hex}"
     body = b""
@@ -140,10 +169,12 @@ def _multipart(fields: dict[str, str]) -> tuple[bytes, str]:
 
 
 def _cloudflare(spec: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
-    account = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "").strip()
-    token = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
+    account = _credential("CLOUDFLARE_ACCOUNT_ID")
+    token = _credential("CLOUDFLARE_API_TOKEN")
     if not account or not token:
-        raise IllustrationUnavailable("Cloudflare Workers AI credentials are not loaded")
+        raise IllustrationUnavailable(
+            "Cloudflare Workers AI credentials are not loaded; use environment variables or an ignored .env file"
+        )
     prompt = build_prompt(spec)
     seed = int(hashlib.sha256(f"{STYLE_VERSION}:{canonical(spec)}".encode()).hexdigest()[:8], 16)
     body, content_type = _multipart({
