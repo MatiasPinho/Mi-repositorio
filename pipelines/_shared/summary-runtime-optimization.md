@@ -50,7 +50,9 @@ Runtime rules:
 Browser audit is final integration QA, not an illustration-refinement session.
 
 ## Why this boundary exists
-The retired free-composition V2 experiment remains available in the repository for compatibility/testing, but it is not in the normal `/resumen` critical path. New summaries must not spend model time authoring large scene-graph geometry, responsive wide/narrow variants or per-scene independent visual-review loops before prose drafting.
+The retired free-composition V2 experiment remains available in the repository for compatibility/testing, but it is not in the normal summary critical path. New summaries must not spend model time authoring large scene-graph geometry, responsive wide/narrow variants or per-scene independent visual-review loops before prose drafting.
+
+Legacy V2 regression coverage remains valid for the dormant engine, including the deterministic `arrow-shaft-too-short` preflight guard. Keeping that regression does not place the V2 engine back on the active summary path.
 
 ## Fidelity risk ledger before prose
 Before drafting, run:
