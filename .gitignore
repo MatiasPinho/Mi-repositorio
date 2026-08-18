@@ -6,6 +6,10 @@ venv/
 .DS_Store
 *.zip
 
+# Local secrets / provider credentials
+.env
+.env.local
+
 # Private academic data stays local. Keep only the public template.
 materias/*
 !materias/_plantilla/
