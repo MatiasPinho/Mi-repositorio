@@ -11,8 +11,8 @@ Only genuinely course-wide runs may live under
 ## Standard stage files
 - `01-input.json`: resolved course/scope, relevant canonical paths/fingerprints, requested mode.
 - `02-plan.json`: pedagogical/content plan. No polished prose.
-- `02-sketches/<id>.json`: optional structured specs for deterministic derived SVGs selected by the plan.
-- `02-visual-build.json`: deterministic materialization report binding the plan to registered figure assets before drafting.
+- `02-sketches/<id>.json`: optional structured specs for deterministic derived diagrams selected by the plan.
+- `02-visual-build.json`: materialization report binding the plan to registered figure assets before drafting.
 - `03-draft.md`: first student-facing draft.
 - `04-humanized.md`: Humanizer output.
 - `05-review.json`: independent fidelity + pedagogy review.
@@ -23,7 +23,7 @@ Only genuinely course-wide runs may live under
 - `09-rendered.html`: deterministic rendered study surface for the accepted Markdown.
 - `10-integrity.json`: deterministic pre-publication gate. Must contain `"ok": true` before the student artifact is published.
 
-Pipelines may omit stages that do not apply, but filenames and semantics must stay stable across Claude and Codex.
+Pipelines may omit stages that do not apply, but filenames and semantics must stay stable across providers.
 
 ## Review JSON minimum
 ```json
@@ -63,124 +63,106 @@ Pipelines may omit stages that do not apply, but filenames and semantics must st
 }
 ```
 
-Required fidelity-check keys are fixed. `status` is only `pass`, `fail` or `not_applicable`; `not_applicable` needs a concrete reason. `claim_checks` must contain the high-risk assertions actually audited (definitions/taxonomies, conditions, relations, certainty/rules and any other risky claim present). Any verdict other than `supported` requires a failing review and a matching issue/repair instruction.
+Required fidelity-check keys are fixed. `status` is only `pass`, `fail` or `not_applicable`; `not_applicable` needs a concrete reason. `claim_checks` contains the high-risk assertions actually audited. Any verdict other than `supported` requires a failing review and a matching issue/repair instruction.
 
 Handoff files are working state and are not automatically student artifacts.
 
 ## Plan visual contract
-`02-plan.json` should include a `visuals` section for student-facing content. Each major concept receives one of `visual_required`, `visual_helpful`, `visual_not_needed`. Every required/helpful entry also records `visual_treatment` as exactly `reinterpret`, `preserve` or `preserve+derived_sketch`, following `rules/visual/figures.md`. Selected source visuals reference ids from `unidades/<unit-id>/conocimiento/figures.json`; derived diagrams must be explicitly marked derived.
+`02-plan.json` includes a `visuals` section for student-facing content. Each major concept receives one of `visual_required`, `visual_helpful`, `visual_not_needed`. A selected visual also records `visual_treatment` as exactly `reinterpret`, `preserve` or `preserve+derived_sketch` following `rules/visual/figures.md`.
 
-For the reconstructible kinds `flow`, `tree`, `concept-map`, `relations` and
-`technical-schematic`, `reinterpret` is the default even when the canonical
-source registry already contains a PNG. `source-first` selects evidence and
-provenance; it never selects `preserve` by itself. A `preserve` or
-`preserve+derived_sketch` entry must include a separate non-empty
-`fidelity_reason` naming the exact pixel-, scale-, notation-, geometry- or
-layout-sensitive information that requires the original. This keeps preserve
-available for screenshots, dense charts, formulas, geometry, circuits, exact
-plots and other precision-sensitive content without turning source reuse into
-an automatic fallback.
+`preserve` and `preserve+derived_sketch` require `source_figure_id` plus a non-empty `fidelity_reason` naming the exact information that reconstruction could lose. `source-first` selects evidence/provenance; it does not automatically select source pixels.
 
-Minimum shape for a selected visual:
+A derived `reinterpret` also records `visual_medium`:
+- `diagram` (default for backward compatibility): exact structure is carried by a compact schema-1 deterministic sketch spec;
+- `illustration`: a non-authoritative physical/conceptual likeness generated from a compact semantic spec.
 
+`preserve+derived_sketch` always uses `visual_medium: diagram`. Source assets never become generated illustrations.
+
+### Deterministic diagram example
 ```json
 {
-  "concept_id": "stable-concept-id",
-  "need": "visual_required",
-  "visual_treatment": "preserve+derived_sketch",
-  "source_figure_id": "u2-source-process",
-  "derived_figure_id": "derived:u2-process-overview",
-  "sketch_spec": "02-sketches/u2-process-overview.json",
-  "based_on": ["concept:stable-concept-id", "figure:u2-source-process"],
-  "reason": "The pair connects the exact evidence to a simpler mental model.",
-  "fidelity_reason": "The source contains scale-dependent measurements that the sketch intentionally omits."
-}
-```
-
-`source_figure_id` is required for `preserve` and
-`preserve+derived_sketch`; `derived_figure_id` and non-empty `based_on` are
-required whenever a derived asset will be created. `preserve+derived_sketch`
-means two distinct figures are retained, never one source image overwritten by
-an artistic derivative. `fidelity_reason` is required whenever source pixels
-are retained; the general pedagogical `reason` does not substitute for it.
-
-For `reinterpret` and `preserve+derived_sketch`, the visual entry also includes
-`sketch_spec`, a run-relative path under `02-sketches/`. The referenced JSON
-must validate against `contracts/sketch-figure.schema.json`. The planner owns
-labels, node/edge identity, semantic shapes, relationships, groups, rank/order
-and element-level `based_on` references. It must not emit SVG, pixels, colors,
-fonts or free-form drawing instructions. `preserve` never has a sketch spec.
-
-Example:
-
-```json
-{
-  "concept_id": "stable-concept-id",
+  "concept_id": "instruction-cycle",
   "need": "visual_required",
   "visual_treatment": "reinterpret",
-  "derived_figure_id": "derived:process-overview",
-  "sketch_spec": "02-sketches/process-overview.json",
-  "based_on": ["concept:stable-concept-id"],
-  "reason": "The process can be reconstructed without losing any relation."
+  "visual_medium": "diagram",
+  "derived_figure_id": "derived:instruction-cycle",
+  "sketch_spec": "02-sketches/instruction-cycle.json",
+  "based_on": ["concept:instruction-cycle"],
+  "reason": "Order and feedback are easier to learn as an explicit cycle."
 }
 ```
 
-After PLAN, run the deterministic materializer before DRAFT:
+The referenced `sketch_spec` validates against `contracts/sketch-figure.schema.json`. The planner owns labels, node/edge identity, semantic shapes, relationships, groups, rank/order and element-level provenance. It never emits raw SVG, arbitrary pixel geometry, local colors or fonts.
+
+### Generated illustration example
+```json
+{
+  "concept_id": "cpu-package",
+  "need": "visual_helpful",
+  "visual_treatment": "reinterpret",
+  "visual_medium": "illustration",
+  "derived_figure_id": "derived:cpu-package",
+  "based_on": ["concept:cpu-package"],
+  "reason": "A recognizable physical form helps connect the abstract term to the hardware object.",
+  "illustration": {
+    "schema_version": 1,
+    "id": "cpu-package",
+    "subject": "generic computer microprocessor package",
+    "view": "top-down",
+    "must_show": ["square integrated-circuit package", "visible pins around the package"],
+    "alt": "Dibujo a lápiz de un microprocesador visto desde arriba.",
+    "caption": "Representación física simplificada de un microprocesador.",
+    "based_on": ["concept:cpu-package"]
+  }
+}
+```
+
+Illustration constraints are structural, not suggestions:
+- `need` must be `visual_helpful`;
+- `visual_treatment` must be `reinterpret`;
+- `illustration.id` must match `derived_figure_id`;
+- `illustration.based_on` must match plan provenance;
+- no `sketch_spec` is present;
+- the generated pixels are not allowed to carry exact labels, arrows, counts, sequence, topology, formulas, dates or assessment-critical facts.
+
+The provider prompt is not a handoff. Carpeta constructs it deterministically from the small semantic illustration spec plus its fixed notebook style. Credentials never appear in the plan, registry or generated artifact.
+
+## Visual build handoff
+After PLAN, `/resumen` runs the hybrid materializer:
 
 ```powershell
-python scripts/venv_exec.py scripts/visual_plan.py `
+python scripts/venv_exec.py scripts/visual_plan_hybrid.py `
   --course <course> --unit <unit-id> `
   --plan <run-dir>/02-plan.json `
   --write <run-dir>/02-visual-build.json
 ```
 
-`02-visual-build.json` contains `plan_sha256` plus one entry per selected
-visual and records the exact registered `asset`; derived entries also record
-the derived id and generator/spec hashes. The report is stable across exact
-retries. DRAFT must use these assets rather than a planned placeholder or the
-source companion of a `reinterpret` entry.
+The existing `scripts/visual_plan.py` / deterministic sketch behavior remains the diagram backend and compatibility contract; the hybrid materializer delegates diagram rows to it and adds the bounded illustration path.
 
-The final integrity gate must receive this same `02-plan.json`. It fails when a
-planned `reinterpret` does not use its registered derived SVG, when a source
-asset named as reinterpret provenance appears in its place, or when a planned
-`preserve+derived_sketch` does not use both figures.
+`02-visual-build.json` contains `plan_sha256` plus one entry per selected visual and the exact registered asset. Derived entries record the derived id and `visual_medium`; deterministic diagrams retain generator/spec hashes, while illustrations retain the semantic-spec hash and model identity through the figure registry. DRAFT uses only assets returned by this build.
+
+If a generated illustration provider is unavailable, the build returns `ok: false` plus `illustration_unavailable`. The executor makes at most one fallback edit for each failed optional illustration: use a deterministic diagram if the supported meaning is naturally diagrammable, otherwise make it `visual_not_needed` for that run. Do not repeatedly retry the image provider and do not weaken the academic text.
+
+## Final visual integrity
+The final integrity gate receives the same `02-plan.json` and verifies the actual registered assets used by the Markdown:
+- a planned diagram reinterpretation uses a registered `deterministic-svg` figure;
+- a planned illustration uses a registered `kind: illustration` figure with `illustration_generation.method: generated-illustration`;
+- a planned source preservation uses the source asset;
+- `preserve+derived_sketch` uses both source and derived diagram.
+
+Generated illustrations have low semantic authority by design; normal academic review must not treat pixels as evidence for a factual claim. The final browser audit still verifies that all images decode and that placement, sizing and document integration remain readable.
 
 ## Plan topic coverage contract
-For unit-scoped summaries, `02-plan.json` should record which observed topic ids
-and explicitly unassigned concepts the plan covers. This is an omission check,
-not a section template: several topics may share a section, one topic may need
-several sections, and neither topic count nor declared syllabus count imposes a
-fixed length.
+For unit-scoped summaries, `02-plan.json` records which observed topic ids and explicitly unassigned concepts the plan covers. This is an omission check, not a section template: several topics may share a section, one topic may need several sections, and neither topic count nor declared syllabus count imposes a fixed length.
 
 ## Stable unit identity
-Human labels such as `U1`, `Unidad 1` and `Unidad 1: Conceptos básicos` are display aliases. Unit-scoped canonical records use a stable `unit_id` such as `unidad-1`. Pipeline code must scope concepts/figures by `unit_id`, not by fuzzy comparison of labels.
+Human labels such as `U1`, `Unidad 1` and `Unidad 1: Conceptos básicos` are display aliases. Unit-scoped canonical records use a stable `unit_id` such as `unidad-1`. Pipeline code scopes concepts/figures by `unit_id`, not fuzzy labels.
 
-The stable id is also the storage boundary. A unit handoff may read explicit
-cross-unit prerequisite records, but it writes artifacts, assets and run state
-only under its own `unidades/<unit-id>/` directory.
+The stable id is also the storage boundary. A unit handoff may read explicit cross-unit prerequisite records, but it writes artifacts, assets and run state only under its own `unidades/<unit-id>/` directory.
 
 ## Derived figure registration
-Derived visuals are namespaced as `derived:<id>` and must include `origin: derived`, `unit_id`, `asset`, and non-empty `based_on` provenance. Registration is collision-safe and must go through `study.py figures register-derived`; source records/assets are never overwritten.
+Derived visuals are namespaced as `derived:<id>` and include `origin: derived`, `unit_id`, `asset`, asset SHA-256 and non-empty `based_on` provenance. Registration is collision-safe; source records/assets are never overwritten.
 
-The registry accepts additive optional `visual_treatment` metadata with the
-same three values as the plan. New generated figures should record it. A
-`preserve+derived_sketch` derived record also requires `source_figure_id`, which
-must identify an existing source-origin figure in the same registry. Legacy
-records without either field remain valid for backward compatibility.
-`reinterpret` belongs to a derived record; `preserve` belongs to a source
-record; and `preserve+derived_sketch` belongs to the derived companion while
-the linked source remains unchanged.
+Deterministic diagrams retain a `generation` object with `method: deterministic-svg`, generator identity/version and canonical spec hash. Generated illustrations retain a separate `illustration_generation` object with `method: generated-illustration`, generator/style version, semantic-spec hash, provider/model identity, deterministic seed, prompt hash and postprocessing metadata. Secrets are never persisted.
 
-Figures produced by the deterministic sketch generator also contain a
-`generation` object with `method: deterministic-svg`, generator identity and
-version, the canonical `.sketch.json` asset and its SHA-256. The SVG embeds the
-same spec hash. Registry verification and the artifact integrity gate reject a
-modified spec, modified SVG, mismatched ID, missing generator marker or asset
-outside `assets/figures/`. Exact retries are idempotent; an existing ID/path
-with different bytes is never overwritten.
-
-`pipeline_run.py start` stores an immutable `01-figures.json` snapshot. Finish
-still rejects any source-figure edit/removal or unplanned registry mutation,
-but permits append-only derived records whose ids and treatments match the
-plan and `02-visual-build.json`. This is the only canonical-input mutation a
-summary run may introduce.
+`pipeline_run.py start` stores an immutable `01-figures.json` snapshot. Finish rejects source-figure edit/removal or unplanned registry mutation, but permits append-only derived records whose ids and treatments match the plan and `02-visual-build.json`.
