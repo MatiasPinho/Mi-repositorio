@@ -63,7 +63,7 @@ After selecting a visual, record exactly one `visual_treatment`:
 `source-first` selects evidence, not final pixels. A source diagram that can be reconstructed without loss may still use `reinterpret`. Never imply that a derived visual came from the chair.
 
 ## Hybrid materialization
-`/resumen` materializes selected visuals with `scripts/visual_plan_hybrid.py`.
+The summary pipeline materializes selected visuals with `scripts/visual_plan_hybrid.py`.
 
 For diagrams:
 1. write the compact schema-1 spec under `02-sketches/`;
