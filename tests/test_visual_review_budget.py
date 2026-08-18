@@ -64,6 +64,10 @@ class VisualReviewBudgetTests(unittest.TestCase):
         docs = (ROOT / "docs" / "visual-system-v2.md").read_text(encoding="utf-8")
 
         self.assertIn("summary-runtime-optimization.md", pipeline)
+        self.assertIn("never choose `visual_not_needed` merely to save tokens, time, reviews or tool work", pipeline)
+        self.assertIn("creator must not open or inspect its own PNG/SVG", pipeline)
+        self.assertIn("repair author again must not inspect/polish the rendered evidence by eye", pipeline)
+        self.assertIn("There is no third visual review", pipeline)
 
         self.assertIn("Visual selection is pedagogical, not a runtime shortcut", runtime)
         self.assertIn("Never choose it merely to save tokens, time, review work or tool calls", runtime)
