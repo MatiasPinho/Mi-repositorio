@@ -14,7 +14,7 @@ The owning pipeline remains responsible for academic purpose, scope, artifact ki
 ## Run boundary
 1. Start a portable run with `scripts/pipeline_run.py start`.
 2. Treat the run snapshot as an isolation boundary. Do not modify engine/rules/contracts/design/tests while the study run is active.
-3. Do not mutate canonical academic, concept or topic state. Figure mutations are allowed only when the owning pipeline explicitly authorizes reviewed deterministic finalization.
+3. Do not mutate canonical academic, concept or topic state. Figure mutations are allowed only through the exact collision-safe materialization/finalization path explicitly authorized by the owning pipeline.
 4. Temporary helper code belongs only under the run's `scratch/` directory.
 5. If an engine capability is broken, stop with **ENGINE FAILURE**; never patch the engine inside the active run and continue publishing.
 
@@ -22,7 +22,7 @@ The owning pipeline remains responsible for academic purpose, scope, artifact ki
 The canonical filenames below are shared by semantic document pipelines. Owning pipelines may add stricter evidence files/stages.
 
 1. **PLAN** → write `02-plan.json` from canonical knowledge. No polished prose.
-2. **OPTIONAL PRE-DRAFT BUILD / REVIEW STAGES** → run deterministic builds and any owning-pipeline review that must complete before drafting. A V2 visual preview plus independent rendered-image review belongs here: perceptual review is not called deterministic merely because its screenshot/hash binding is deterministic.
+2. **OPTIONAL PRE-DRAFT BUILD / REVIEW STAGES** → run deterministic/materialization builds and only the owning-pipeline reviews that must complete before drafting. Do not invent extra review loops that the owning pipeline does not require.
 3. **DRAFT** → write `03-draft.md` only after mandatory pre-draft stages pass.
 4. **HUMANIZE** → read `vendor/humanizer/SKILL.md` and edit only student-facing prose into `04-humanized.md`; preserve academic meaning, certainty, semantic callouts and image markup.
 5. **INDEPENDENT REVIEW** → evaluate `04-humanized.md` against canonical state and every rubric required by the owning pipeline. Act as an **independent critic**: audit high-risk claims first, then candidate internal consistency, and write `05-review.json` without inheriting writer justifications.
@@ -32,7 +32,7 @@ The canonical filenames below are shared by semantic document pipelines. Owning 
    - do not run a third academic review/repair cycle.
 7. **RENDER CANDIDATE** → produce the exact final `09-rendered.html` required by the owning pipeline. A pipeline may first create `09-rendered-base.html` and apply deterministic transforms, but only `09-rendered.html` is the candidate that proceeds to integrity/publication.
 8. **INTEGRITY GATE** → validate accepted Markdown plus final HTML with the owning pipeline's deterministic integrity command and persist `10-integrity.json`. Do not publish unless `ok: true`.
-9. **BROWSER VISUAL GATE** → run the browser auditor specified by the owning pipeline against final `09-rendered.html`, require `visual-audit/audit.json -> ok: true`, and inspect required screenshot evidence against `rules/evaluation/visual-rubric.md`. For V2 this includes per-scene desktop/mobile crops in addition to document screenshots. Missing Playwright/Chromium or unavailable required screenshots is incomplete visual review, not permission to downgrade the gate.
+9. **BROWSER VISUAL GATE** → run the browser auditor specified by the owning pipeline against final `09-rendered.html`, require `visual-audit/audit.json -> ok: true`, and inspect required screenshot evidence against `rules/evaluation/visual-rubric.md`. Missing Playwright/Chromium or unavailable required screenshots is incomplete visual QA, not permission to downgrade the gate. Historical V2 runs may additionally require per-scene evidence when their owning contract says so.
 10. **ATOMIC PUBLISH** → publish only after all required gates pass. Leave accepted run Markdown and `09-rendered.html` byte-for-byte unchanged. Deterministic rebasing of local image/srcset references is allowed only in published destinations and every rewritten reference must resolve to the same physical asset. The publication report keeps immutable `source_sha256` plus transformed `published_sha256` / destination hashes.
 11. **MARK + FINISH** → mark the published artifact, then finish with `scripts/pipeline_run.py finish`. Owning-pipeline fingerprint/figure/publication checks remain mandatory.
 
@@ -44,7 +44,7 @@ A gate controls **publication status**, not whether already-generated work exist
 - Do not regenerate the summary merely because a late infrastructure gate failed. Repair the engine outside the active run and resume/re-run from the earliest contractually safe stage.
 
 ## Review-bound visual distinction
-Academic/pedagogical review can judge whether a visual was a good teaching choice from plan/content context. It cannot certify rendered execution without images. When an owning pipeline requires a pre-draft vision review, the visual creator and visual reviewer must be independent executions/contexts and the reviewer must actually receive the rendered previews.
+Academic/pedagogical review judges whether a visual was a good teaching choice from plan/content context. Rendered execution is checked only through the visual evidence required by the owning pipeline. A pipeline that requires a separate pre-draft vision reviewer must define that boundary explicitly; a pipeline that deliberately uses bounded optional generated illustrations must not silently invent a new per-image regeneration/review loop.
 
 ## Environment contract
 A complete semantic document run requires the repository-local `.venv` installed by the project setup flow. Check readiness with `python scripts/venv_exec.py scripts/setup_env.py check`. Missing `.venv`, Playwright or Chromium is an environment failure.
