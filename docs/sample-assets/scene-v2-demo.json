@@ -1,0 +1,97 @@
+{
+  "schema_version": 2,
+  "id": "scene-v2-demo",
+  "title": "Composición libre V2",
+  "visual_treatment": "reinterpret",
+  "role": "supporting",
+  "representation_role": "pedagogical_analogy",
+  "description": "Fixture no académica que ejercita composición libre, solapamiento intencional, curva y anotación.",
+  "alt": "Dos ideas superpuestas dentro de un contexto y una flecha curva hacia un resultado",
+  "caption": "Fixture técnica para probar el motor visual, no contenido de una materia.",
+  "based_on": ["demo:a", "demo:b", "demo:relation", "demo:result"],
+  "elements": [
+    {
+      "id": "context",
+      "type": "region",
+      "shape": "rounded",
+      "members": ["a", "b"],
+      "label": "Contexto",
+      "tone": "neutral",
+      "based_on": ["demo:relation"]
+    },
+    {
+      "id": "a",
+      "type": "shape",
+      "shape": "circle",
+      "label": "Idea A",
+      "tone": "primary",
+      "based_on": ["demo:a"]
+    },
+    {
+      "id": "b",
+      "type": "shape",
+      "shape": "circle",
+      "label": "Idea B",
+      "tone": "example",
+      "based_on": ["demo:b"]
+    },
+    {
+      "id": "result",
+      "type": "shape",
+      "shape": "rounded",
+      "label": "Resultado",
+      "tone": "connection",
+      "based_on": ["demo:result"]
+    },
+    {
+      "id": "curve",
+      "type": "arrow",
+      "tone": "connection",
+      "based_on": ["demo:relation"]
+    },
+    {
+      "id": "note",
+      "type": "annotation",
+      "text": "La superposición es intencional",
+      "text_role": "annotation",
+      "tone": "warning",
+      "based_on": ["demo:relation"]
+    }
+  ],
+  "layouts": {
+    "wide": {
+      "canvas": {"width": 900, "height": 500},
+      "placements": {
+        "context": {"x": 50, "y": 50, "width": 560, "height": 330},
+        "a": {"x": 130, "y": 125, "width": 210, "height": 210},
+        "b": {"x": 275, "y": 125, "width": 210, "height": 210},
+        "result": {"x": 680, "y": 185, "width": 165, "height": 100},
+        "curve": {
+          "commands": [
+            {"op": "move", "x": 490, "y": 230},
+            {"op": "cubic", "cx1": 555, "cy1": 110, "cx2": 625, "cy2": 350, "x": 680, "y": 235}
+          ]
+        },
+        "note": {"x": 265, "y": 410, "width": 360, "height": 55, "text_anchor": "middle"}
+      },
+      "allowed_overlaps": [["a", "b"], ["b", "curve"], ["curve", "result"]]
+    },
+    "narrow": {
+      "canvas": {"width": 420, "height": 820},
+      "placements": {
+        "context": {"x": 35, "y": 45, "width": 350, "height": 450},
+        "a": {"x": 70, "y": 120, "width": 205, "height": 205},
+        "b": {"x": 145, "y": 220, "width": 205, "height": 205},
+        "result": {"x": 120, "y": 600, "width": 180, "height": 105},
+        "curve": {
+          "commands": [
+            {"op": "move", "x": 250, "y": 425},
+            {"op": "quadratic", "cx": 350, "cy": 535, "x": 210, "y": 600}
+          ]
+        },
+        "note": {"x": 55, "y": 735, "width": 310, "height": 55, "text_anchor": "middle"}
+      },
+      "allowed_overlaps": [["a", "b"], ["b", "curve"], ["curve", "result"]]
+    }
+  }
+}

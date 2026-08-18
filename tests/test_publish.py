@@ -114,6 +114,65 @@ class AtomicPublicationTests(unittest.TestCase):
             self.assertEqual(by_role["html"]["published_sha256"], by_role["html"]["destination_sha256"])
             self.assertEqual(by_role["html"]["transform"], "rebase-local-image-refs-v1")
 
+    def test_publish_promotes_run_local_figure_copy_to_canonical_unit_asset(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as td:
+            unit = Path(td) / "unidad-1"
+            run = unit / ".study" / "runs" / "run-1"
+            run_asset = run / "assets" / "figures" / "metodo.svg"
+            canonical_asset = unit / "assets" / "figures" / "metodo.svg"
+            source_md = run / "06-final.md"
+            source_html = run / "09-rendered.html"
+            dest_md = unit / "resumenes" / "unidad-1-resumen.md"
+            dest_html = unit / "resumenes" / "unidad-1-resumen.html"
+            report_path = run / "11-publication.json"
+
+            run_asset.parent.mkdir(parents=True)
+            canonical_asset.parent.mkdir(parents=True)
+            run_asset.write_bytes(b"same-approved-svg")
+            canonical_asset.write_bytes(b"same-approved-svg")
+            source_md.write_text("# U1\n\n![Método](assets/figures/metodo.svg)\n", encoding="utf-8")
+            source_html.write_text("<html><body>sin imagen</body></html>", encoding="utf-8")
+            before_md = source_md.read_bytes()
+
+            report = publish_pair(source_md, source_html, dest_md, dest_html, report_path)
+
+            self.assertTrue(report["ok"])
+            self.assertEqual(source_md.read_bytes(), before_md)
+            published = dest_md.read_text(encoding="utf-8")
+            self.assertIn("![Método](../assets/figures/metodo.svg)", published)
+            self.assertNotIn(".study/runs", published)
+            self.assertTrue((dest_md.parent / "../assets/figures/metodo.svg").resolve().is_file())
+            markdown = {row["role"]: row for row in report["files"]}["markdown"]
+            self.assertEqual(markdown["resource_rewrites"][0]["original"], "assets/figures/metodo.svg")
+            self.assertEqual(markdown["resource_rewrites"][0]["published"], "../assets/figures/metodo.svg")
+            self.assertEqual(Path(markdown["resource_rewrites"][0]["target"]).name, "metodo.svg")
+
+    def test_run_local_figure_copy_cannot_replace_different_canonical_asset(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as td:
+            unit = Path(td) / "unidad-1"
+            run = unit / ".study" / "runs" / "run-1"
+            run_asset = run / "assets" / "figures" / "metodo.svg"
+            canonical_asset = unit / "assets" / "figures" / "metodo.svg"
+            source_md = run / "06-final.md"
+            source_html = run / "09-rendered.html"
+            dest_md = unit / "resumenes" / "unidad-1-resumen.md"
+            dest_html = unit / "resumenes" / "unidad-1-resumen.html"
+            report_path = run / "11-publication.json"
+
+            run_asset.parent.mkdir(parents=True)
+            canonical_asset.parent.mkdir(parents=True)
+            run_asset.write_bytes(b"run-svg")
+            canonical_asset.write_bytes(b"different-canonical-svg")
+            source_md.write_text("![Método](assets/figures/metodo.svg)\n", encoding="utf-8")
+            source_html.write_text("<html></html>", encoding="utf-8")
+
+            with self.assertRaisesRegex(OSError, "publication-run-figure-hash-mismatch"):
+                publish_pair(source_md, source_html, dest_md, dest_html, report_path)
+
+            self.assertFalse(dest_md.exists())
+            self.assertFalse(dest_html.exists())
+            self.assertFalse(report_path.exists())
+
     def test_missing_local_resource_aborts_without_overwriting_existing_publication(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as td:
             unit = Path(td) / "unidad-3"

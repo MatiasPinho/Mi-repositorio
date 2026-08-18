@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 THEME = ROOT / "assets" / "study-theme.css"
+HANDDRAWN_STRUCTURES_CSS = ROOT / "assets" / "handdrawn-structures.css"
 NOTEBOOK_READER_CSS = ROOT / "assets" / "notebook-reader.css"
 NOTEBOOK_READER_JS = ROOT / "assets" / "notebook-reader.js"
 
@@ -660,6 +661,8 @@ def render(input_path: Path, output_path: Path, kind: str, course: str = "", sco
     )
     css = (
         THEME.read_text(encoding="utf-8")
+        + "\n"
+        + HANDDRAWN_STRUCTURES_CSS.read_text(encoding="utf-8")
         + "\n"
         + NOTEBOOK_READER_CSS.read_text(encoding="utf-8")
     )
