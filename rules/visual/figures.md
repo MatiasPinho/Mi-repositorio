@@ -113,7 +113,7 @@ Visual support must not recreate the old open-ended graphic-design pipeline.
 - Browser visual audit remains final integration QA. It may reject a visibly broken/misleading generated illustration, but it must not trigger an open-ended regeneration session.
 - Academic review remains strict and independent of visual runtime optimization.
 
-The old schema-2 free-composition scene engine may remain in the repository for compatibility, experiments and historical evidence, but it is **not the default or required path for new `/resumen` visuals**.
+The old schema-2 free-composition scene engine may remain in the repository for compatibility, experiments and historical evidence, but it is **not the default or required path for new summary visuals**.
 
 ## Placement
 Put each figure immediately beside the explanation it supports. A useful figure block has meaningful alt/caption text, the visual, a short explanation of what relationship or recognition cue to notice and optionally one recall prompt. Do not narrate every pixel.
