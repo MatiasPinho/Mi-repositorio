@@ -30,7 +30,7 @@ Then load only these summary-specific rules/contracts before semantic work:
 Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps below specialize that lifecycle for summaries. They do not replace or weaken any shared academic review, gate, publication, environment or failure requirement.
 
 ## ACTIVE VISUAL ARCHITECTURE
-The current `/resumen` path is hybrid. The visual and notebook improvements already present in this branch remain active; only the expensive free-composition V2 scene-authoring/review path is removed from the normal critical path.
+The current summary path is hybrid. The visual and notebook improvements already present in this branch remain active; only the expensive free-composition V2 scene-authoring/review path is removed from the normal critical path.
 
 - **Exact academic structure** → `visual_medium: diagram` → compact schema-1 structured spec → deterministic SVG through the existing `scripts/visual_plan.py` backend, dispatched by `scripts/visual_plan_hybrid.py`.
 - **Physical/recognizable support** → `visual_medium: illustration` → compact semantic illustration object → one bounded generated-image provider call → deterministic crop/background removal → transparent notebook overlay.
@@ -73,7 +73,7 @@ A study agent may repair run-local candidate data, but it must never repair the 
 
    `source-first` selects evidence, not final pixels. `preserve` / `preserve+derived_sketch` require a concrete `fidelity_reason`.
 
-   For `diagram`, create a compact schema-1 spec under `<run-dir>/02-sketches/<id>.json`. The model supplies semantic nodes/edges/groups only; do not write raw SVG or explicit scene coordinates. **Never create normal diagrams with an image-generation model.**
+   For `diagram`, create a compact schema-1 spec under `<run-dir>/02-sketches/<id>.json`. The model supplies semantic nodes/edges/groups only; do not write raw SVG or explicit scene coordinates. Rule: never create normal diagrams with an image-generation model.
 
    For `illustration`, write only the compact semantic object defined in `contracts/hybrid-visuals.md`. It must be `visual_helpful` + `reinterpret`. Do not write a provider prompt. Do not ask generated pixels to contain academic text, numbers, arrows, formulas, chronology or exact topology.
 
