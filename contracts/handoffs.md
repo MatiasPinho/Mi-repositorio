@@ -11,23 +11,23 @@ Only genuinely course-wide runs may live under
 ## Standard stage files
 - `01-input.json`: resolved course/scope, relevant canonical paths/fingerprints, requested mode.
 - `02-plan.json`: pedagogical/content plan. No polished prose.
-- `02-sketches/<id>.json`: legacy schema-1 structured specs for deterministic graph SVGs.
-- `02-scenes/<id>.json`: schema-2 free scene graph specs for new derived figures.
-- `02-visual-preflight-failures/<scene-id>/<NN>/`: run-local scene/preflight evidence for deterministic failures. These failures do not consume a vision-review attempt.
-- `02-visual-attempts/<scene-id>/<NN>/`: run-local V2 normalized scene, passing preflight, wide/narrow SVGs and preview PNGs eligible for independent vision review. New summary runs create at most two reviewable attempts per scene.
-- `02-visual-preview.json`: current V2 preview report bound to the current `02-plan.json`.
-- `02-visual-review.json`: independent vision review bound to exact preview PNG SHA-256 values. It may contain an empty `figures` array only when the current preview set is empty after failed visuals were deliberately omitted from the final plan.
-- `02-visual-build.json`: deterministic materialization report binding the final plan to registered assets before drafting. V2 build reports also bind preview/review hashes and `vision_verified: true`.
+- `02-sketches/<id>.json`: compact schema-1 structured specs for deterministic graph SVGs.
+- `02-fidelity-constraints.json`: deterministic high-risk/split-view/unresolved claim ledger for summaries.
+- `02-visual-build.json`: deterministic hybrid materialization report binding the current plan to exact registered assets before drafting.
 - `03-draft.md`: first student-facing draft.
 - `04-humanized.md`: Humanizer output.
-- `05-review.json`: independent academic fidelity + pedagogy review; `visual_support` evaluates visual selection, not V2 perceptual execution.
+- `04-fidelity-guard.json`: deterministic wording guard for unresolved/split-view constraints.
+- `05-review.json`: independent academic fidelity + pedagogy review; `visual_support` evaluates visual selection/fit/truth.
 - `06-final.md`: accepted candidate when the first review passes.
 - `06-repair.md`: targeted repair when the first review fails.
 - `07-review.json`: second and final review of the repair.
 - `08-final.md`: accepted repaired candidate after the second review.
-- `09-rendered-base.html`: optional V2 intermediate produced by the normal Markdown renderer before responsive scene markup is applied.
+- `09-rendered-base.html`: optional intermediate produced by the normal Markdown renderer before deterministic code highlighting.
+- `09-code-highlight.json`: deterministic code-highlighting report when the summary contains highlighted code/pseudocode.
 - `09-rendered.html`: deterministic final rendered study surface for the accepted Markdown.
 - `10-integrity.json`: deterministic pre-publication gate. Must contain `"ok": true` before publication.
+- `11-publication.json`: atomic publication report binding source and published Markdown/HTML.
+- `12-runtime.json`: deterministic stage timing report.
 
 Pipelines may omit stages that do not apply, but filenames and semantics must stay stable across executors.
 
@@ -78,65 +78,85 @@ Handoff files are working state and are not automatically student artifacts.
 
 `source_figure_id` is required for `preserve` and `preserve+derived_sketch`; `fidelity_reason` names the exact pixel-, scale-, notation-, geometry- or layout-sensitive information that requires original pixels. `derived_figure_id` and non-empty `based_on` are required whenever a derived asset will be created. `preserve+derived_sketch` always means two distinct figures.
 
-### Schema 2 selected visual
-New derived figures use `scene_spec` under `02-scenes/`:
+The active summary path also records `visual_medium`:
+- `diagram` for deterministic exact structure;
+- `illustration` for optional generated physical/recognition support;
+- `source` is inferred for `preserve`.
+
+Full field-level rules and examples live in `contracts/hybrid-visuals.md`.
+
+### Diagram handoff
+A deterministic diagram uses a schema-1 spec under `02-sketches/` and validates against `contracts/sketch-figure.schema.json`.
 
 ```json
 {
-  "concept_id": "stable-concept-id",
+  "concept_id": "instruction-cycle",
   "need": "visual_required",
   "visual_treatment": "reinterpret",
-  "derived_figure_id": "derived:process-overview",
-  "scene_spec": "02-scenes/process-overview.json",
-  "based_on": ["concept:stable-concept-id"],
-  "reason": "The spatial composition makes the supported relationship easier to see."
+  "visual_medium": "diagram",
+  "derived_figure_id": "derived:instruction-cycle",
+  "sketch_spec": "02-sketches/instruction-cycle.json",
+  "based_on": ["concept:instruction-cycle"],
+  "reason": "The cycle/order is part of the concept."
 }
 ```
 
-The scene validates against `contracts/scene-figure.schema.json`. Academic semantics live once in `elements`; `layouts.wide` and `layouts.narrow` may change geometry only. The planner may control composition but never SVG, CSS, exact colors, fonts or raw style properties.
+The existing `scripts/visual_plan.py` deterministic generator remains the diagram backend. The model supplies compact semantic nodes/edges/groups, not raw SVG or explicit free-layout coordinates.
 
-### V2 preview / review / finalize handoff
-After PLAN and before DRAFT:
+### Illustration handoff
+A generated illustration is valid only for `visual_helpful` + `reinterpret`.
 
-```powershell
-python scripts/venv_exec.py scripts/visual_plan_v2.py preview `
-  --course <course> --unit <unit-id> `
-  --plan <run-dir>/02-plan.json `
-  --write <run-dir>/02-visual-preview.json
+```json
+{
+  "concept_id": "cpu",
+  "need": "visual_helpful",
+  "visual_treatment": "reinterpret",
+  "visual_medium": "illustration",
+  "derived_figure_id": "derived:cpu-package",
+  "based_on": ["concept:cpu"],
+  "reason": "A physical mental image helps recognition.",
+  "illustration": {
+    "schema_version": 1,
+    "id": "cpu-package",
+    "subject": "generic computer microprocessor package",
+    "view": "top-down",
+    "must_show": ["square integrated-circuit package", "visible pins around the package"],
+    "alt": "Dibujo a lápiz de un microprocesador visto desde arriba.",
+    "caption": "Representación física simplificada de un microprocesador.",
+    "based_on": ["concept:cpu"]
+  }
+}
 ```
 
-A deterministic preflight failure is preserved under `02-visual-preflight-failures/` and returns no review attempt number. Only scenes that pass preflight are rendered to wide/narrow PNG evidence.
+There is no free-form image-provider prompt in the handoff. Carpeta owns style, negative prompt constraints, provider/model, deterministic seed, timeout, white-canvas cleanup and transparent notebook integration.
 
-A separate vision-capable reviewer inspects every current wide/narrow PNG and writes `02-visual-review.json` following `contracts/visual-review.schema.json`. The reviewer declaration must state `capability: vision` and `independent: true`. The engine mechanically proves that the review references the current PNG bytes by SHA-256.
+Generated pixels never carry authoritative labels, numbers, arrows, chronology, formulas or topology. Exact academic content stays in prose, deterministic diagrams or preserved source figures.
 
-A scene gets one initial reviewed attempt. If it fails, repair only that scene once and preview/review the changed evidence one final time. New runs allow at most two reviewable/rendered attempts per scene. There is no third review.
-
-If a scene still fails after attempt 2, remove that visual from the current plan (`visual_not_needed` for this run and no derived scene fields), rerun preview against the updated plan, carry unchanged PASS rows mechanically, and continue. A failed pedagogical illustration is omitted rather than blocking the textual summary. If every V2 scene is omitted, the current preview/review scene sets are both empty and finalization may continue with no V2 scene entries.
-
-After every scene still present in the final plan passes:
+## Hybrid materialization handoff
+After PLAN/fidelity constraints and before DRAFT:
 
 ```powershell
-python scripts/venv_exec.py scripts/visual_plan_v2.py finalize `
+python scripts/venv_exec.py scripts/visual_plan_hybrid.py `
   --course <course> --unit <unit-id> `
   --plan <run-dir>/02-plan.json `
-  --preview <run-dir>/02-visual-preview.json `
-  --review <run-dir>/02-visual-review.json `
   --write <run-dir>/02-visual-build.json
 ```
 
-Finalization re-renders the surviving SVGs and requires their hashes to equal the reviewed attempt before registration. It preflights every permanent destination before writing and rolls back newly created scene assets if registration fails. The V2 build report records `plan_sha256`, `preview_sha256`, `visual_review_sha256`, `vision_verified: true`, final scene hashes and responsive variant hashes.
+The build report must bind `plan_sha256` and every selected visual to the exact registered asset/hash. Deterministic diagrams remain collision-safe/idempotent. Generated illustrations are also collision-safe/idempotent and reuse an exact already-registered semantic spec without a provider call.
 
-DRAFT uses only the exact surviving assets returned by the final build report. The final renderer upgrades wide scene assets to responsive `<picture>` markup using the registered narrow companion. The prose must remain understandable when a visual was omitted.
+If an illustration provider is unavailable, the report does not silently continue as if the image existed. The executor may make at most one run-local fallback decision for that optional visual, update the plan, and rerun the materializer once. A deterministic/registry/engine failure remains a real run failure.
 
-### Legacy schema 1 handoff
-Existing schema-1 specs remain under `02-sketches/` and validate against `contracts/sketch-figure.schema.json`. Legacy flows continue through `scripts/visual_plan.py`; generator identity/output are not migrated merely because V2 exists.
+DRAFT uses only assets present in the final successful build report.
 
-## Final V2 binding
-For a V2 run, render accepted Markdown to `09-rendered-base.html`, then apply `scripts/scene_responsive.py` to produce `09-rendered.html`. Validate the final artifact with `scripts/artifact_integrity_v2.py`, which checks the final plan, preview, independent vision review, scene/variant hashes, registered provenance and responsive HTML. Omitted failed scenes are no longer planned visuals and therefore are not required by final integrity.
+## Final hybrid binding
+Render accepted Markdown with the normal Carpeta renderer so the branch's notebook typography, hand-drawn structures, figures and page styling remain intact. Apply deterministic code highlighting when required, then validate with `scripts/artifact_integrity.py --plan <run-dir>/02-plan.json`.
 
-Then run `scripts/visual_audit_v2.py`, which adds per-scene desktop/mobile crops to the normal browser evidence and records which responsive variant Chromium selected. This is integration QA, not another open-ended visual redesign cycle.
+The integrity gate checks that `reinterpret` uses the planned derived asset, `preserve` uses the planned source, `preserve+derived_sketch` uses both, and generated illustration records carry the generated-illustration metadata expected by `scripts/visual_plan_hybrid.py`.
 
-`pipeline_run.py finish` requires exact preview/review hashes, V2 integrity markers and complete browser evidence for every surviving planned V2 scene.
+Run `scripts/visual_audit.py` on the final HTML for desktop/mobile integration. Generated illustrations are not given a separate review/regeneration loop; a visibly invalid optional illustration is omitted rather than repeatedly regenerated.
+
+## Legacy V2 compatibility
+Historical schema-2 scene files, preview/review/finalizer evidence and V2 scripts remain readable/testable. They are not the default or required handoff for new `/resumen` visuals. Existing registered V2 records remain immutable; the hybrid migration does not rewrite them.
 
 ## Plan topic coverage contract
 For unit-scoped summaries, `02-plan.json` records which observed topic ids and explicitly unassigned concepts the plan covers. This is an omission check, not a section template.
@@ -147,6 +167,6 @@ Human labels such as `U1`, `Unidad 1` and `Unidad 1: Conceptos básicos` are dis
 ## Derived figure registration
 Derived visuals remain namespaced as `derived:<id>` with `origin: derived`, stable unit ownership, non-empty provenance and collision-safe assets under `assets/figures/`. Source records/assets are never overwritten.
 
-Schema-1 generated records keep their existing `generation` object and hashes. Schema-2 records add `scene_generation` metadata with deterministic scene renderer identity, scene SHA, wide/narrow asset hashes and the reviewed attempt. Existing schema-1 data remains valid unchanged.
+Schema-1 diagram records keep their existing `generation` object and hashes. Generated illustration records use `illustration_generation` with semantic spec/style/provider metadata and final transparent-overlay hash. Existing schema-1 and schema-2 data remains valid unchanged.
 
 `pipeline_run.py start` stores an immutable `01-figures.json` snapshot. Finish rejects source edits/removals and unplanned canonical figure mutations while permitting append-only derived records declared in the final plan/build report.
