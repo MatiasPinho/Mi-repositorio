@@ -38,7 +38,9 @@ Also judge whether the chosen visual form matches the kind of concept being taug
 
 If the concept offers one of these clear representation opportunities, the evidence supports it, and the scene still substitutes generic labeled boxes with no meaningful visual encoding, score `pedagogical_value <= 3`. The repair should improve the drawing/structure, **not add more prose**.
 
-Do **not** penalize boxes merely for being boxes. Containers are appropriate when boundaries, grouping, architecture, memory regions, layers or containment are themselves part of the concept, and a genuinely simple concept may deserve a genuinely simple figure. A rectangular physical object may also legitimately be rectangular. Never demand decorative realism, unsupported internals or extra visual detail that is not supported by provenance.
+For **tangible or recognizable objects**, generic-box substitution is a blocking representational failure, not a stylistic preference. If the canonical evidence safely supports an object-level schematic and the primary representation is still only a generic rectangle/card with the object's name and textual sublabels, record a `blocking` issue with the message/code `generic-box-substitution` and keep `pedagogical_value <= 3`. Examples include a CPU shown only as a rectangle labeled `CPU`, RAM shown only as a generic `Memoria` box, or E/S represented only by an `E/S` box when simple chip/module/device-like cues are available. A valid repair adds recognizable silhouette/parts/relationships supported by provenance; adding prose inside the same rectangle is not a repair.
+
+Do **not** penalize boxes merely for being boxes. Containers are appropriate when boundaries, grouping, architecture, memory regions, layers or containment are themselves part of the concept, and a genuinely simple concept may deserve a genuinely simple figure. A rectangular physical object may also legitimately be rectangular when the drawing includes enough object-level cues to represent the thing rather than serving as a generic text container. Never demand decorative realism, unsupported internals or extra visual detail that is not supported by provenance.
 
 PASS requires every score >= 4 and no `blocking` or `major` issue.
 
@@ -48,6 +50,7 @@ Hard fail a V2 scene for any of the following:
 - visible crowding or elements stuck together without deliberate meaning;
 - ambiguous connection origin/destination;
 - arrow/path through text, through its own label, or through unrelated semantic content;
+- **generic-box substitution** for a tangible/recognizable object when canonical evidence supports a simple recognizable schematic form;
 - missing or invented academic relationship;
 - mobile/narrow figure that only works by shrinking the wide scene or requiring zoom;
 - pencil treatment effectively invisible at final size;
