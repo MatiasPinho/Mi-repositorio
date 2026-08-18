@@ -15,6 +15,8 @@ Only `published: true` means a current Markdown+HTML pair exists under the resol
 ## Deterministic before perceptual
 - Geometry that code can prove must fail before vision review. In particular, an arrow/connector path whose final-display length is too short for its marker footprint is a deterministic preflight failure (`arrow-shaft-too-short`) and consumes no reviewed attempt.
 - Hash equality, asset identity, responsive variant identity, bounds, collisions, empty semantic shapes and own-label crossings remain deterministic facts. Never ask a model to re-prove them.
+- `02-visual-build.json` is deterministic finalizer output, not model-authored evidence. Integrity reconstructs the expected build from plan + preview + policy-bound review + deterministic rerender + canonical registry/assets and requires exact equivalence.
+- Never patch engine code during a running study pipeline to make the candidate pass. `scripts/venv_exec.py` guards the active run before target commands execute; observed engine drift writes a sticky run-local violation marker, so reverting the edit does not make that run valid again.
 
 ## Registered visual reuse vs cross-run scene PASS reuse
 There are two different reuse paths and they must not be confused.
@@ -33,8 +35,16 @@ Therefore, if four registered legacy figures are reused and one new V2 scene is 
 
 A previously registered **V2** scene is different: do not treat registry metadata alone as a new visual PASS. Materialize the exact registered scene JSON into the current run's `02-scenes/` and use the hash-bound cross-run PASS path below.
 
+Registered V2 ids are immutable revisions. An identical scene may be re-reviewed under a newer policy without changing its id. If repair changes scene semantics or geometry, create a **new scene id + `derived_figure_id`** and register that revision append-only. Never overwrite an older registered V2 scene merely because a new rubric now prefers a different drawing.
+
 ### B. Cross-run V2 visual PASS reuse
-A rerun may reuse a previous V2 visual PASS only when the current scene spec and registered wide/narrow SVG assets are byte-identical to evidence from a previous independent PASS **and the visual pedagogy/review policy is unchanged**. The reuse utility compares the prior run's engine-snapshot hashes for `rules/visual/figures.md` and `rules/evaluation/visual-rubric.md` with the current files. A change to either rule invalidates the old perceptual PASS without invalidating cache merely because unrelated engine code changed.
+A rerun may reuse a previous V2 visual PASS only when the current scene spec and registered wide/narrow SVG assets are byte-identical to evidence from a previous independent PASS **and the visual pedagogy/review policy is unchanged**.
+
+The policy has two bindings:
+1. the prior run's engine-snapshot hashes for `rules/visual/figures.md` and `rules/evaluation/visual-rubric.md` must still match; and
+2. the prior `02-visual-preview.json` and `02-visual-review.json` must carry the same explicit `visual_policy_sha256` fingerprint as the current policy.
+
+Changing either rule invalidates the old perceptual PASS even if scene and PNG bytes stayed identical. Do not copy an old review and merely replace its policy hash; that is a new-policy review and requires current independent vision inspection.
 
 When the plan intentionally reuses an already-reviewed V2 scene, materialize the exact registered scene JSON into the current run's `02-scenes/` instead of redesigning it. Then, before normal preview, run:
 
@@ -47,7 +57,7 @@ python scripts/venv_exec.py scripts/visual_reuse_v2.py \
 ```
 
 If `all_reused: true`:
-- the utility has verified current visual-policy hashes + current scene SHA + permanent wide/narrow SVG hashes + prior preview PNG hashes + prior independent PASS;
+- the utility has verified current visual-policy hashes + policy fingerprint + current scene SHA + permanent wide/narrow SVG hashes + prior preview PNG hashes + prior independent PASS;
 - it copies the old reviewed evidence into the new run and mechanically rebinds paths/hashes;
 - run the normal `visual_plan_v2.py preview` next. It must report the seeded scenes as reused without rendering/screenshotting them again;
 - **do not call a vision model**. Use the mechanically carried `02-visual-review.json` and proceed to the normal `visual_plan_v2.py finalize` command;
@@ -89,7 +99,7 @@ python scripts/venv_exec.py scripts/fidelity_guard.py \
 If the first academic review requires `06-repair.md`, run the same guard against the repaired Markdown before the second/final review. Never send a candidate with a known deterministic fidelity violation to another model.
 
 ## Surgical retries
-- Visual repair: only failed/changed scenes are repaired and reviewed; byte-identical PASS rows are carried forward mechanically only while the visual policy is unchanged.
+- Visual repair: only failed/changed scenes are repaired and reviewed; byte-identical PASS rows are carried forward mechanically only while the visual policy is unchanged. A changed already-registered V2 scene gets a new append-only id rather than overwriting history.
 - Academic repair: edit only cited sentences/sections. The second review gets the repaired candidate, first-review findings, the fidelity ledger and canonical support for the failed claims. Do not repeat repository exploration, visual review or humanization of unchanged prose.
 - Browser audit remains deterministic integration QA, not another open-ended vision pass.
 
