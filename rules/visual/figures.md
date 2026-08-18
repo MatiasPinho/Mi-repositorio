@@ -3,24 +3,56 @@
 A figure is pedagogical content, not decoration.
 
 ## Core rule
-Use a visual when it makes a spatial, structural, causal, temporal, relational or physically recognizable concept easier to understand than prose alone. Do not force a fixed number of figures and do not remove a useful visual merely to save runtime.
+Use a visual when it makes a spatial, structural, causal, temporal, relational or physically recognizable concept easier to understand than prose alone. This is especially important in subjects such as computer architecture, operating systems, networking, databases, electronics, algorithms and mathematics.
 
 Every selected figure must also belong to the shared notebook language:
 
 > Toda figura debe integrarse al lenguaje visual del cuaderno. Las figuras pedagógicas derivadas tienden por defecto a una reinterpretación tipo notebook sketch/lápiz, salvo cuando la fidelidad del contenido requiera preservar el original.
 
-This is a semantic treatment rule, not a blanket image filter.
+This is a semantic treatment rule, not a blanket image filter. A notebook sketch or illustration must be reconstructed from canonical knowledge and auditable provenance; it is never an automatic pencil effect applied to arbitrary pixels.
 
-## First decide the pedagogical need
-For every major concept record exactly one:
-- `visual_required`: prose alone is a poor teaching choice;
-- `visual_helpful`: the visual improves recognition or understanding but the prose still carries the complete academic explanation;
-- `visual_not_needed`: prose/example teaches the concept equally well or better.
+Good candidates include:
+- architecture/block diagrams;
+- process/state diagrams;
+- memory maps and hierarchies;
+- timelines and scheduling diagrams;
+- flowcharts;
+- tables whose structure carries meaning;
+- annotated screenshots when the interface itself is being learned;
+- graphs, geometric figures and circuit diagrams;
+- simple recognizable physical objects when visual recognition adds learning value.
 
-The decision is pedagogical. `visual_not_needed` is never a shortcut for saving tokens, image calls or implementation work.
+Do **not** include:
+- decorative illustrations;
+- logos and cover art;
+- screenshots that add no instructional information;
+- duplicate visuals that say the same thing;
+- a dense page image when a clearer source figure or small schematic is available;
+- generated illustrations that carry exact academic relationships, labels or quantities.
 
-## Then choose the representation
-Use the smallest representation that teaches the concept correctly.
+## Selection during PLAN
+For every major concept, explicitly decide one of:
+- `visual_required`: prose alone would be a poor teaching choice;
+- `visual_helpful`: visual adds clear value while the prose still carries the complete explanation;
+- `visual_not_needed`: prose/example is better.
+
+Do not force a fixed number of figures. The decision is pedagogical: `visual_not_needed` is never a shortcut for saving tokens, image calls, review work or runtime.
+
+For every `visual_required` or `visual_helpful` decision, also record the `visual_treatment`. Identify the selected source figure when using `preserve`. For `preserve+derived_sketch`, identify both the preserved source figure and the separate derived asset/record. A decision to `reinterpret` must list the canonical concepts or source figure on which the new visual is based. `preserve` and `preserve+derived_sketch` also require `fidelity_reason`; a generic preference for the original or a source-first shortcut is invalid.
+
+## Treatment decision
+After deciding that a visual is required or helpful, record exactly one `visual_treatment` in the plan:
+
+- `reinterpret`: the visual is a pedagogical derivation whose meaning can be reconstructed without loss. This remains the default for exact flows, trees, concept maps, relations and technical schematics. A supporting generated illustration may also use `reinterpret` only under the strict illustration boundary below.
+- `preserve`: use the precise original/representation because restyling could lose information. This is the normal choice for screenshots, dense charts, precision-sensitive visual tables, exact plots, formulas, geometry, circuits, notation-heavy figures and any visual whose pixels, scale or layout are part of the evidence. Every `preserve` decision records a non-empty `fidelity_reason` naming the detail that reconstruction could lose.
+- `preserve+derived_sketch`: keep the precise source figure and add a separate, clearly labelled simplified deterministic notebook sketch only when the pair has more teaching value than either figure alone. The sketch explains a supported mental model; it does not replace, correct or impersonate the source.
+
+When there is a concrete uncertainty about losing exact information, choose `preserve` and state that uncertainty in `fidelity_reason`. The mere existence of a source asset is not such a reason. For reconstructible diagrams, first test whether all meaningful labels, relations, directions, groupings and order can be declared in the structured spec; if they can, `reinterpret` remains the default. Visual character still has lower priority than academic fidelity and legibility. Do not use `preserve+derived_sketch` merely to decorate a preserved figure or satisfy a figure count.
+
+Code, formulas and tables are not literal pencil drawings. Keep their content exact and integrate them through the shared renderer's borders, captions, annotations and other notebook details. A simplified diagram derived from them is allowed only as a separate pedagogical figure with explicit provenance.
+
+## Choose the visual medium
+A derived `reinterpret` must use the smallest medium that teaches the concept correctly.
 
 ### `visual_medium: diagram`
 Use the deterministic notebook-sketch renderer when the visual itself carries exact academic structure. This includes:
@@ -32,9 +64,9 @@ Use the deterministic notebook-sketch renderer when the visual itself carries ex
 - architecture and subsystem relationships;
 - exact labels, order, direction, topology or grouping.
 
-The planner declares semantic nodes, edges, groups and evidence. Carpeta computes the SVG geometry and pencil treatment. The model must not write raw SVG or pixel coordinates.
+The planner declares labels, nodes, edges, groups, semantic shapes, rank/order and provenance. Deterministic code owns final SVG geometry and notebook style. The model must not write raw SVG, pixel coordinates, colors or fonts.
 
-Existing schema-1 diagrams remain the canonical diagram path through `02-sketches/<id>.json`, `contracts/sketch-figure.schema.json` and `scripts/sketch_figure.py`.
+Missing `visual_medium` remains backward-compatible with `diagram` for existing plans/specs.
 
 ### `visual_medium: illustration`
 Use a generated illustration only for a recognizable physical/conceptual likeness where exact topology is not the teaching payload. Good examples are a generic CPU package, RAM module, disk, monitor, keyboard or peripheral.
@@ -42,7 +74,7 @@ Use a generated illustration only for a recognizable physical/conceptual likenes
 Illustrations are intentionally **supporting only**:
 - an illustration must use `need: visual_helpful`, never `visual_required`;
 - it may show only simple visual cues explicitly supported by canonical knowledge;
-- it must not encode exact quantities, sequence, wiring, topology, formulas, dates, taxonomies or exam-critical relationships;
+- it must not encode exact quantities, sequence, wiring, topology, formulas, dates, taxonomies or assessment-critical relationships;
 - it must contain no requested text, letters, numbers, labels or arrows;
 - all authoritative labels and explanations stay in prose/HTML or a deterministic diagram;
 - never generate the whole study page as an image.
@@ -51,44 +83,75 @@ The planner supplies only a compact semantic illustration spec: subject, view, s
 
 When the same concept benefits from physical recognition **and** an exact relationship diagram, both may be used: the illustration provides recognition; the diagram carries the academic structure.
 
-### Source figure
-Use the source pixels when reconstruction risks losing evidence. Screenshots, dense charts, precision-sensitive tables, exact plots, formulas, geometry, circuits and notation-heavy figures normally stay source assets.
+## Source-first policy
+Prefer a relevant figure from the unit sources when it faithfully represents what the chair teaches. Preserve provenance internally in `unidades/<unit-id>/conocimiento/figures.json`.
 
-## Treatment decision
-After selecting a visual, record exactly one `visual_treatment`:
-- `reinterpret`: a derived diagram or supporting illustration reconstructed from canonical knowledge;
-- `preserve`: keep the precise source representation; requires a concrete `fidelity_reason`;
-- `preserve+derived_sketch`: keep the precise source and add a separate deterministic diagram when the pair teaches more than either alone. The derived companion is always `visual_medium: diagram`.
+`source-first` governs evidence selection, not treatment selection. It must not automatically override a lossless `reinterpret` decision. A reconstructible source diagram may be the `figure:<id>` provenance of a new sketch while the final artifact uses the registered derived SVG rather than the source PNG.
 
-`source-first` selects evidence, not final pixels. A source diagram that can be reconstructed without loss may still use `reinterpret`. Never imply that a derived visual came from the chair.
+If a source figure is too dense but the concept would benefit from a simpler schematic, a simplified diagram may be created only if every relationship shown is supported by canonical knowledge. Mark its origin as `derived` internally; never imply that a derived diagram came from the chair.
 
-## Hybrid materialization
-The summary pipeline materializes selected visuals with `scripts/visual_plan_hybrid.py`.
+## Deterministic diagram generation
+Normal pedagogical diagrams selected as `reinterpret` are generated from a structured sketch spec, never with an image-generation model. The planner decides what the figure means and contains; deterministic code owns the final SVG geometry and notebook style.
 
-For diagrams:
-1. write the compact schema-1 spec under `02-sketches/`;
-2. validate it;
-3. generate/register the deterministic transparent SVG;
-4. use the exact asset returned by `02-visual-build.json`.
+Supported priorities are flows, trees, concept maps, explicit relationships and technical schematics. For each selected derived diagram:
+1. write `02-sketches/<id>.json` using `contracts/sketch-figure.schema.json`;
+2. declare every node, edge and group with non-empty element-level `based_on` references included in the spec's global provenance;
+3. use semantic shapes, rank/order and direction only—never colors, fonts, pixels or arbitrary SVG;
+4. materialize through the hybrid visual plan, which delegates diagram rows to the established deterministic sketch generator;
+5. persist `02-visual-build.json` and verify every planned SVG is registered;
+6. only then draft Markdown, referencing the exact `asset` returned by the build report.
 
-For illustrations:
-1. declare the compact inline `illustration` spec in `02-plan.json`;
-2. make one bounded provider call;
-3. deterministically crop and remove the white working canvas;
-4. wrap the raster as a transparent notebook overlay and register it under `assets/figures/`;
-5. use the exact asset returned by `02-visual-build.json`.
+The diagram generator validates, renders and registers in one retry-safe operation. It stores the normalized spec next to the SVG, records both SHA-256 fingerprints and embeds generator/spec identity inside the SVG. Equal specs produce equal bytes. Existing IDs or paths with different content are refused.
 
-No independent per-image vision-review loop is part of this path. The speed boundary is deliberate: generated illustrations are not allowed to carry authoritative academic structure. The normal academic review, integrity gate and final browser audit still apply to the document.
+The generated SVG is a transparent ink overlay. It must not contain paper, rules, a full-canvas rectangle, an outer frame, a plate or UI-like solid node fills; the document theme owns the visible notebook sheet behind it. Nodes and edges use deterministic double pencil traces with small curved deviations, so the drawing reads as manual without changing endpoints, labels, direction or semantic geometry. `sketch_figure.py audit` rejects an opaque canvas, a frame or node/edge geometry reduced to a single perfectly clean trace.
 
-If the illustration provider is unavailable, do not retry repeatedly. Make at most one plan fallback for that failed visual: switch it to a deterministic diagram when the same supported meaning is naturally diagrammable, otherwise omit that optional illustration for the current run. Do not reduce academic text quality.
+`preserve` bypasses this generator. `preserve+derived_sketch` requires the source figure to remain in the artifact and the spec to name the same `source_figure_id`; the SVG is a separate simplified companion. Screenshots, dense charts, visual tables, code, formulas, geometry, circuits, exact plots and any pixel/scale-sensitive representation remain source assets unless a separate supported sketch adds genuine learning value.
 
-## Style and integration
-Derived diagrams and illustrations must look like marks made on the actual notebook page, not pasted cards. Deterministic diagrams use transparent SVG. Generated illustrations are postprocessed into transparent overlays so the real paper/rules remain visible behind them.
+## Generated illustration materialization
+A selected illustration is materialized by `scripts/visual_plan_hybrid.py` from the compact semantic spec in `02-plan.json`.
 
-A generated illustration should normally be isolated, simple and recognizable. Exact annotation belongs outside the pixels. Captions explain why the visual is useful rather than narrating every pixel.
+The bounded path is:
+1. build the provider prompt deterministically from the semantic spec plus Carpeta's fixed notebook style;
+2. make one provider call;
+3. crop the white working canvas and deterministically key it to transparency;
+4. wrap the raster as a transparent notebook overlay and collision-safely register it under `assets/figures/`;
+5. record provider/model identity, semantic-spec hash, prompt hash, seed, final asset hash and postprocessing metadata without storing credentials;
+6. use only the exact asset returned by `02-visual-build.json`.
+
+No independent per-image vision-review loop is part of this path. The speed boundary is deliberate because generated illustrations are not allowed to carry authoritative academic structure. Normal academic review, integrity and final browser audit still apply to the document.
+
+If the illustration provider is unavailable, do not retry repeatedly. Make at most one plan fallback for that failed visual: switch it to a deterministic diagram when the same supported meaning is naturally diagrammable, otherwise omit that optional illustration for the current run. Never reduce academic text quality to preserve a visual.
+
+## Placement
+Corresponding words and images belong together. Put the figure immediately after the paragraph that introduces it, followed by a short **How to read this figure** explanation when needed.
+
+A useful figure block has:
+1. meaningful alt text/caption;
+2. the visual;
+3. 1–4 sentences telling the learner what relationship to notice;
+4. optionally one recall prompt that asks the learner to reconstruct/explain the visual.
+
+Do not describe every pixel. Explain the conceptual relationship the student should extract. For generated illustrations, exact annotation belongs outside the pixels.
 
 ## Truth boundary
-Visual character always loses to academic fidelity. Never invent internal parts merely to make a drawing richer. If the evidence supports only a high-level component, show only a high-level recognizable form. Never infer unlabeled components from an unreadable source image.
+Never infer unlabeled components from an unreadable image. If the agent cannot confidently inspect or interpret a source visual, either omit it or state that visual interpretation is unavailable and use supported prose instead.
 
-## Stable identity and provenance
-Use the resolved stable `unit_id`. Derived ids remain namespaced `derived:<id>` and source figures/assets are never overwritten. Every derived visual has non-empty `based_on` provenance and collision-safe registration. Diagram records retain deterministic generator/spec hashes; generated illustrations retain provider/model, semantic-spec hash, prompt hash and final asset hash without storing credentials.
+For a generated illustration, visual character always loses to academic fidelity. Never invent internal parts merely to make the drawing richer. If evidence supports only a high-level component, request only a high-level recognizable form. The generated pixels are never evidence for a factual claim.
+
+## On-demand discovery for migrated/older courses
+If `unidades/<unit-id>/conocimiento/figures.json` has no relevant source entry for the requested scope, do **not** reprocess the whole course. Instead:
+1. run `python study.py figures scan <course> --write` if `.study/figure-pages.json` is missing/stale and the visual dependency is available;
+2. use concept source references to identify candidate PDF pages for the requested scope;
+3. inspect only those candidate pages/figures;
+4. register/render only visuals that pass the pedagogical selection rule.
+
+This is a narrow visual-indexing pass, not a reason to reread all transcripts or regenerate canonical text knowledge.
+
+## Stable identity and derived registration
+Unit matching is machine based. Use the resolved `unit_id` from `01-input.json`; do not compare strings such as `U1` and `Unidad 1` manually.
+
+Derived assets live under `assets/figures/` and use namespaced `derived:<id>` records with `origin: derived`, stable `unit_id`, non-empty `based_on`, collision-safe asset paths and SHA-256 identity. Never directly overwrite a record whose origin is `source`.
+
+Deterministic diagrams retain `generation.method: deterministic-svg`, generator/spec hashes and the established SVG integrity markers. Generated illustrations retain a separate `illustration_generation.method: generated-illustration` object with provider/model, semantic-spec hash, prompt hash, seed and postprocessing identity. These metadata families are intentionally distinct so an illustration can never masquerade as an exact deterministic diagram.
+
+The integrity gate receives `02-plan.json` and fails closed when a planned derived asset is absent, uses the wrong medium/generator, substitutes a source asset for a `reinterpret`, or drops either member of `preserve+derived_sketch`.
