@@ -73,7 +73,7 @@ A study agent may repair run-local candidate data, but it must never repair the 
 
    `source-first` selects evidence, not final pixels. `preserve` / `preserve+derived_sketch` require a concrete `fidelity_reason`.
 
-   For `diagram`, create a compact schema-1 spec under `<run-dir>/02-sketches/<id>.json`. The model supplies semantic nodes/edges/groups only; do not write raw SVG or explicit scene coordinates.
+   For `diagram`, create a compact schema-1 spec under `<run-dir>/02-sketches/<id>.json`. The model supplies semantic nodes/edges/groups only; do not write raw SVG or explicit scene coordinates. **Never create normal diagrams with an image-generation model.**
 
    For `illustration`, write only the compact semantic object defined in `contracts/hybrid-visuals.md`. It must be `visual_helpful` + `reinterpret`. Do not write a provider prompt. Do not ask generated pixels to contain academic text, numbers, arrows, formulas, chronology or exact topology.
 
