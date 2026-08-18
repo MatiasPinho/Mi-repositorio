@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import html
 import io
 import json
 import os
@@ -189,7 +190,8 @@ def _cloudflare(spec: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
     }
 
 
-def _crop_to_content(raw: bytes) -> tuple[bytes, dict[str, Any]]:
+def _prepare_overlay(raw: bytes, alt: str) -> tuple[bytes, dict[str, Any]]:
+    """Crop the white canvas, key it to alpha, and wrap the raster as a transparent SVG overlay."""
     try:
         from PIL import Image, ImageChops, ImageStat  # type: ignore
     except Exception as exc:
@@ -212,9 +214,31 @@ def _crop_to_content(raw: bytes) -> tuple[bytes, dict[str, Any]]:
     cropped = image.crop(box)
     if ImageStat.Stat(cropped.convert("L")).stddev[0] < 2:
         raise IllustrationUnavailable("Generated image has insufficient contrast")
-    out = io.BytesIO()
-    cropped.save(out, "PNG", optimize=True)
-    return out.getvalue(), {"crop_box": list(box), "output_size": [cropped.width, cropped.height]}
+
+    gray = cropped.convert("L")
+    alpha = gray.point(lambda p: max(0, min(255, (250 - p) * 6)))
+    rgba = cropped.convert("RGBA")
+    rgba.putalpha(alpha)
+    png_out = io.BytesIO()
+    rgba.save(png_out, "PNG", optimize=True)
+    png = png_out.getvalue()
+    encoded = base64.b64encode(png).decode("ascii")
+    width, height = cropped.size
+    svg = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" data-study-sketch="1" '
+        'data-transparent-canvas="1" data-generated-illustration="1">\n'
+        f'<title>{html.escape(alt)}</title>\n'
+        f'<image width="{width}" height="{height}" href="data:image/png;base64,{encoded}"/>\n'
+        '</svg>\n'
+    ).encode("utf-8")
+    return svg, {
+        "crop_box": list(box),
+        "output_size": [width, height],
+        "embedded_png_sha256": digest(png),
+        "transparent_overlay": True,
+    }
 
 
 def _atomic(path: Path, data: bytes) -> None:
@@ -272,7 +296,7 @@ def generate_and_register(
     if not unit_id:
         raise IllustrationError(f"Could not resolve unit: {unit_value}")
     base = unit_root(course, unit_id) if has_unit_layout(course) else course
-    asset_rel = f"assets/figures/{spec['id']}.illustration.png"
+    asset_rel = f"assets/figures/{spec['id']}.illustration.svg"
     spec_rel = f"assets/figures/{spec['id']}.illustration.json"
     asset_path, spec_path = (base / asset_rel).resolve(), (base / spec_rel).resolve()
     spec_bytes = (json.dumps(spec, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
@@ -284,9 +308,9 @@ def generate_and_register(
         raise IllustrationError("Illustration path already exists with unregistered content")
 
     raw, provider = _cloudflare(spec)
-    png, crop = _crop_to_content(raw)
+    overlay, preparation = _prepare_overlay(raw, spec["alt"])
     _atomic(spec_path, spec_bytes)
-    _atomic(asset_path, png)
+    _atomic(asset_path, overlay)
     try:
         data = load_registry(course)
         figures = data["figures"]
@@ -322,7 +346,7 @@ def generate_and_register(
                 "spec": spec_rel,
                 "spec_sha256": spec_sha,
                 **provider,
-                **crop,
+                **preparation,
             },
         }
         figures[key] = record
