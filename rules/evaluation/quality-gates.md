@@ -41,7 +41,7 @@ Generated illustration rules are strict:
 The final candidate then uses `artifact_integrity.py` plus `visual_audit.py`. Browser audit validates the actual notebook integration on desktop/mobile and may reject broken, blank, misleading or opaque-card illustrations, but it must not become an open-ended generation loop.
 
 ## Legacy V2 compatibility
-The schema-2 free-composition scene engine and its independent vision-review machinery remain available for historical runs, experiments and regression tests. They are not a required execution gate for the active `/resumen` hybrid path.
+The schema-2 free-composition scene engine and its independent vision-review machinery remain available for historical runs, experiments and regression tests. They are not a required execution gate for the active summary hybrid path.
 
 ## Reviewer independence
 When the execution environment supports isolated agents/contexts, prefer an independent academic reviewer that receives only the candidate/evidence needed for its role and the relevant evaluation rules. Otherwise simulate independence through the portable handoff boundary and do not inherit the creator's self-justifications.
