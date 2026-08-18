@@ -21,14 +21,20 @@
     },
     "figures": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
+      "description": "May be empty only when the current preview set is empty, for example after bounded visual failures were omitted from the final plan. Runtime binding enforces exact set equality.",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["scene_id", "attempt", "status", "inspected", "scores", "issues"],
         "properties": {
           "scene_id": {"type": "string", "minLength": 1},
-          "attempt": {"type": "integer", "minimum": 1, "maximum": 3},
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "description": "Attempt 3 is retained for historical evidence compatibility. New summary previews are capped at two attempts by scene_figure.py."
+          },
           "status": {"enum": ["pass", "fail"]},
           "inspected": {
             "type": "array",
