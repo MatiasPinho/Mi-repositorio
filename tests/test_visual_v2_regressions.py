@@ -18,6 +18,7 @@ from scripts import (
     scene_figure,
     scene_pencil,
     scene_preflight,
+    visual_policy,
     visual_review,
 )
 from tests.test_scene_v2 import free_scene
@@ -64,6 +65,7 @@ class FirstRealRunRegressionTests(unittest.TestCase):
         review = {
             "version": 1,
             "vision_verified": True,
+            "visual_policy_sha256": visual_policy.current_fingerprint(),
             "reviewer": {"id": "vision", "capability": "vision", "independent": True},
             "figures": [{
                 "scene_id": "s",
