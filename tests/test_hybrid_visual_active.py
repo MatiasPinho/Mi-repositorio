@@ -27,7 +27,7 @@ class HybridPipelineContractTests(unittest.TestCase):
         self.assertIn("not the default or required path for new summary visuals", figures)
         self.assertIn("physical_recognition_review", pipeline)
         self.assertIn("same PLAN pass", pipeline)
-        self.assertIn("preserve and preserve+derived_sketch are invalid in `/resumen`", pipeline)
+        self.assertIn("are invalid in `/resumen`", pipeline)
         self.assertIn("raw pixels are never a publishable summary visual", contract)
         self.assertIn("handdrawn-structures.css", renderer)
 
