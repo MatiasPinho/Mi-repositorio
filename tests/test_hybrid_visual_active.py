@@ -24,12 +24,44 @@ class HybridPipelineContractTests(unittest.TestCase):
         self.assertNotIn("scripts/visual_plan_v2.py preview", pipeline)
         self.assertNotIn("scripts/scene_responsive.py <run-dir>", pipeline)
         self.assertIn("not the default or required path for new summary visuals", figures)
+        self.assertIn("physical_recognition_review", pipeline)
+        self.assertIn("same PLAN pass", pipeline)
         self.assertIn("handdrawn-structures.css", renderer)
+
+    def test_hybrid_plan_requires_completed_physical_recognition_review(self):
+        with tempfile.TemporaryDirectory() as td:
+            plan = Path(td) / "02-plan.json"
+            plan.write_text(json.dumps({"visuals": []}), encoding="utf-8")
+            with mock.patch.object(visual_plan_hybrid, "resolve_unit", return_value={"unit_id": "unidad-1"}), \
+                 mock.patch.object(visual_plan_hybrid, "load_registry", return_value={"figures": {}}):
+                with self.assertRaisesRegex(visual_plan_hybrid.VisualPlanError, "physical_recognition_review is required"):
+                    visual_plan_hybrid.inspect_plan(Path(td), "unidad-1", plan)
+
+    def test_recognition_illustration_decision_must_match_selected_illustration(self):
+        with tempfile.TemporaryDirectory() as td:
+            plan = Path(td) / "02-plan.json"
+            plan.write_text(json.dumps({
+                "physical_recognition_review": {
+                    "complete": True,
+                    "candidates": [{
+                        "subject": "punched cards",
+                        "decision": "illustration",
+                        "reason": "physical recognition helps",
+                        "derived_figure_id": "punched-cards",
+                    }],
+                },
+                "visuals": [],
+            }), encoding="utf-8")
+            with mock.patch.object(visual_plan_hybrid, "resolve_unit", return_value={"unit_id": "unidad-1"}), \
+                 mock.patch.object(visual_plan_hybrid, "load_registry", return_value={"figures": {}}):
+                with self.assertRaisesRegex(visual_plan_hybrid.VisualPlanError, "must match a selected visual_medium=illustration row"):
+                    visual_plan_hybrid.inspect_plan(Path(td), "unidad-1", plan)
 
     def test_generated_pixels_cannot_be_required_academic_evidence(self):
         with tempfile.TemporaryDirectory() as td:
             plan = Path(td) / "02-plan.json"
             plan.write_text(json.dumps({
+                "physical_recognition_review": {"complete": True, "candidates": []},
                 "visuals": [{
                     "concept_id": "cpu",
                     "need": "visual_required",
