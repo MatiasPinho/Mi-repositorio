@@ -11,6 +11,48 @@ from scripts import illustration_figure, sketch_figure
 from scripts import visual_plan_hybrid_runtime as runtime
 
 
+def _flow_spec() -> dict:
+    return {
+        "schema_version": 1,
+        "id": "runtime-flow",
+        "title": "Entrada y salida",
+        "kind": "flow",
+        "visual_treatment": "reinterpret",
+        "role": "essential",
+        "description": "Flujo real para probar el runtime pulido.",
+        "alt": "Una entrada conduce a una salida",
+        "caption": "El flujo conserva su estructura.",
+        "based_on": ["concept:flow"],
+        "concepts": ["flow"],
+        "learner_focus": ["Seguir la relación"],
+        "layout": {"direction": "top-to-bottom", "background": "transparent"},
+        "nodes": [
+            {
+                "id": "input",
+                "label": "Entrada",
+                "shape": "data",
+                "tone": "primary",
+                "rank": 0,
+                "order": 0,
+                "based_on": ["concept:flow"],
+            },
+            {
+                "id": "output",
+                "label": "Salida",
+                "shape": "process",
+                "tone": "example",
+                "rank": 1,
+                "order": 0,
+                "based_on": ["concept:flow"],
+            },
+        ],
+        "edges": [
+            {"from": "input", "to": "output", "based_on": ["concept:flow"]},
+        ],
+        "groups": [],
+    }
+
+
 class HybridVisualRuntimeTests(unittest.TestCase):
     def test_node_boxes_gain_breathing_room(self):
         node = {
@@ -24,6 +66,17 @@ class HybridVisualRuntimeTests(unittest.TestCase):
         self.assertGreater(height, old_height)
         self.assertGreaterEqual(width, 232)
         self.assertGreaterEqual(height, 116)
+
+    def test_polished_renderer_keeps_real_self_closing_paths_valid(self):
+        svg, report = runtime._render_svg_polished(_flow_spec())
+        root = ET.fromstring(svg)
+        paths = root.findall(".//{http://www.w3.org/2000/svg}path")
+        stroked = [path for path in paths if path.get("stroke")]
+
+        self.assertTrue(stroked)
+        self.assertTrue(all(path.get("vector-effect") == "non-scaling-stroke" for path in stroked))
+        self.assertNotIn(b'/ vector-effect=', svg)
+        self.assertTrue(report["style_audit"]["ok"], report["style_audit"])
 
     def test_tight_crop_removes_transparent_tail_without_provider_call(self):
         image = Image.new("RGBA", (420, 320), (255, 255, 255, 0))
