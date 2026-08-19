@@ -2,8 +2,8 @@
 """Runtime wrapper for the active hybrid visual plan.
 
 Keeps the compact schema-1 / Cloudflare architecture while applying the
-scale-aware notebook pencil profile, roomier diagram layout and tighter
-illustration cropping. This adds no model/agent calls.
+scale-aware notebook pencil profile, V2-inspired final-display layout guards
+and tighter illustration cropping. This adds no model/agent calls.
 """
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import copy
 import hashlib
 import io
 import json
+import math
 import os
 import re
 import sys
@@ -38,10 +39,21 @@ from scripts.figure_assets import (  # noqa: E402
 from scripts.scene_pencil import profile as pencil_profile, rough_polyline as v2_rough_polyline  # noqa: E402
 from scripts.unit_identity import resolve_unit  # noqa: E402
 
-DIAGRAM_GENERATOR_VERSION = 3
+DIAGRAM_GENERATOR_VERSION = 4
 ILLUSTRATION_GENERATOR_VERSION = 2
 TARGET_DIAGRAM_WIDTH_PX = 704.0
 ILLUSTRATION_CROP_VERSION = 2
+
+# Recovered from GPT56/V2's deterministic geometry preflight. The hybrid path
+# keeps schema-1 specs compact, but layout is now chosen against final-display
+# constraints instead of logical-canvas dimensions alone.
+V2_MIN_DISPLAY_GAP_PX = 7.0
+V2_MAX_DENSITY = 0.74
+V2_MAX_WIDE_ASPECT = 3.4
+MIN_LAYOUT_SCALE = 0.88
+PREFERRED_NODE_GAP = 72
+PREFERRED_RANK_GAP = 124
+LAYOUT_PROFILE = "v2-display-guard"
 
 _ORIGINAL_LAYOUT = sketch._layout
 _ORIGINAL_NODE_DIMENSIONS = sketch._node_dimensions
@@ -50,6 +62,16 @@ _ORIGINAL_RENDER_SVG = sketch.render_svg
 _ORIGINAL_PREPARE_OVERLAY = illustration._prepare_overlay
 _ORIGINAL_GENERATE_ILLUSTRATION = illustration.generate_and_register
 _ACTIVE_PROFILE = pencil_profile(704.0, 704.0)
+_ACTIVE_LAYOUT_REPORT: dict[str, Any] = {
+    "profile": LAYOUT_PROFILE,
+    "requested_direction": "top-to-bottom",
+    "resolved_direction": "top-to-bottom",
+    "max_nodes_per_row": 1,
+    "display_scale": 1.0,
+    "min_display_gap_px": None,
+    "density": 0.0,
+    "aspect_ratio": 1.0,
+}
 
 
 def _atomic_write(path: Path, data: bytes) -> None:
@@ -76,34 +98,134 @@ def _node_dimensions_polished(node: dict[str, Any]):
     if detail_lines or len(node.get("label", "")) > 28:
         extra_width += 24.0
     width = min(410.0, max(232.0, width + extra_width))
-    height = max(116.0, height + 24.0 + (8.0 if detail_lines else 0.0))
+    height = max(116.0, height + 24.0 + (12.0 if detail_lines else 0.0))
     return width, height, label_lines, detail_lines
 
 
-def _layout_polished(spec: dict[str, Any]):
-    """Use larger gaps and fewer columns only when a graph is visually dense."""
-    global _ACTIVE_PROFILE
+def _box_distance(left: sketch.NodeBox, right: sketch.NodeBox) -> float:
+    dx = max(left.x - (right.x + right.width), right.x - (left.x + left.width), 0.0)
+    dy = max(left.y - (right.y + right.height), right.y - (left.y + left.height), 0.0)
+    return math.hypot(dx, dy)
+
+
+def _layout_metrics(
+    boxes: dict[str, sketch.NodeBox],
+    width: float,
+    height: float,
+) -> dict[str, float | None]:
+    display_scale = min(1.0, TARGET_DIAGRAM_WIDTH_PX / max(width, 1.0))
+    values = list(boxes.values())
+    gaps = [
+        _box_distance(left, right) * display_scale
+        for index, left in enumerate(values)
+        for right in values[index + 1 :]
+    ]
+    occupied = sum(box.width * box.height for box in values)
+    return {
+        "display_scale": display_scale,
+        "min_display_gap_px": min(gaps) if gaps else None,
+        "density": occupied / max(width * height, 1.0),
+        "aspect_ratio": width / max(height, 1.0),
+        "display_height_px": height * display_scale,
+    }
+
+
+def _layout_candidate(
+    spec: dict[str, Any],
+    *,
+    direction: str,
+    max_nodes_per_row: int,
+) -> dict[str, Any]:
     work = copy.deepcopy(spec)
     layout = work.setdefault("layout", {})
-    layout["node_gap"] = max(int(layout.get("node_gap", 56)), 64)
-    layout["rank_gap"] = max(int(layout.get("rank_gap", 108)), 118)
+    layout["direction"] = direction
+    layout["node_gap"] = max(int(layout.get("node_gap", 56)), PREFERRED_NODE_GAP)
+    layout["rank_gap"] = max(int(layout.get("rank_gap", 108)), PREFERRED_RANK_GAP)
 
-    nodes = work.get("nodes", [])
-    dense = len(nodes) >= 5 or any(
-        len(str(node.get("label", ""))) > 30 or bool(str(node.get("detail", "")).strip())
-        for node in nodes
-        if isinstance(node, dict)
-    )
     previous = sketch.MAX_NODES_PER_ROW
-    sketch.MAX_NODES_PER_ROW = 2 if dense else 3
+    sketch.MAX_NODES_PER_ROW = max_nodes_per_row
     try:
         boxes, width, height, title_height = _ORIGINAL_LAYOUT(work)
     finally:
         sketch.MAX_NODES_PER_ROW = previous
 
-    display_width = min(TARGET_DIAGRAM_WIDTH_PX, width)
-    _ACTIVE_PROFILE = pencil_profile(width, display_width)
-    return boxes, width, height, title_height
+    return {
+        "boxes": boxes,
+        "width": width,
+        "height": height,
+        "title_height": title_height,
+        "direction": direction,
+        "max_nodes_per_row": max_nodes_per_row,
+        "metrics": _layout_metrics(boxes, width, height),
+    }
+
+
+def _layout_score(candidate: dict[str, Any], requested_direction: str) -> tuple[float, ...]:
+    metrics = candidate["metrics"]
+    scale = float(metrics["display_scale"] or 0.0)
+    min_gap = metrics["min_display_gap_px"]
+    density = float(metrics["density"] or 0.0)
+    aspect = float(metrics["aspect_ratio"] or 0.0)
+
+    hard_failures = 0.0
+    if scale < MIN_LAYOUT_SCALE:
+        hard_failures += 1.0
+    if min_gap is not None and float(min_gap) < V2_MIN_DISPLAY_GAP_PX:
+        hard_failures += 1.0
+    if density > V2_MAX_DENSITY:
+        hard_failures += 1.0
+    if aspect > V2_MAX_WIDE_ASPECT:
+        hard_failures += 1.0
+
+    # Prefer the requested orientation when it already satisfies final-display
+    # constraints. Otherwise a readable top-to-bottom reflow beats shrinking a
+    # horizontal diagram until its text/padding collapse.
+    direction_penalty = 0.0 if candidate["direction"] == requested_direction else 1.0
+    return (
+        hard_failures,
+        max(0.0, MIN_LAYOUT_SCALE - scale),
+        max(0.0, V2_MIN_DISPLAY_GAP_PX - float(min_gap or V2_MIN_DISPLAY_GAP_PX)),
+        max(0.0, density - V2_MAX_DENSITY),
+        max(0.0, aspect - V2_MAX_WIDE_ASPECT),
+        direction_penalty,
+        float(metrics["display_height_px"] or 0.0),
+    )
+
+
+def _layout_polished(spec: dict[str, Any]):
+    """Recover GPT56/V2 final-display composition guarantees without scene graphs."""
+    global _ACTIVE_PROFILE, _ACTIVE_LAYOUT_REPORT
+    requested = str(spec.get("layout", {}).get("direction") or "top-to-bottom")
+
+    candidates: list[dict[str, Any]] = []
+    if requested == "left-to-right":
+        candidates.append(_layout_candidate(spec, direction="left-to-right", max_nodes_per_row=2))
+        candidates.append(_layout_candidate(spec, direction="top-to-bottom", max_nodes_per_row=2))
+        candidates.append(_layout_candidate(spec, direction="top-to-bottom", max_nodes_per_row=1))
+    else:
+        candidates.append(_layout_candidate(spec, direction="top-to-bottom", max_nodes_per_row=2))
+        candidates.append(_layout_candidate(spec, direction="top-to-bottom", max_nodes_per_row=1))
+
+    chosen = min(candidates, key=lambda row: _layout_score(row, requested))
+    metrics = chosen["metrics"]
+    display_width = min(TARGET_DIAGRAM_WIDTH_PX, float(chosen["width"]))
+    _ACTIVE_PROFILE = pencil_profile(float(chosen["width"]), display_width)
+    _ACTIVE_LAYOUT_REPORT = {
+        "profile": LAYOUT_PROFILE,
+        "requested_direction": requested,
+        "resolved_direction": chosen["direction"],
+        "max_nodes_per_row": chosen["max_nodes_per_row"],
+        "display_scale": round(float(metrics["display_scale"] or 0.0), 4),
+        "min_display_gap_px": (
+            round(float(metrics["min_display_gap_px"]), 2)
+            if metrics["min_display_gap_px"] is not None
+            else None
+        ),
+        "density": round(float(metrics["density"] or 0.0), 4),
+        "aspect_ratio": round(float(metrics["aspect_ratio"] or 0.0), 4),
+        "canvas": [round(float(chosen["width"]), 2), round(float(chosen["height"]), 2)],
+    }
+    return chosen["boxes"], chosen["width"], chosen["height"], chosen["title_height"]
 
 
 def _rough_polyline_polished(
@@ -159,9 +281,14 @@ def _postprocess_svg(svg: bytes) -> bytes:
         _add_non_scaling_stroke,
         text,
     )
+    layout_attrs = (
+        f'data-layout-profile="{LAYOUT_PROFILE}" '
+        f'data-layout-direction="{_ACTIVE_LAYOUT_REPORT.get("resolved_direction", "")}" '
+        f'data-layout-scale="{_ACTIVE_LAYOUT_REPORT.get("display_scale", 1.0)}"'
+    )
     text = text.replace(
         'data-pencil-style="graphite-overlay-v1"',
-        'data-pencil-style="graphite-overlay-v1" data-pencil-profile="scale-aware-v2"',
+        f'data-pencil-style="graphite-overlay-v1" data-pencil-profile="scale-aware-v2" {layout_attrs}',
         1,
     )
     polished = text.encode("utf-8")
@@ -183,6 +310,7 @@ def _render_svg_polished(spec_value: Any):
     report = dict(report)
     report["svg_sha256"] = hashlib.sha256(polished).hexdigest()
     report["pencil_profile"] = "scale-aware-v2"
+    report["layout"] = dict(_ACTIVE_LAYOUT_REPORT)
     report["style_audit"] = sketch.audit_svg_style(polished)
     return polished, report
 
@@ -212,7 +340,7 @@ def _stored_spec(base: Path, record: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def generate_polished_diagram(course: Path, unit_value: str, spec_value: Any) -> dict[str, Any]:
-    """Generate schema-1 diagrams with the V2 pencil profile and upgrade safe reuse in place."""
+    """Generate schema-1 diagrams with V2 pencil/display guards and safe reuse upgrades."""
     spec = sketch.validate_spec(spec_value)
     unit_id, base = _unit_base(course, unit_value)
     key = derived_key(spec["id"])
@@ -280,6 +408,7 @@ def generate_polished_diagram(course: Path, unit_value: str, spec_value: Any) ->
                 "spec_sha256": spec_sha,
                 "diagram_kind": spec["kind"],
                 "pencil_profile": "scale-aware-v2",
+                "layout_profile": LAYOUT_PROFILE,
             }
             issues = registry_issues(course, data)
             if issues:
