@@ -125,6 +125,14 @@ def _rough_polyline_polished(
     )
 
 
+def _add_non_scaling_stroke(match: re.Match[str]) -> str:
+    """Add vector-effect without corrupting normal or self-closing path tags."""
+    tag = match.group(0)
+    closing = "/>" if tag.endswith("/>") else ">"
+    body = tag[: -len(closing)].rstrip()
+    return f'{body} vector-effect="non-scaling-stroke"{closing}'
+
+
 def _postprocess_svg(svg: bytes) -> bytes:
     """Keep text/strokes legible after a wide SVG is scaled into the notebook."""
     logical = _ACTIVE_PROFILE.logical_per_css_px
@@ -143,10 +151,12 @@ def _postprocess_svg(svg: bytes) -> bytes:
 
     # SVG <img> scaling used to make the two pencil traces look ruler-clean.
     # Non-scaling strokes preserve graphite weight while scale-aware geometry
-    # above preserves visible wobble.
+    # above preserves visible wobble. Match the complete opening tag and let the
+    # replacement preserve '/>' explicitly; otherwise the slash becomes part of
+    # the attribute body and creates invalid XML.
     text = re.sub(
-        r'<path(?![^>]*vector-effect=)([^>]*\bstroke="[^"]+"[^>]*)>',
-        r'<path\1 vector-effect="non-scaling-stroke">',
+        r'<path\b(?![^>]*\bvector-effect=)(?=[^>]*\bstroke="[^"]+")[^>]*?/?>',
+        _add_non_scaling_stroke,
         text,
     )
     text = text.replace(
@@ -155,6 +165,10 @@ def _postprocess_svg(svg: bytes) -> bytes:
         1,
     )
     polished = text.encode("utf-8")
+    try:
+        ET.fromstring(polished)
+    except ET.ParseError as exc:
+        raise sketch.SketchSpecError(f"polished SVG is invalid XML: {exc}") from exc
     audit = sketch.audit_svg_style(polished)
     if not audit["ok"]:
         raise sketch.SketchSpecError(
