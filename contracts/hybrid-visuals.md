@@ -8,9 +8,11 @@ Carpeta chooses the execution backend from semantic intent; the study model does
 
 - `diagram` = exact structure that must remain academically auditable: flows, cycles, timelines, hierarchies, state changes, architectures, buses, relationships, algorithms and other topology/order-bearing content.
 - `illustration` = optional recognition support for a physical or visually recognizable subject: CPU package, RAM module, disk, keyboard, monitor, printer, generic device or similar object.
-- `source` = preserve an original source figure when its precise pixels/layout carry evidence that reconstruction could lose.
+- Source figures are evidence/provenance only in `/resumen`. Their raw pixels are never a publishable summary visual.
 
-Generated illustration pixels are never authoritative academic evidence. A concept that is `visual_required` must use a deterministic diagram or preserved source, never a generated illustration.
+Every selected summary visual uses `visual_treatment: "reinterpret"` and must materialize as an `origin: derived` asset. `preserve` and `preserve+derived_sketch` are not valid selected treatments for this pipeline.
+
+Generated illustration pixels are never authoritative academic evidence. A concept that is `visual_required` must use a deterministic diagram. If exact source pixels would be required to remain truthful and the meaning cannot be reconstructed safely, select `visual_not_needed` and teach that meaning in prose instead of pasting the source image.
 
 ## Plan row
 
@@ -20,7 +22,7 @@ Every major concept still declares one of:
 - `visual_helpful`
 - `visual_not_needed`
 
-Every selected visual declares `visual_treatment`, `reason` and provenance.
+Every selected visual declares `visual_treatment: "reinterpret"`, `reason` and provenance. A source figure may appear only as a `figure:<id>` reference inside `based_on`; `source_figure_id` is not allowed for selected summary visuals.
 
 ### Deterministic diagram
 
@@ -40,6 +42,21 @@ Use `visual_medium: "diagram"` and the existing compact schema-1 sketch spec und
 ```
 
 The existing `scripts/visual_plan.py` / deterministic SVG backend remains the diagram implementation. The model supplies compact semantic graph structure, not explicit coordinates or scene-graph geometry.
+
+When a source figure informs the reconstruction, retain provenance without publishing the source pixels:
+
+```json
+{
+  "concept_id": "architecture",
+  "need": "visual_required",
+  "visual_treatment": "reinterpret",
+  "visual_medium": "diagram",
+  "reason": "The architecture can be reconstructed without losing the relationships being taught.",
+  "derived_figure_id": "architecture-overview",
+  "based_on": ["concept:architecture", "figure:u1-source-architecture"],
+  "sketch_spec": "02-sketches/architecture-overview.json"
+}
+```
 
 ### Generated illustration
 
@@ -84,7 +101,7 @@ An illustration must not be asked to encode or teach exact:
 - component relationships whose correctness matters;
 - implementation internals unsupported by canonical knowledge.
 
-If any of those are pedagogically necessary, use `diagram` or `source`.
+If any of those are pedagogically necessary, use `diagram`. If a truthful diagram cannot preserve the required meaning without depending on exact source pixels, use `visual_not_needed` for the visual and preserve the supported meaning in prose.
 
 ## Runtime boundary
 
@@ -99,4 +116,4 @@ If any of those are pedagogically necessary, use `diagram` or `source`.
 
 `scripts/visual_plan_hybrid.py` materializes all selected rows and writes `02-visual-build.json`.
 
-Generated illustrations are cropped, white-keyed to transparency and registered as SVG notebook overlays. The page, ruled paper, typography, captions, tables and code remain real Carpeta HTML/CSS; generated pixels never become a screenshot of the page.
+Every materialized summary figure is derived: deterministic diagrams are notebook-style SVGs and generated illustrations are cropped, white-keyed to transparency and registered as SVG notebook overlays. The page, ruled paper, typography, captions, tables and code remain real Carpeta HTML/CSS; generated pixels never become a screenshot of the page. Any source-origin figure referenced by the final summary is an integrity failure.
