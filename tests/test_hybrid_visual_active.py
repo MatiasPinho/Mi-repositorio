@@ -17,6 +17,7 @@ class HybridPipelineContractTests(unittest.TestCase):
         pipeline = (ROOT / "pipelines" / "resumen.md").read_text(encoding="utf-8")
         figures = (ROOT / "rules" / "visual" / "figures.md").read_text(encoding="utf-8")
         renderer = (ROOT / "scripts" / "render_study.py").read_text(encoding="utf-8")
+        contract = (ROOT / "contracts" / "hybrid-visuals.md").read_text(encoding="utf-8")
 
         self.assertIn("scripts/visual_plan_hybrid.py", pipeline)
         self.assertIn("scripts/visual_plan.py", pipeline)
@@ -26,6 +27,8 @@ class HybridPipelineContractTests(unittest.TestCase):
         self.assertIn("not the default or required path for new summary visuals", figures)
         self.assertIn("physical_recognition_review", pipeline)
         self.assertIn("same PLAN pass", pipeline)
+        self.assertIn("preserve and preserve+derived_sketch are invalid in `/resumen`", pipeline)
+        self.assertIn("raw pixels are never a publishable summary visual", contract)
         self.assertIn("handdrawn-structures.css", renderer)
 
     def test_hybrid_plan_requires_completed_physical_recognition_review(self):
@@ -56,6 +59,28 @@ class HybridPipelineContractTests(unittest.TestCase):
                  mock.patch.object(visual_plan_hybrid, "load_registry", return_value={"figures": {}}):
                 with self.assertRaisesRegex(visual_plan_hybrid.VisualPlanError, "must match a selected visual_medium=illustration row"):
                     visual_plan_hybrid.inspect_plan(Path(td), "unidad-1", plan)
+
+    def test_summary_rejects_preserved_source_visual_treatments(self):
+        for treatment in ("preserve", "preserve+derived_sketch"):
+            with self.subTest(treatment=treatment), tempfile.TemporaryDirectory() as td:
+                plan = Path(td) / "02-plan.json"
+                plan.write_text(json.dumps({
+                    "physical_recognition_review": {"complete": True, "candidates": []},
+                    "visuals": [{
+                        "concept_id": "source-sensitive",
+                        "need": "visual_required",
+                        "visual_treatment": treatment,
+                        "reason": "legacy source request",
+                        "source_figure_id": "source-1",
+                    }],
+                }), encoding="utf-8")
+                with mock.patch.object(visual_plan_hybrid, "resolve_unit", return_value={"unit_id": "unidad-1"}), \
+                     mock.patch.object(visual_plan_hybrid, "load_registry", return_value={"figures": {}}):
+                    with self.assertRaisesRegex(
+                        visual_plan_hybrid.VisualPlanError,
+                        "preserve and preserve\+derived_sketch are not publishable summary visuals",
+                    ):
+                        visual_plan_hybrid.inspect_plan(Path(td), "unidad-1", plan)
 
     def test_generated_pixels_cannot_be_required_academic_evidence(self):
         with tempfile.TemporaryDirectory() as td:
@@ -101,6 +126,39 @@ class HybridPipelineContractTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(illustration_figure.IllustrationError, "unknown illustration fields"):
             illustration_figure.validate_spec(spec)
+
+    def test_hybrid_integrity_rejects_any_source_origin_figure_in_summary(self):
+        rows = [{
+            "concept_id": "flow",
+            "visual_treatment": "reinterpret",
+            "visual_medium": "diagram",
+            "derived_figure_id": "derived:flow",
+            "based_on": ["concept:flow", "figure:source-1"],
+        }]
+        registry = {
+            "figures": {
+                "derived:flow": {
+                    "id": "derived:flow",
+                    "origin": "derived",
+                    "visual_treatment": "reinterpret",
+                    "generation": {"method": "deterministic-svg"},
+                },
+                "source-1": {
+                    "id": "source-1",
+                    "origin": "source",
+                    "asset": "assets/figures/source-1.png",
+                },
+            }
+        }
+        with mock.patch.object(visual_plan_hybrid, "inspect_plan", return_value=rows), \
+             mock.patch.object(visual_plan_hybrid, "load_registry", return_value=registry):
+            issues, count = visual_plan_hybrid.artifact_usage_issues(
+                Path("."), "unidad-1", Path("02-plan.json"), {"derived:flow", "source-1"}
+            )
+
+        self.assertEqual(count, 1)
+        self.assertIn("summary-source-figure-used:source-1", issues)
+        self.assertIn("planned-reinterpret-uses-source-asset:flow:source-1", issues)
 
     def test_hybrid_report_does_not_enter_legacy_v2_finish_chain(self):
         report = {"version": 1, "visual_system": "hybrid-v1", "entries": []}
