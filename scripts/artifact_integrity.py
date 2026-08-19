@@ -16,7 +16,8 @@ from scripts.figure_assets import load_registry, registry_issues  # noqa: E402
 from scripts.course_layout import has_unit_layout, unit_root  # noqa: E402
 from scripts.render_study import validate_caption_comments, validate_images  # noqa: E402
 from scripts.unit_identity import record_unit_id, resolve_unit  # noqa: E402
-from scripts.visual_plan_hybrid import artifact_usage_issues  # noqa: E402
+from scripts.visual_plan import artifact_usage_issues as legacy_artifact_usage_issues  # noqa: E402
+from scripts.visual_plan_hybrid import artifact_usage_issues as hybrid_artifact_usage_issues  # noqa: E402
 
 _AUTO_PLAN = object()
 
@@ -52,6 +53,29 @@ def html_image_issues(html_path: Path, text: str) -> list[str]:
     if "<!-- caption:" in text.lower():
         issues.append("caption-comment-leaked-to-html")
     return issues
+
+
+def _plan_artifact_usage_issues(
+    course: Path,
+    scope: str,
+    plan_path: Path,
+    used_registered: set[str],
+) -> tuple[list[str], int]:
+    """Use the hybrid contract for hybrid plans while keeping old plan artifacts auditable.
+
+    New /resumen runs are forced through ``visual_plan_hybrid.materialize_plan`` before
+    draft, so a current run cannot bypass ``physical_recognition_review``. Integrity
+    may also be asked to audit older deterministic plans created before that field
+    existed; those should still be checked for figure-treatment misuse rather than
+    failing only because their historical schema predates the hybrid contract.
+    """
+    try:
+        raw = json.loads(plan_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return hybrid_artifact_usage_issues(course, scope, plan_path, used_registered)
+    if isinstance(raw, dict) and "physical_recognition_review" in raw:
+        return hybrid_artifact_usage_issues(course, scope, plan_path, used_registered)
+    return legacy_artifact_usage_issues(course, scope, plan_path, used_registered)
 
 
 def check(
@@ -138,7 +162,7 @@ def check(
         if not resolved_plan.is_file():
             issues.append(f"visual-plan-missing:{resolved_plan}")
         else:
-            plan_issues, visual_plan_count = artifact_usage_issues(
+            plan_issues, visual_plan_count = _plan_artifact_usage_issues(
                 course, scope, resolved_plan, used_registered
             )
             issues.extend(plan_issues)
