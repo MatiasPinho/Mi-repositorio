@@ -8,7 +8,13 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import runpy
+import sys
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from study import resolve_course
 from scripts.figure_assets import derived_key, load_registry
@@ -400,4 +406,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Execute through the runtime wrapper so direct CLI use gets the same
+    # scale-aware pencil/layout/crop behavior as the pipeline, without adding
+    # another model pass or changing the semantic plan contract.
+    runpy.run_module("scripts.visual_plan_hybrid_runtime", run_name="__main__")
