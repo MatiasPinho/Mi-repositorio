@@ -288,6 +288,10 @@
         leaf.classList.toggle('is-active', d === 0);
         leaf.classList.toggle('is-neighbor', distance === 1);
         leaf.classList.toggle('is-hidden', distance > 1);
+        // Keep distant sheets out of sight via opacity while leaving their text
+        // in the rendered DOM. aria-hidden still excludes them from assistive
+        // navigation until the sheet becomes active or adjacent.
+        leaf.style.visibility = distance > 1 ? 'visible' : '';
         leaf.style.zIndex = String(20 - Math.min(distance, 19));
         leaf.tabIndex = distance === 1 ? 0 : -1;
         leaf.setAttribute('aria-hidden', distance > 1 ? 'true' : 'false');
@@ -349,7 +353,7 @@
       const numberBack = document.createElement('div');
       numberBack.className = 'notebook-page-number';
       numberBack.textContent = `— ${index * 2 + 2} —`;
-      backFace.appendChild(back);
+      backFace.appendChild(numberBack);
 
       const setRotation = (value, dragging = false) => {
         rotations[index] = value;
