@@ -32,9 +32,10 @@ Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps be
 ## ACTIVE VISUAL ARCHITECTURE
 The current summary path is hybrid. The visual and notebook improvements already present in this branch remain active; only the expensive free-composition V2 scene-authoring/review path is removed from the normal critical path.
 
-- **Exact academic structure** → `visual_medium: diagram` → compact schema-1 structured spec → deterministic SVG through the existing `scripts/visual_plan.py` backend, dispatched by `scripts/visual_plan_hybrid.py`.
+- **Exact academic structure** → `visual_medium: diagram` → compact schema-1 structured spec → deterministic notebook-style SVG through the existing `scripts/visual_plan.py` backend, dispatched by `scripts/visual_plan_hybrid.py`.
 - **Physical/recognizable support** → `visual_medium: illustration` → compact semantic illustration object → one bounded generated-image provider call → deterministic crop/background removal → transparent notebook overlay.
-- **Precision-sensitive source evidence** → `preserve` unchanged.
+- **Source figures** → provenance/evidence only. Raw source pixels are never published by `/resumen`; reconstruct them as a notebook-style deterministic diagram when truth can be preserved, otherwise use `visual_not_needed` and keep the explanation in text.
+- Every selected published visual uses `visual_treatment: reinterpret` and is registered as `origin: derived`.
 - Generated illustrations are always optional `visual_helpful`; they never carry required academic truth.
 - The old schema-2 free-composition engine stays in the repository for compatibility/testing but is not required for new summary visuals.
 
@@ -94,9 +95,9 @@ A study agent may repair run-local candidate data, but it must never repair the 
    Select the medium by teaching job:
    - exact flow/cycle/timeline/hierarchy/relationship/architecture/state/order/topology → `visual_medium: diagram`;
    - optional physical recognition of a CPU, RAM, disk, keyboard, monitor, printer or similar subject → `visual_medium: illustration`;
-   - source pixels whose precision matters → `preserve`.
+   - source material whose exact pixels cannot be safely reconstructed → `visual_not_needed` for the summary visual while preserving the supported meaning in prose.
 
-   `source-first` selects evidence, not final pixels. `preserve` / `preserve+derived_sketch` require a concrete `fidelity_reason`.
+   `source-first` selects evidence and provenance, never final pixels. A source figure may be cited only as `figure:<id>` inside `based_on`. Selected summary visuals must use `visual_treatment: reinterpret`; `preserve` and `preserve+derived_sketch` are invalid in `/resumen`.
 
    For `diagram`, create a compact schema-1 spec under `<run-dir>/02-sketches/<id>.json`. The model supplies semantic nodes/edges/groups only; do not write raw SVG or explicit scene coordinates. Rule: never create normal diagrams with an image-generation model.
 
@@ -109,7 +110,7 @@ A study agent may repair run-local candidate data, but it must never repair the 
 5. **VISUAL BUILD** → run:
    `python scripts/venv_exec.py scripts/visual_plan_hybrid.py --course <course> --unit "<scope>" --plan <run-dir>/02-plan.json --write <run-dir>/02-visual-build.json`.
 
-   The hybrid materializer delegates deterministic diagrams to the existing `scripts/visual_plan.py` / `study.py figures generate-sketch` implementation and generated illustrations to the bounded illustration backend.
+   The hybrid materializer delegates deterministic diagrams to the existing `scripts/visual_plan.py` / `study.py figures generate-sketch` implementation and generated illustrations to the bounded illustration backend. It never materializes source-origin pixels into the summary output.
 
    For a new illustration there is exactly one provider request. Exact registered spec/asset reuse makes zero provider calls. There is no independent per-illustration vision-review/regeneration loop.
 
@@ -117,7 +118,7 @@ A study agent may repair run-local candidate data, but it must never repair the 
 
    Stop on a genuine deterministic diagram, registry, collision or engine failure. Continue only with a final build report whose `ok` is true.
 
-6. **DRAFT** → write `03-draft.md` from plan, canonical knowledge, fidelity constraints and the successful `02-visual-build.json`. The draft must stand alone for a student who has not read the sources and remain fully understandable if an optional illustration was omitted. Use the exact registered `asset` returned by the build and place each figure beside its explanation. Generated illustrations supply recognition only and are never cited as exact evidence.
+6. **DRAFT** → write `03-draft.md` from plan, canonical knowledge, fidelity constraints and the successful `02-visual-build.json`. The draft must stand alone for a student who has not read the sources and remain fully understandable if an optional illustration was omitted. Use the exact registered derived `asset` returned by the build and place each figure beside its explanation. Generated illustrations supply recognition only and are never cited as exact evidence.
 
 7. **HUMANIZE + FIDELITY GUARD** → execute the shared Humanizer stage to `04-humanized.md`, then run:
    `python scripts/venv_exec.py scripts/fidelity_guard.py --markdown <run-dir>/04-humanized.md --constraints <run-dir>/02-fidelity-constraints.json --write <run-dir>/04-fidelity-guard.json`.
@@ -135,7 +136,7 @@ A study agent may repair run-local candidate data, but it must never repair the 
 
 10. **INTEGRITY GATE** → run:
    `python scripts/venv_exec.py scripts/artifact_integrity.py --course <course> --markdown <accepted-md> --html <run-dir>/09-rendered.html --scope "<scope>" --type summary --plan <run-dir>/02-plan.json --write <run-dir>/10-integrity.json`.
-   Integrity binds final Markdown figure usage to the hybrid plan/registry: deterministic diagrams must use their registered deterministic SVG; illustrations must use the registered generated-illustration overlay; neither may silently substitute a source asset; `preserve+derived_sketch` must use both members.
+   Integrity binds final Markdown figure usage to the hybrid plan/registry: deterministic diagrams must use their registered deterministic SVG; illustrations must use the registered generated-illustration overlay; every published figure must be `origin: derived`; any source-origin figure used by the summary is a hard integrity failure.
 
 11. **BROWSER VISUAL GATE** → run `python scripts/venv_exec.py scripts/visual_audit.py <run-dir>/09-rendered.html --out <run-dir>/visual-audit` and require `audit.json -> ok: true`. Inspect desktop/mobile integration. Reject obvious clipping, broken images, misleading generated text/labels, blank illustrations or pasted opaque white cards. If an optional generated illustration is visibly invalid, omit it instead of starting an open-ended generation/review loop.
 
