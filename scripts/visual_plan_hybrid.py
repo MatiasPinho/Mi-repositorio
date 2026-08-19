@@ -36,12 +36,59 @@ from scripts.visual_plan import (
 )
 
 MEDIA = {"diagram", "illustration"}
+RECOGNITION_DECISIONS = {"illustration", "visual_not_needed"}
+
+
+def _physical_recognition_review(plan: dict[str, Any]) -> list[dict[str, str]]:
+    """Require one compact, explicit recognition check inside the existing PLAN pass."""
+    raw = plan.get("physical_recognition_review")
+    if not isinstance(raw, dict):
+        raise VisualPlanError(
+            "physical_recognition_review is required; complete it inside the existing PLAN pass"
+        )
+    if raw.get("complete") is not True:
+        raise VisualPlanError("physical_recognition_review.complete must be true")
+    candidates = raw.get("candidates")
+    if not isinstance(candidates, list):
+        raise VisualPlanError("physical_recognition_review.candidates must be an array")
+
+    normalized: list[dict[str, str]] = []
+    for index, candidate in enumerate(candidates):
+        location = f"physical_recognition_review.candidates[{index}]"
+        if not isinstance(candidate, dict):
+            raise VisualPlanError(f"{location} must be an object")
+        subject = _text(candidate.get("subject"))
+        decision = _text(candidate.get("decision"))
+        reason = _text(candidate.get("reason"))
+        derived_id = _text(candidate.get("derived_figure_id"))
+        if not subject:
+            raise VisualPlanError(f"{location}.subject must be non-empty")
+        if decision not in RECOGNITION_DECISIONS:
+            raise VisualPlanError(
+                f"{location}.decision must be one of {sorted(RECOGNITION_DECISIONS)}"
+            )
+        if not reason:
+            raise VisualPlanError(f"{location}.reason must explain the decision")
+        if decision == "illustration" and not derived_id:
+            raise VisualPlanError(f"{location}.derived_figure_id is required for illustration")
+        if decision == "visual_not_needed" and derived_id:
+            raise VisualPlanError(
+                f"{location}.derived_figure_id is only valid when decision=illustration"
+            )
+        normalized.append({
+            "subject": subject,
+            "decision": decision,
+            "reason": reason,
+            "derived_figure_id": derived_id,
+        })
+    return normalized
 
 
 def inspect_plan(course: Path, unit_value: str, plan_path: Path) -> list[dict[str, Any]]:
     """Return normalized selected visual entries after hybrid contract validation."""
     plan_path = plan_path.resolve()
     plan = _load_json(plan_path, "visual plan")
+    recognition_review = _physical_recognition_review(plan)
     unit_id = _text(resolve_unit(course, unit_value).get("unit_id"))
     if not unit_id:
         raise VisualPlanError(f"Could not resolve stable unit id from: {unit_value}")
@@ -182,6 +229,26 @@ def inspect_plan(course: Path, unit_value: str, plan_path: Path) -> list[dict[st
             normalized["figure_kind"] = _text(item.get("figure_kind") or (source_item or {}).get("kind"))
 
         selected.append(normalized)
+
+    illustration_ids = {
+        row["derived_figure_id"]
+        for row in selected
+        if row.get("visual_medium") == "illustration" and row.get("derived_figure_id")
+    }
+    for index, candidate in enumerate(recognition_review):
+        if candidate["decision"] != "illustration":
+            continue
+        location = f"physical_recognition_review.candidates[{index}]"
+        try:
+            normalized_id = derived_key(candidate["derived_figure_id"])
+        except (ValueError, SystemExit) as exc:
+            raise VisualPlanError(
+                f"{location}.derived_figure_id is invalid: {candidate['derived_figure_id']}"
+            ) from exc
+        if normalized_id not in illustration_ids:
+            raise VisualPlanError(
+                f"{location}.derived_figure_id must match a selected visual_medium=illustration row"
+            )
     return selected
 
 
