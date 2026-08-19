@@ -66,6 +66,31 @@ A study agent may repair run-local candidate data, but it must never repair the 
 
 3. **PLAN** → write `02-plan.json`, including `depth`. Use canonical knowledge to decide ordering, examples, traps and omissions. For every major concept decide `visual_required`, `visual_helpful` or `visual_not_needed`; for every selected visual record treatment, reason and provenance.
 
+   In this **same PLAN pass**, perform one compact physical-recognition review over the canonical knowledge and source descriptions already loaded. Do not spawn another agent, another model call, another source-reading pass or a separate visual-review loop. Consider recognizable physical subjects such as CPU packages, RAM modules, disks, peripherals, punched cards, magnetic tape or similar objects. A candidate belongs on the illustration path only when recognizing its physical form helps learning and no exact labels, arrows, chronology, quantities or topology need to live inside the generated pixels.
+
+   Record that check in `02-plan.json` as:
+
+   ```json
+   "physical_recognition_review": {
+     "complete": true,
+     "candidates": [
+       {
+         "subject": "punched cards",
+         "decision": "illustration",
+         "reason": "Physical recognition helps a modern student understand the historical medium.",
+         "derived_figure_id": "punched-cards"
+       },
+       {
+         "subject": "magnetic tape",
+         "decision": "visual_not_needed",
+         "reason": "The physical form adds no useful recognition value in this scope."
+       }
+     ]
+   }
+   ```
+
+   Use an empty `candidates` array only when the already-loaded unit material contains no physical/recognizable subject worth considering. Every `decision: "illustration"` must point to a selected `visual_medium: illustration` row with the same `derived_figure_id`; the deterministic hybrid validator enforces this. This review is intentionally tiny and runs inside the existing PLAN reasoning so it does not recreate the expensive V2 workflow.
+
    Select the medium by teaching job:
    - exact flow/cycle/timeline/hierarchy/relationship/architecture/state/order/topology → `visual_medium: diagram`;
    - optional physical recognition of a CPU, RAM, disk, keyboard, monitor, printer or similar subject → `visual_medium: illustration`;
