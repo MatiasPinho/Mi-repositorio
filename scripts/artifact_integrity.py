@@ -55,7 +55,7 @@ def html_image_issues(html_path: Path, text: str) -> list[str]:
     return issues
 
 
-def _plan_artifact_usage_issues(
+def artifact_usage_issues(
     course: Path,
     scope: str,
     plan_path: Path,
@@ -68,6 +68,9 @@ def _plan_artifact_usage_issues(
     may also be asked to audit older deterministic plans created before that field
     existed; those should still be checked for figure-treatment misuse rather than
     failing only because their historical schema predates the hybrid contract.
+
+    Keep this public name for compatibility with existing integrity tests and callers
+    that patch ``artifact_integrity.artifact_usage_issues`` directly.
     """
     try:
         raw = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -162,7 +165,7 @@ def check(
         if not resolved_plan.is_file():
             issues.append(f"visual-plan-missing:{resolved_plan}")
         else:
-            plan_issues, visual_plan_count = _plan_artifact_usage_issues(
+            plan_issues, visual_plan_count = artifact_usage_issues(
                 course, scope, resolved_plan, used_registered
             )
             issues.extend(plan_issues)
