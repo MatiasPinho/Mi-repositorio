@@ -33,6 +33,15 @@ The active path is **Hybrid V1**:
 - generated illustrations are always optional `visual_helpful`;
 - schema-2/V2 free-composition remains compatibility/testing code, not this pipeline's critical path.
 
+Implementation map:
+- `scripts/resumen_visual_build.py` is the guarded materialization entrypoint and delegates the active hybrid plan semantics implemented by `scripts/visual_plan_hybrid.py`;
+- `scripts/visual_plan.py` and `figures generate-sketch` remain schema-1 compatibility primitives, but are not the authoritative guarded entrypoint for this pipeline;
+- `scripts/resumen_guard.py render` owns candidate rendering and internally reaches the shared `scripts/render_study.py` renderer;
+- lifecycle order is **VISUAL BUILD** before **DRAFT**;
+- deterministic diagrams must be produced from schema-1 specs; never create normal diagrams with an image-generation model;
+- `physical_recognition_review` is completed in the same PLAN pass as visual selection;
+- source/preserve visual treatments are invalid in `/resumen`; source figures are evidence/provenance only.
+
 ## AUTHORITATIVE RUNTIME GUARD
 For `/resumen`, `scripts/resumen_guard.py` is authoritative for environment preflight, plan validation/lock, bounded provider fallback, candidate render and review binding. `scripts/sketch_geometry.py` is authoritative for deterministic V1 spacing/collision checks. `scripts/resumen_visual_build.py` is the unit-scoped visual materialization entrypoint. `scripts/resumen_finalize.py` is authoritative for finish/status.
 
