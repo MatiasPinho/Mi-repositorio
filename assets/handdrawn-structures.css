@@ -52,6 +52,21 @@ figcaption,
   font-family: var(--study-font-hand);
 }
 
+/* Notebook sketches must read as graphite drawn directly on the sheet, never
+   as a white card pasted over it. The SVG renderer already emits transparent
+   node fills; multiply is an intentional compatibility fallback for older
+   registered SVGs that may still contain opaque white pixels. */
+figure.study-sketch,
+figure.study-sketch .plate,
+figure.study-sketch img {
+  background: transparent !important;
+}
+
+figure.study-sketch img {
+  mix-blend-mode: multiply;
+  isolation: auto;
+}
+
 .table-scroll {
   position: relative;
   isolation: isolate;
