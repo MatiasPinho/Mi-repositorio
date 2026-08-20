@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Deterministic scale-aware notebook pencil primitives for scene V2."""
+"""Deterministic scale-aware notebook pencil primitives for scene V2.
+
+The primitives are shared by scene V2 and the active schema-1 hybrid runtime.
+Closed shapes deliberately keep visible hand variation at final notebook scale,
+while connector endpoints stay locked to their logical node ports.
+"""
 from __future__ import annotations
 
 import hashlib
 import math
+import re
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -55,13 +61,7 @@ class PencilProfile:
 
 
 def profile(canvas_width: float, target_display_width: float) -> PencilProfile:
-    """Return a perceptual pencil profile at the actual expected display size.
-
-    V1/V2 originally had mathematically rough geometry whose sub-pixel variation
-    disappeared after the SVG was scaled into the notebook.  These values are
-    defined in CSS-pixel terms and converted back to logical scene units so the
-    wobble remains visible on both wide and narrow renders.
-    """
+    """Return a perceptual pencil profile at the expected display size."""
     if canvas_width <= 0 or target_display_width <= 0:
         raise ValueError("canvas/display width must be positive")
     logical = canvas_width / target_display_width
@@ -92,12 +92,7 @@ def jitter(seed: str, *parts, scale: float = 1.0) -> float:
 def _densify(
     points: list[tuple[float, float]], *, max_segment: float, closed: bool
 ) -> list[tuple[float, float]]:
-    """Subdivide long straight geometry before jittering it.
-
-    A single quadratic between perfect rectangle corners still reads as a vector
-    line.  Small deterministic intermediate points make long edges visibly hand
-    drawn while preserving the model's intended composition and bounds.
-    """
+    """Subdivide long straight geometry before jittering it."""
     if len(points) < 2:
         return points
     result = [points[0]]
@@ -109,7 +104,6 @@ def _densify(
         steps = max(1, int(math.ceil(length / max(max_segment, 1.0))))
         for step in range(1, steps + 1):
             if closed and index == pair_count - 1 and step == steps:
-                # The caller closes against the independently jittered first point.
                 continue
             t = step / steps
             result.append((
@@ -117,6 +111,13 @@ def _densify(
                 start[1] + (end[1] - start[1]) * t,
             ))
     return result
+
+
+def _variant_factor(seed: str, key: str) -> float:
+    """Give closed outlines three stable degrees of hand variation."""
+    base_key = re.sub(r":(?:main|ghost)$", "", key)
+    value = hashlib.sha256(f"{seed}|{base_key}|roughness".encode("utf-8")).digest()[0] % 3
+    return (0.96, 1.12, 1.28)[value]
 
 
 def rough_polyline(
@@ -128,29 +129,47 @@ def rough_polyline(
     bend_scale: float,
     closed: bool = False,
 ) -> str:
+    """Render a scale-aware rough line without sacrificing connector ports.
+
+    The old renderer jittered every endpoint.  On connectors that can move the
+    arrowhead just inside a box.  First/last connector points are now exact;
+    intermediate geometry still receives the pencil treatment.  Closed shapes
+    receive one of three deterministic roughness variants so rectangles,
+    diamonds and related forms do not read as ruler-perfect UI controls.
+    """
     pts = list(points)
     if len(pts) < 2:
         raise ValueError("rough polyline needs at least two points")
-    # jitter_scale is 1.65 CSS px in logical units for the normal profile.
-    # ~50 display px per segment keeps a long edge from looking ruler-straight.
-    max_segment = max(jitter_scale * 30.0, 18.0)
+
+    factor = _variant_factor(seed, key) if closed else 1.0
+    effective_jitter = jitter_scale * factor
+    effective_bend = bend_scale * factor
+    max_segment = max(effective_jitter * 30.0, 18.0)
     pts = _densify(pts, max_segment=max_segment, closed=closed)
-    varied = [
-        (
-            x + jitter(seed, key, i, "x", scale=jitter_scale),
-            y + jitter(seed, key, i, "y", scale=jitter_scale),
-        )
-        for i, (x, y) in enumerate(pts)
-    ]
+
+    connector = key.startswith("edge-") and not closed
+    last_index = len(pts) - 1
+    varied: list[tuple[float, float]] = []
+    for index, (x, y) in enumerate(pts):
+        if connector and index in {0, last_index}:
+            varied.append((x, y))
+        else:
+            varied.append((
+                x + jitter(seed, key, index, "x", scale=effective_jitter),
+                y + jitter(seed, key, index, "y", scale=effective_jitter),
+            ))
+
     commands = [f"M {varied[0][0]:.2f} {varied[0][1]:.2f}"]
     targets = varied[1:] + ([varied[0]] if closed else [])
     start = varied[0]
-    for i, target in enumerate(targets):
+    for index, target in enumerate(targets):
         dx = target[0] - start[0]
         dy = target[1] - start[1]
         length = max(1.0, math.hypot(dx, dy))
-        bend = jitter(seed, key, i, "bend", scale=bend_scale)
-        along = jitter(seed, key, i, "along", scale=jitter_scale * 0.45)
+        endpoint_segment = connector and index in {0, len(targets) - 1}
+        bend_budget = effective_bend * (0.35 if endpoint_segment else 1.0)
+        bend = jitter(seed, key, index, "bend", scale=bend_budget)
+        along = jitter(seed, key, index, "along", scale=effective_jitter * 0.45)
         cx = (start[0] + target[0]) / 2 + (-dy / length) * bend + (dx / length) * along
         cy = (start[1] + target[1]) / 2 + (dx / length) * bend + (dy / length) * along
         commands.append(f"Q {cx:.2f} {cy:.2f} {target[0]:.2f} {target[1]:.2f}")
@@ -247,3 +266,13 @@ def rough_commands(
             out.append(f"C {cx1:.2f} {cy1:.2f} {cx2:.2f} {cy2:.2f} {x:.2f} {y:.2f}")
             current = (x, y)
     return " ".join(out)
+
+
+# The active Hybrid V1 runtime imports this module after ``sketch_figure`` and
+# before capturing its schema-1 renderer hooks.  Installing here restores the
+# notebook presentation layer without changing semantic plans or adding a new
+# runtime stage.  V2 renderers can import these primitives safely; patching
+# sketch_figure is irrelevant to them unless they explicitly use schema-1 too.
+from scripts.sketch_notebook_polish import install as _install_schema1_notebook_polish
+
+_install_schema1_notebook_polish()
