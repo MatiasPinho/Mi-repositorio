@@ -58,13 +58,47 @@ figcaption,
    registered SVGs that may still contain opaque white pixels. */
 figure.study-sketch,
 figure.study-sketch .plate,
-figure.study-sketch img {
+figure.study-sketch img,
+figure.study-sketch svg {
   background: transparent !important;
 }
 
 figure.study-sketch img {
   mix-blend-mode: multiply;
   isolation: auto;
+}
+
+/* Final study documents inline deterministic SVGs so their text participates
+   in the same typography context as the notebook instead of falling back to a
+   browser-default font inside an external <img>. The semantic diagram kind is
+   still present in SVG metadata, but is intentionally not student-facing. */
+figure.study-sketch svg.notebook-sketch-svg {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  margin-inline: 0;
+  overflow: visible;
+  mix-blend-mode: multiply;
+}
+
+figure.study-sketch svg.notebook-sketch-svg .sketch-kind {
+  display: none !important;
+}
+
+figure.study-sketch svg.notebook-sketch-svg .sketch-title {
+  font-family: var(--study-font-display) !important;
+  font-weight: 400 !important;
+}
+
+figure.study-sketch svg.notebook-sketch-svg :is(
+  .sketch-label,
+  .sketch-detail,
+  .sketch-edge-label,
+  .sketch-group-label
+) {
+  font-family: var(--study-font-body) !important;
 }
 
 /* Tables are ruled directly onto the notebook paper. Their cells and header
