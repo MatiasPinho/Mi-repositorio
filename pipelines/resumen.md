@@ -34,7 +34,7 @@ The active path is **Hybrid V1**:
 - schema-2/V2 free-composition remains compatibility/testing code, not this pipeline's critical path.
 
 ## AUTHORITATIVE RUNTIME GUARD
-For `/resumen`, `scripts/resumen_guard.py` is authoritative for environment preflight, plan validation/lock, bounded provider fallback, candidate render and review binding. `scripts/resumen_visual_build.py` is the unit-scoped visual materialization entrypoint. `scripts/resumen_finalize.py` is authoritative for finish/status.
+For `/resumen`, `scripts/resumen_guard.py` is authoritative for environment preflight, plan validation/lock, bounded provider fallback, candidate render and review binding. `scripts/sketch_geometry.py` is authoritative for deterministic V1 spacing/collision checks. `scripts/resumen_visual_build.py` is the unit-scoped visual materialization entrypoint. `scripts/resumen_finalize.py` is authoritative for finish/status.
 
 Correctness must not depend on agent obedience.
 
@@ -71,7 +71,7 @@ Missing Cloudflare credentials are a visible, non-blocking warning: text and det
 
 The run fingerprints canonical inputs (`source_sha256`/canonical hashes) and the engine. Publication later records `published_sha256` so source and published identities remain auditable.
 
-### 3. PLAN + VALIDATE + LOCK
+### 3. PLAN + GEOMETRY VALIDATE + LOCK
 Write `<run-dir>/02-plan.json` once.
 
 Requirements:
@@ -84,7 +84,13 @@ Requirements:
 - diagrams use schema-1 specs under `<run-dir>/02-sketches/`;
 - physical-recognition candidates are recorded in one compact `physical_recognition_review` during this PLAN pass.
 
-Then run exactly once:
+Before locking, run the deterministic geometry gate:
+
+`python scripts/venv_exec.py scripts/sketch_geometry.py validate-plan --run <run-dir>`
+
+It applies renderer-owned minimum `node_gap`/`rank_gap`, places labeled edges into deterministic safe lanes, checks label-vs-label and label-vs-node clearance, rejects over-wide labels and rejects any diagram for which no collision-free placement exists. Fix only the run-local plan/spec and rerun this geometry check until it passes; no SVG has been registered yet.
+
+Then lock exactly once:
 
 `python scripts/venv_exec.py scripts/resumen_guard.py validate-plan --run <run-dir>`
 
@@ -98,13 +104,13 @@ This validates canonical coverage + hybrid schemas and writes `02-plan-lock.json
 
 `python scripts/venv_exec.py scripts/resumen_visual_build.py --run <run-dir>`
 
-This entrypoint scopes registration to the active unit only, preserves figure-registry root metadata and allows only planned derived additions. It must not rewrite figure registries belonging to other units.
+This entrypoint scopes registration to the active unit only, preserves figure-registry root metadata, re-applies the exact deterministic geometry constraints used by preflight, and allows only planned derived additions. It must not rewrite figure registries belonging to other units.
 
 If and only if the build reports an unavailable optional illustration, the sole allowed post-lock mutation is:
 
 `python scripts/venv_exec.py scripts/resumen_guard.py fallback --run <run-dir> --concept <concept-id>`
 
-Then rerun the unit-scoped guarded build once. The fallback command itself edits the narrow allowed fields and updates the lock. Do not edit the plan manually. Stop on deterministic diagram, registry, collision or engine failure.
+Then rerun the unit-scoped guarded build once. The fallback command itself edits the narrow allowed fields and updates the lock. Do not edit the plan manually. Stop on deterministic diagram, geometry, registry, collision or engine failure.
 
 ### 6. DRAFT
 Write `03-draft.md` only after `02-visual-build.json -> ok: true`. Use canonical knowledge, fidelity constraints and the exact derived assets returned by the build. Generated illustrations are recognition support, never exact evidence.
