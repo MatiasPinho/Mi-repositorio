@@ -50,12 +50,14 @@ During an active run, never:
 A published candidate may exist while the run is failed. Only guarded `effective_status: finished` means success.
 
 ## DEPTH + RUNTIME
-Default `depth` is `standard`; explicit detailed/profound wording selects `detailed`. Record it in `02-plan.json`. A standard run should normally take about 10–20 minutes; 30 minutes is a warning and 60+ minutes is a product/runtime failure. Never weaken pedagogy to save runtime.
+`resumen` is the single public long-form study-document action. Default depth is `standard`; explicit `detallado`, `profundo`, former “guía”, or equivalent wording selects `detailed`. Record `depth: "standard"|"detailed"` in `02-plan.json`. The published artifact remains the unit's canonical `resumen`; detailed mode changes depth, not the public artifact type.
+
+A standard run should normally take about 10–20 minutes; 30 minutes is a warning and 60+ minutes is a product/runtime failure. Never weaken pedagogy to save runtime.
 
 ## PIPELINE
 
 ### 1. SCOPE + PREREQUISITE + PREFLIGHT
-Resolve exactly one stable `unit_id`. Stop with **NEEDS_INGESTION** if canonical concepts are missing.
+Summary scope is unit-only: resolve exactly one stable `unit_id`. Stop with **NEEDS_INGESTION** if canonical concepts are missing. Canonical concepts plus observed topics are the coverage boundary.
 
 Run before starting:
 
@@ -66,6 +68,8 @@ Missing Cloudflare credentials are a visible, non-blocking warning: text and det
 ### 2. START
 
 `python scripts/venv_exec.py scripts/pipeline_run.py start --course <course> --pipeline resumen --scope "<scope>"`
+
+The run fingerprints canonical inputs (`source_sha256`/canonical hashes) and the engine. Publication later records `published_sha256` so source and published identities remain auditable.
 
 ### 3. PLAN + VALIDATE + LOCK
 Write `<run-dir>/02-plan.json` once.
