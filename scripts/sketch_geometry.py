@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
-"""Deterministic geometry and render policy for Hybrid V1 sketch diagrams.
+"""Deterministic geometry gate for Hybrid V1 notebook diagrams.
 
-The semantic sketch spec stays compact and coordinate-free. This module owns the
-cheap guarantees that should never require a vision model: notebook-scale
-legibility, renderer-owned spacing, safe connector ports, collision-free edge
-labels, deterministic pencil roughness and the notebook typography used inside
-standalone SVG images.
+This module is the cheap, local visual contract used before and during summary
+visual materialization.  It deliberately keeps semantic specs coordinate-free
+while making the renderer own the things a model should never have to guess:
+
+- final notebook legibility;
+- fit-first node sizing;
+- compact orientation for simple flows;
+- safe connector ports and routing clearance;
+- collision-free edge-label lanes;
+- bounded aspect ratio / canvas width;
+- notebook pencil shapes and typography.
+
+No model or vision call is required.
 """
 from __future__ import annotations
 
@@ -24,21 +32,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts import pipeline_run, sketch_figure, visual_plan_hybrid  # noqa: E402
+from scripts import pipeline_run, sketch_figure, sketch_notebook_polish, visual_plan_hybrid  # noqa: E402
 from scripts.course_layout import has_unit_layout, unit_root  # noqa: E402
+from scripts.scene_pencil import rough_polyline as pencil_rough_polyline  # noqa: E402
 from scripts.unit_identity import resolve_unit  # noqa: E402
 
-# Geometry is calibrated against the notebook's ~44rem wide content lane. A
-# viewBox wider than this budget gets scaled down by <img max-width:100%>, which
-# was the main reason labels became tiny even though the SVG font sizes looked
-# healthy in isolation.
 NOTEBOOK_RENDER_WIDTH = 704.0
 MAX_VIEWBOX_WIDTH = 960.0
 MAX_TALL_ASPECT_RATIO = 2.15
 
-# Direction-aware gaps: horizontal flows need substantially less inter-rank
-# whitespace than vertical diagrams. The old global 118px rank minimum made a
-# 4-5 step flow much wider than the notebook and therefore shrank its text.
 MIN_NODE_GAP = 44
 MIN_RANK_GAP = 84
 VERTICAL_RANK_GAP = 104
@@ -63,7 +65,13 @@ EDGE_LABEL_NODE_GAP = 14.0
 CANVAS_MARGIN = 14.0
 CONNECTOR_TOLERANCE = 1.75
 CONNECTOR_NODE_CLEARANCE = 3.0
-LABEL_LANES = (0.0, -28.0, 28.0, -56.0, 56.0, -84.0, 84.0, -112.0, 112.0)
+
+# Prefer moving labels along the free inter-rank corridor before moving them
+# sideways. Crossed comparison edges sometimes need a small second dimension,
+# so x lanes are explicit rather than allowing arbitrary positions.
+LABEL_Y_LANES = (0.0, -28.0, 28.0, -56.0, 56.0, -84.0, 84.0, -112.0, 112.0)
+LABEL_X_LANES = (0.0, -48.0, 48.0, -96.0, 96.0, -144.0, 144.0)
+LABEL_LANES = LABEL_Y_LANES  # compatibility for older callers/tests
 
 SIZE_CLASSES = (
     ("S", 700.0),
@@ -72,10 +80,10 @@ SIZE_CLASSES = (
     ("XL", MAX_VIEWBOX_WIDTH),
 )
 
-NEUCHA_WOFF2 = "https://fonts.gstatic.com/s/neucha/v18/q5uGsou0JOdh94bfvQlt.woff2"
-ARCHITECTS_TTF = "https://fonts.gstatic.com/s/architectsdaughter/v19/KtkxAKiDZI_td1Lkx62xHZHDtgO_Y-bvfY5q4szgE-Q.ttf"
 TYPOGRAPHY_POLICY = "carpeta-notebook-v1"
-PENCIL_POLICY = "deterministic-pencil-v2"
+PENCIL_POLICY = "deterministic-pencil-v3"
+GEOMETRY_POLICY = "fit-first-geometry-v2"
+AUTO_FLOW_POLICY = "linear-flow-auto-horizontal-v1"
 
 
 class GeometryError(ValueError):
@@ -112,11 +120,60 @@ class Rect:
         )
 
 
+def _is_linear_flow(spec: dict[str, Any]) -> bool:
+    nodes = spec.get("nodes", [])
+    edges = spec.get("edges", [])
+    if spec.get("kind") != "flow" or not (2 <= len(nodes) <= 4):
+        return False
+    if len(edges) != len(nodes) - 1:
+        return False
+    ids = {node["id"] for node in nodes}
+    indegree = {node_id: 0 for node_id in ids}
+    outdegree = {node_id: 0 for node_id in ids}
+    for edge in edges:
+        source = edge["from"]
+        target = edge["to"]
+        if source not in ids or target not in ids or source == target:
+            return False
+        outdegree[source] += 1
+        indegree[target] += 1
+    return (
+        sum(value == 0 for value in indegree.values()) == 1
+        and sum(value == 0 for value in outdegree.values()) == 1
+        and all(value <= 1 for value in indegree.values())
+        and all(value <= 1 for value in outdegree.values())
+    )
+
+
+def _projected_horizontal_width(spec: dict[str, Any]) -> float:
+    widths = [sketch_notebook_polish.node_dimensions(node)[0] for node in spec["nodes"]]
+    gap_count = max(0, len(widths) - 1)
+    return sum(widths) + gap_count * HORIZONTAL_RANK_GAP_MAX + 120.0
+
+
+def _should_auto_horizontal(spec: dict[str, Any]) -> bool:
+    if spec["layout"]["direction"] != "top-to-bottom":
+        return False
+    if not _is_linear_flow(spec):
+        return False
+    return _projected_horizontal_width(spec) <= MAX_VIEWBOX_WIDTH
+
+
 def constrained_spec(spec_value: Any) -> dict[str, Any]:
-    """Return a normalized copy with renderer-owned safe spacing bounds."""
+    """Normalize once, then apply renderer-owned spacing/orientation policy.
+
+    Horizontal rank gaps intentionally go below the public schema's generic
+    minimum.  The effective spec therefore must never be fed back through
+    ``validate_spec``.  It is an internal layout document, not a user spec.
+    """
     spec = sketch_figure.validate_spec(spec_value)
     effective = copy.deepcopy(spec)
     layout = effective["layout"]
+
+    if _should_auto_horizontal(effective):
+        layout["direction"] = "left-to-right"
+        effective["_geometry_auto_direction"] = AUTO_FLOW_POLICY
+
     if layout["direction"] == "left-to-right":
         layout["rank_gap"] = min(
             HORIZONTAL_RANK_GAP_MAX,
@@ -135,101 +192,36 @@ def constrained_spec(spec_value: Any) -> dict[str, Any]:
     return effective
 
 
-def _rank_counts(spec: dict[str, Any]) -> tuple[int, int]:
-    ranks = sketch_figure._rank_nodes(spec)
-    counts: dict[int, int] = {}
-    for node in spec["nodes"]:
-        rank = ranks[node["id"]]
-        counts[rank] = counts.get(rank, 0) + 1
-    return len(counts), max(counts.values(), default=1)
+def _fit_first_dimensions(node: dict[str, Any]):
+    # One source of truth for the final node content box.  Long labels/details
+    # make the box grow or wrap; font-size is never the escape hatch.
+    return sketch_notebook_polish.node_dimensions(node)
 
 
-def _policy_node_dimensions(
-    node: dict[str, Any],
-    *,
-    direction: str,
-    node_count: int,
-    max_parallel: int,
-) -> tuple[float, float, tuple[str, ...], tuple[str, ...]]:
-    """Keep node text large by compacting geometry instead of shrinking fonts."""
-    label = node["label"]
-    detail = node["detail"]
-    longest = max((len(word) for word in label.split()), default=8)
-
-    if direction == "left-to-right":
-        if node_count >= 6:
-            # Six or more sequential columns cannot remain notebook-legible;
-            # keep a readable node floor and let the width gate demand a reflow.
-            min_width, max_width = 132.0, 150.0
-        elif node_count == 5:
-            # 5 * 136 + 4 * 40 + 120 margins = 960px, the notebook budget.
-            min_width, max_width = 132.0, 136.0
-        elif node_count == 4:
-            min_width, max_width = 150.0, 180.0
-        else:
-            min_width, max_width = 174.0, 226.0
-    elif max_parallel >= 3:
-        min_width, max_width = 176.0, 244.0
-    elif max_parallel == 2:
-        min_width, max_width = 188.0, 274.0
-    else:
-        min_width, max_width = 202.0, 300.0
-
-    width = max(
-        min_width,
-        108.0 + min(len(label), 42) * 2.45,
-        42.0 + longest * 8.7,
-    )
-    width = min(max_width, width)
-    if node["shape"] in {"circle", "decision"}:
-        width = min(max_width + 20.0, max(width, min_width + 22.0))
-
-    label_capacity = max(12, int((width - 34.0) / 10.6))
-    detail_capacity = max(17, int((width - 34.0) / 7.9))
-    label_lines = sketch_figure._wrap(label, label_capacity)
-    detail_lines = sketch_figure._wrap(detail, detail_capacity)
-    height = 42 + len(label_lines) * 28 + len(detail_lines) * 21
-    if detail_lines:
-        height += 8
-    height = max(92.0, float(height))
-    if node["shape"] == "decision":
-        height = max(132.0, height + 12.0)
-    if node["shape"] == "circle":
-        width = height = max(width, height, 170.0)
-    return width, height, label_lines, detail_lines
-
-
-def _layout_with_policy(
-    spec_value: Any,
+def _layout_effective(
+    effective: dict[str, Any],
     layout_fn: Callable[[dict[str, Any]], tuple[dict[str, Any], float, float, float]],
 ) -> tuple[dict[str, Any], float, float, float]:
-    effective = constrained_spec(spec_value)
-    _rank_count, max_parallel = _rank_counts(effective)
-    direction = effective["layout"]["direction"]
-    node_count = len(effective["nodes"])
     original_dimensions = sketch_figure._node_dimensions
-
-    def safe_dimensions(node: dict[str, Any]):
-        return _policy_node_dimensions(
-            node,
-            direction=direction,
-            node_count=node_count,
-            max_parallel=max_parallel,
-        )
-
-    sketch_figure._node_dimensions = safe_dimensions  # type: ignore[assignment]
+    sketch_figure._node_dimensions = _fit_first_dimensions  # type: ignore[assignment]
     try:
         return layout_fn(effective)
     finally:
         sketch_figure._node_dimensions = original_dimensions  # type: ignore[assignment]
 
 
+def _layout_with_policy(
+    spec_value: Any,
+    layout_fn: Callable[[dict[str, Any]], tuple[dict[str, Any], float, float, float]],
+) -> tuple[dict[str, Any], float, float, float]:
+    return _layout_effective(constrained_spec(spec_value), layout_fn)
+
+
 def constrained_layout(
     spec_value: Any,
     original_layout: Callable[[dict[str, Any]], tuple[dict[str, Any], float, float, float]] | None = None,
 ):
-    layout_fn = original_layout or sketch_figure._layout
-    return _layout_with_policy(spec_value, layout_fn)
+    return _layout_with_policy(spec_value, original_layout or sketch_figure._layout)
 
 
 def _node_rect(box: Any) -> Rect:
@@ -258,13 +250,14 @@ def _node_overlap_issues(boxes: dict[str, Any]) -> list[str]:
     for index, (left_id, left_box) in enumerate(items):
         left = _node_rect(left_box)
         for right_id, right_box in items[index + 1 :]:
-            right = _node_rect(right_box)
-            if left.intersects(right, 0.0):
+            if left.intersects(_node_rect(right_box)):
                 issues.append(f"node-overlap:{left_id}:{right_id}")
     return issues
 
 
-def _point_on_rect_border(point: tuple[float, float], rect: Rect, tolerance: float = CONNECTOR_TOLERANCE) -> bool:
+def _point_on_rect_border(
+    point: tuple[float, float], rect: Rect, tolerance: float = CONNECTOR_TOLERANCE
+) -> bool:
     x, y = point
     horizontal = (
         rect.left - tolerance <= x <= rect.right + tolerance
@@ -280,7 +273,6 @@ def _point_on_rect_border(point: tuple[float, float], rect: Rect, tolerance: flo
 def _segment_hits_rect_interior(
     start: tuple[float, float], end: tuple[float, float], rect: Rect
 ) -> bool:
-    """Detect intrusion for the orthogonal connectors emitted by sketch_figure."""
     x1, y1 = start
     x2, y2 = end
     eps = CONNECTOR_TOLERANCE
@@ -297,15 +289,10 @@ def _segment_hits_rect_interior(
         low, high = sorted((y1, y2))
         return high > rect.top + eps and low < rect.bottom - eps
 
-    # Fallback for future non-orthogonal connectors: sample the segment densely
-    # enough to catch an actual pass through a node. This remains deterministic
-    # and cheap for the small graphs allowed by the contract.
     steps = max(8, int(math.ceil(math.hypot(x2 - x1, y2 - y1) / 8.0)))
     for index in range(1, steps):
         t = index / steps
-        x = x1 + (x2 - x1) * t
-        y = y1 + (y2 - y1) * t
-        if rect.contains_strict(x, y, CONNECTOR_NODE_CLEARANCE):
+        if rect.contains_strict(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, CONNECTOR_NODE_CLEARANCE):
             return True
     return False
 
@@ -344,7 +331,6 @@ def _connector_issues(
                     issues.append(
                         f"connector-intrusion:{index}:{edge['from']}->{edge['to']}:{node_id}"
                     )
-
         paths.append({
             "edge_index": index,
             "from": edge["from"],
@@ -388,27 +374,46 @@ def _legibility_issues(width: float, height: float) -> tuple[list[str], dict[str
     }
 
 
-def analyze_spec(
-    spec_value: Any,
+def _find_label_lane(
+    label: str,
+    base_x: float,
+    base_y: float,
     *,
-    layout_fn: Callable[[dict[str, Any]], tuple[dict[str, Any], float, float, float]] | None = None,
-    edge_fn: Callable[[Any, Any, str, int], tuple[list[tuple[float, float]], float, float]] | None = None,
-) -> dict[str, Any]:
-    """Return one deterministic, machine-checkable preflight report."""
-    spec = sketch_figure.validate_spec(spec_value)
-    effective = constrained_spec(spec)
-    raw_layout = layout_fn or sketch_figure._layout
-    raw_edge = edge_fn or sketch_figure._edge_geometry
-    boxes, width, height, _title_height = _layout_with_policy(effective, raw_layout)
+    width: float,
+    height: float,
+    node_rects: list[tuple[str, Rect]],
+    occupied: list[tuple[int, Rect]],
+) -> tuple[float, float, Rect] | None:
+    for y_offset in LABEL_Y_LANES:
+        for x_offset in LABEL_X_LANES:
+            candidate = _label_rect(label, base_x + x_offset, base_y + y_offset)
+            if not _inside_canvas(candidate, width, height):
+                continue
+            if any(candidate.intersects(rect, EDGE_LABEL_NODE_GAP) for _node_id, rect in node_rects):
+                continue
+            if any(candidate.intersects(rect, EDGE_LABEL_GAP) for _index, rect in occupied):
+                continue
+            return x_offset, y_offset, candidate
+    return None
 
+
+def _analyze_effective(
+    spec: dict[str, Any],
+    effective: dict[str, Any],
+    *,
+    layout_fn: Callable[[dict[str, Any]], tuple[dict[str, Any], float, float, float]],
+    edge_fn: Callable[[Any, Any, str, int], tuple[list[tuple[float, float]], float, float]],
+) -> dict[str, Any]:
+    boxes, width, height, _title_height = _layout_effective(effective, layout_fn)
     issues = _node_overlap_issues(boxes)
-    connector_issues, connector_paths = _connector_issues(effective, boxes, raw_edge)
+    connector_issues, connector_paths = _connector_issues(effective, boxes, edge_fn)
     issues.extend(connector_issues)
     legibility_issues, legibility = _legibility_issues(width, height)
     issues.extend(legibility_issues)
 
     occupied_labels: list[tuple[int, Rect]] = []
     label_offsets: dict[int, float] = {}
+    label_x_offsets: dict[int, float] = {}
     label_boxes: list[dict[str, Any]] = []
     node_rects = [(node_id, _node_rect(box)) for node_id, box in boxes.items()]
 
@@ -416,6 +421,7 @@ def analyze_spec(
         label = str(edge.get("label") or "")
         if not label:
             label_offsets[index] = 0.0
+            label_x_offsets[index] = 0.0
             continue
         estimated_width = max(42.0, len(label) * EDGE_LABEL_CHAR_WIDTH + 14.0)
         if estimated_width > EDGE_LABEL_MAX_WIDTH:
@@ -424,32 +430,32 @@ def analyze_spec(
             )
             continue
 
-        _points, base_x, base_y = raw_edge(
+        _points, base_x, base_y = edge_fn(
             boxes[edge["from"]], boxes[edge["to"]], effective["layout"]["direction"], index
         )
-        chosen: tuple[float, Rect] | None = None
-        for offset in LABEL_LANES:
-            candidate = _label_rect(label, base_x, base_y + offset)
-            if not _inside_canvas(candidate, width, height):
-                continue
-            if any(candidate.intersects(rect, EDGE_LABEL_NODE_GAP) for _node_id, rect in node_rects):
-                continue
-            if any(candidate.intersects(rect, EDGE_LABEL_GAP) for _other_index, rect in occupied_labels):
-                continue
-            chosen = (offset, candidate)
-            break
+        chosen = _find_label_lane(
+            label,
+            base_x,
+            base_y,
+            width=width,
+            height=height,
+            node_rects=node_rects,
+            occupied=occupied_labels,
+        )
         if chosen is None:
             issues.append(f"edge-label-no-safe-lane:{index}:{edge['from']}->{edge['to']}")
             continue
-        offset, rect = chosen
-        label_offsets[index] = offset
+        x_offset, y_offset, rect = chosen
+        label_offsets[index] = y_offset
+        label_x_offsets[index] = x_offset
         occupied_labels.append((index, rect))
         label_boxes.append({
             "edge_index": index,
             "from": edge["from"],
             "to": edge["to"],
             "label": label,
-            "offset": offset,
+            "offset": y_offset,
+            "x_offset": x_offset,
             "box": [round(rect.left, 2), round(rect.top, 2), round(rect.right, 2), round(rect.bottom, 2)],
         })
 
@@ -465,15 +471,35 @@ def analyze_spec(
             "edge_label_node_gap": EDGE_LABEL_NODE_GAP,
             "edge_label_max_width": EDGE_LABEL_MAX_WIDTH,
             "connector_tolerance": CONNECTOR_TOLERANCE,
+            "text_fit_policy": sketch_notebook_polish.TEXT_FIT_POLICY,
+            "geometry_policy": GEOMETRY_POLICY,
         },
         "effective_layout": dict(effective["layout"]),
+        "auto_direction": effective.get("_geometry_auto_direction"),
         "width": int(round(width)),
         "height": int(round(height)),
         **legibility,
         "label_offsets": {str(key): value for key, value in sorted(label_offsets.items())},
+        "label_x_offsets": {str(key): value for key, value in sorted(label_x_offsets.items())},
         "label_boxes": label_boxes,
         "connector_paths": connector_paths,
     }
+
+
+def analyze_spec(
+    spec_value: Any,
+    *,
+    layout_fn: Callable[[dict[str, Any]], tuple[dict[str, Any], float, float, float]] | None = None,
+    edge_fn: Callable[[Any, Any, str, int], tuple[list[tuple[float, float]], float, float]] | None = None,
+) -> dict[str, Any]:
+    spec = sketch_figure.validate_spec(spec_value)
+    effective = constrained_spec(spec)
+    return _analyze_effective(
+        spec,
+        effective,
+        layout_fn=layout_fn or sketch_figure._layout,
+        edge_fn=edge_fn or sketch_figure._edge_geometry,
+    )
 
 
 def _policy_rough_polyline(
@@ -484,100 +510,74 @@ def _policy_rough_polyline(
     closed: bool = False,
     scale: float = 1.0,
 ) -> str:
-    """Pencil path with exact connector ports and more visible shape roughness."""
     if not points:
         return ""
-    is_connector = key.startswith("edge-") and not closed
-    effective_scale = scale * (1.35 if closed else 1.0)
-    varied: list[tuple[float, float]] = []
-    last_index = len(points) - 1
-    for index, (x, y) in enumerate(points):
-        lock_port = is_connector and index in {0, last_index}
-        if lock_port:
-            varied.append((x, y))
-        else:
-            varied.append((
-                x + sketch_figure._jitter(seed, key, index, "x", scale=0.72 * effective_scale),
-                y + sketch_figure._jitter(seed, key, index, "y", scale=0.72 * effective_scale),
-            ))
-
-    commands = [f"M {varied[0][0]:.2f} {varied[0][1]:.2f}"]
-    targets = varied[1:] + ([varied[0]] if closed else [])
-    start = varied[0]
-    for index, target in enumerate(targets):
-        dx = target[0] - start[0]
-        dy = target[1] - start[1]
-        length = max(1.0, math.hypot(dx, dy))
-        bend = sketch_figure._jitter(seed, key, index, "bend", scale=1.55 * effective_scale)
-        along = sketch_figure._jitter(seed, key, index, "along", scale=0.45 * effective_scale)
-        control_x = (start[0] + target[0]) / 2 + (-dy / length) * bend + (dx / length) * along
-        control_y = (start[1] + target[1]) / 2 + (dx / length) * bend + (dy / length) * along
-        commands.append(f"Q {control_x:.2f} {control_y:.2f} {target[0]:.2f} {target[1]:.2f}")
-        start = target
-    if closed:
-        commands.append("Z")
-    return " ".join(commands)
+    return pencil_rough_polyline(
+        points,
+        seed,
+        key,
+        jitter_scale=1.65 * scale,
+        bend_scale=2.85 * scale,
+        closed=closed,
+    )
 
 
-def _apply_notebook_typography(svg_bytes: bytes, size_class: str) -> bytes:
+def _apply_geometry_metadata(svg_bytes: bytes, size_class: str) -> bytes:
     text = svg_bytes.decode("utf-8")
-    font_faces = (
-        f'@font-face{{font-family:"Neucha";font-style:normal;font-weight:400;font-display:swap;'
-        f'src:local("Neucha"),url("{NEUCHA_WOFF2}") format("woff2")}}'
-        f'@font-face{{font-family:"Architects Daughter";font-style:normal;font-weight:400;font-display:swap;'
-        f'src:local("Architects Daughter"),url("{ARCHITECTS_TTF}") format("truetype")}}'
+    marker = 'data-pencil-style="graphite-overlay-v1"'
+    additions = (
+        marker
+        + f' data-layout-size="{html.escape(size_class, quote=True)}"'
+        + f' data-typography="{TYPOGRAPHY_POLICY}"'
+        + f' data-pencil-policy="{PENCIL_POLICY}"'
+        + f' data-geometry-policy="{GEOMETRY_POLICY}"'
     )
-    text = text.replace("<style>", "<style>" + font_faces, 1)
-    replacements = {
-        "sketch-label": f'font:400 {int(NODE_LABEL_FONT_SIZE)}px "Neucha","Segoe Print","Comic Sans MS",cursive',
-        "sketch-detail": f'font:400 {int(NODE_DETAIL_FONT_SIZE)}px "Neucha","Segoe Print","Comic Sans MS",cursive',
-        "sketch-title": 'font:400 29px "Architects Daughter","Segoe Print","Comic Sans MS",cursive',
-        "sketch-kind": 'font:400 15px "Neucha","Segoe Print","Comic Sans MS",cursive',
-        "sketch-edge-label": f'font:400 {int(EDGE_LABEL_FONT_SIZE)}px "Neucha","Segoe Print","Comic Sans MS",cursive',
-        "sketch-group-label": 'font:400 15px "Neucha","Segoe Print","Comic Sans MS",cursive',
-    }
-    for class_name, font_decl in replacements.items():
-        text = re.sub(
-            rf'(\.{re.escape(class_name)}\{{)font:[^;]+;',
-            rf'\1{font_decl};',
-            text,
-            count=1,
-        )
-    marker = 'data-pencil-style="graphite-overlay-v1">'
-    enriched = (
-        f'data-pencil-style="graphite-overlay-v1" data-layout-size="{html.escape(size_class, quote=True)}" '
-        f'data-typography="{TYPOGRAPHY_POLICY}" data-pencil-policy="{PENCIL_POLICY}">'
-    )
-    text = text.replace(marker, enriched, 1)
+    text = text.replace(marker, additions, 1)
     return text.encode("utf-8")
 
 
 def install_for_spec(spec_value: Any):
-    """Install the exact preflighted geometry + render policy for one diagram."""
+    """Install the exact preflighted geometry and notebook render for one figure."""
+    sketch_notebook_polish.install()
+
     original_layout = sketch_figure._layout
     original_edge = sketch_figure._edge_geometry
     original_rough_polyline = sketch_figure._rough_polyline
     original_render_svg = sketch_figure.render_svg
 
-    report = analyze_spec(spec_value, layout_fn=original_layout, edge_fn=original_edge)
+    spec = sketch_figure.validate_spec(spec_value)
+    effective = constrained_spec(spec)
+    report = _analyze_effective(
+        spec,
+        effective,
+        layout_fn=original_layout,
+        edge_fn=original_edge,
+    )
     if not report["ok"]:
         raise GeometryError("; ".join(report["issues"]))
-    offsets = {int(key): float(value) for key, value in report["label_offsets"].items()}
 
-    def safe_layout(spec: dict[str, Any]):
-        return _layout_with_policy(spec, original_layout)
+    y_offsets = {int(key): float(value) for key, value in report["label_offsets"].items()}
+    x_offsets = {int(key): float(value) for key, value in report["label_x_offsets"].items()}
+
+    def safe_layout(spec_to_render: dict[str, Any]):
+        render_effective = constrained_spec(spec_to_render)
+        return _layout_effective(render_effective, original_layout)
 
     def safe_edge(start: Any, end: Any, direction: str, index: int):
         points, label_x, label_y = original_edge(start, end, direction, index)
-        return points, label_x, label_y + offsets.get(index, 0.0)
+        return (
+            points,
+            label_x + x_offsets.get(index, 0.0),
+            label_y + y_offsets.get(index, 0.0),
+        )
 
-    def safe_render(spec: Any):
-        svg_bytes, render_report = original_render_svg(spec)
-        svg_bytes = _apply_notebook_typography(svg_bytes, str(report["size_class"]))
+    def safe_render(spec_to_render: Any):
+        svg_bytes, render_report = original_render_svg(spec_to_render)
+        svg_bytes = _apply_geometry_metadata(svg_bytes, str(report["size_class"]))
         style_audit = sketch_figure.audit_svg_style(svg_bytes)
         if not style_audit["ok"]:
             raise sketch_figure.SketchSpecError(
-                f"generated SVG failed style audit: {', '.join(style_audit['issues'])}"
+                "generated SVG failed style audit: " + ", ".join(style_audit["issues"])
             )
         updated = dict(render_report)
         updated.update({
@@ -586,6 +586,10 @@ def install_for_spec(spec_value: Any):
             "size_class": report["size_class"],
             "typography_policy": TYPOGRAPHY_POLICY,
             "pencil_policy": PENCIL_POLICY,
+            "geometry_policy": GEOMETRY_POLICY,
+            "node_text_policy": sketch_notebook_polish.TEXT_FIT_POLICY,
+            "shape_policy": sketch_notebook_polish.SHAPE_POLICY,
+            "title_meta_policy": sketch_notebook_polish.TITLE_META_POLICY,
         })
         return svg_bytes, updated
 
@@ -615,6 +619,7 @@ def validate_run_plan(run_value: str) -> dict[str, Any]:
         raise GeometryError(f"could not resolve unit: {unit_id}")
     if has_unit_layout(course):
         unit_root(course, unit_id)
+
     plan_path = run / "02-plan.json"
     selected = visual_plan_hybrid.inspect_plan(course, unit_id, plan_path)
     figures: list[dict[str, Any]] = []
@@ -623,7 +628,11 @@ def validate_run_plan(run_value: str) -> dict[str, Any]:
         if row.get("visual_medium") != "diagram":
             continue
         report = analyze_spec(row["spec"])
-        figures.append({"concept_id": row["concept_id"], "derived_figure_id": row["derived_figure_id"], **report})
+        figures.append({
+            "concept_id": row["concept_id"],
+            "derived_figure_id": row["derived_figure_id"],
+            **report,
+        })
         issues.extend(f"{row['derived_figure_id']}:{issue}" for issue in report["issues"])
     return {"ok": not issues, "issues": issues, "figures": figures}
 
