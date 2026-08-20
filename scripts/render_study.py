@@ -347,19 +347,61 @@ def _row(body: str, mark: str = "", extra_class: str = "") -> str:
     return f'<div class="{cls}"><div class="mark">{mark}</div><div class="body">{body}</div></div>'
 
 
-def is_study_sketch(src: str, image_base: Path | None) -> bool:
-    """Recognize only SVGs emitted by the deterministic sketch generator."""
+def _study_sketch_path(src: str, image_base: Path | None) -> Path | None:
+    """Resolve only trusted local SVGs emitted by the deterministic sketch generator."""
     if image_base is None or re.match(r"^[a-z]+://", src) or src.startswith("data:"):
-        return False
+        return None
     target = (image_base / src).resolve()
     if target.suffix.lower() != ".svg" or not target.is_file():
-        return False
+        return None
     try:
         with target.open("r", encoding="utf-8") as stream:
             head = stream.read(4096)
     except (OSError, UnicodeError):
-        return False
-    return 'data-study-sketch="1"' in head and 'data-transparent-canvas="1"' in head
+        return None
+    if 'data-study-sketch="1"' not in head or 'data-transparent-canvas="1"' not in head:
+        return None
+    return target
+
+
+def is_study_sketch(src: str, image_base: Path | None) -> bool:
+    """Recognize only SVGs emitted by the deterministic sketch generator."""
+    return _study_sketch_path(src, image_base) is not None
+
+
+def inline_study_sketch(src: str, image_base: Path | None) -> str | None:
+    """Inline a trusted sketch so it inherits the notebook's real typefaces.
+
+    SVGs loaded through <img> are separate image documents and may reject or
+    ignore their webfont requests. Inlining keeps the same deterministic SVG
+    geometry while letting its text use the exact Neucha / Architects Daughter
+    faces already loaded by the study document. The semantic figure kind stays
+    in metadata, but its small debug label is removed from student-facing SVG.
+    """
+    target = _study_sketch_path(src, image_base)
+    if target is None:
+        return None
+    try:
+        svg = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return None
+    svg = re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", svg, count=1, flags=re.IGNORECASE)
+    svg = re.sub(r"^\s*<!DOCTYPE[^>]*>\s*", "", svg, count=1, flags=re.IGNORECASE)
+    svg = re.sub(
+        r"\s*<text\b[^>]*class=\"sketch-kind\"[^>]*>.*?</text>",
+        "",
+        svg,
+        count=1,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    svg, replacements = re.subn(
+        r"<svg\b",
+        '<svg class="notebook-sketch-svg" data-inline-study-sketch="1"',
+        svg,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    return svg if replacements == 1 else None
 
 
 def render_markdown(
@@ -524,15 +566,23 @@ def render_markdown(
         im = re.fullmatch(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)\s*", line.strip())
         if im:
             alt, src, cap = im.group(1), im.group(2), im.group(3) or im.group(1)
-            figure_class = ' class="study-sketch"' if is_study_sketch(src, image_base) else ""
-            out.append(
-                f'<figure{figure_class}>'
-                '<div class="plate">'
-                f'<img src="{html.escape(src, quote=True)}" alt="{html.escape(alt, quote=True)}" loading="lazy">'
-                '</div>'
-                f'<figcaption><span>{inline(cap)}</span></figcaption>'
-                '</figure>'
-            )
+            sketch_svg = inline_study_sketch(src, image_base)
+            if sketch_svg is not None:
+                out.append(
+                    '<figure class="study-sketch">'
+                    f'<div class="plate">{sketch_svg}</div>'
+                    f'<figcaption><span>{inline(cap)}</span></figcaption>'
+                    '</figure>'
+                )
+            else:
+                out.append(
+                    '<figure>'
+                    '<div class="plate">'
+                    f'<img src="{html.escape(src, quote=True)}" alt="{html.escape(alt, quote=True)}" loading="lazy">'
+                    '</div>'
+                    f'<figcaption><span>{inline(cap)}</span></figcaption>'
+                    '</figure>'
+                )
             i += 1
             continue
 
