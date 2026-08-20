@@ -127,16 +127,18 @@ class PortableActionTests(unittest.TestCase):
         for name in ("resumen", "repaso"):
             text = (ROOT / "pipelines" / f"{name}.md").read_text(encoding="utf-8")
             self.assertIn("pipelines/_shared/semantic-document-lifecycle.md", text)
-            self.assertIn("render_study.py", text)
             self.assertNotIn("## Engine failure contract", text)
             self.assertNotIn("## Environment contract", text)
 
         summary = (ROOT / "pipelines" / "resumen.md").read_text(encoding="utf-8")
         self.assertIn("02-visual-build.json", summary)
-        self.assertIn("visual_plan.py", summary)
+        self.assertIn("resumen_visual_build.py", summary)
+        self.assertIn("sketch_geometry.py", summary)
+        self.assertIn("resumen_guard.py render", summary)
         self.assertIn("--kind summary", summary)
 
         review = (ROOT / "pipelines" / "repaso.md").read_text(encoding="utf-8")
+        self.assertIn("render_study.py", review)
         self.assertIn("--kind rapid-review", review)
         self.assertIn("register-derived", review)
 
@@ -144,9 +146,9 @@ class PortableActionTests(unittest.TestCase):
         checked = list((ROOT / "rules").rglob("*.md")) + list((ROOT / "pipelines").rglob("*.md")) + [ROOT / "core" / "ROUTER.md"]
         for p in checked:
             text = p.read_text(encoding="utf-8").lower()
-            # Provider names may be mentioned only in the portable router's explanation, never as required execution syntax.
+            # Public action names may be discussed in their provider-neutral pipeline.
+            # Provider-specific invocation syntax must still stay in thin adapters.
             self.assertNotIn("context: fork", text, p)
-            self.assertIsNone(re.search(r"(?<![\w.-])/resumen(?![\w/.-])", text), p)
             self.assertNotIn("$resumen", text, p)
 
 
