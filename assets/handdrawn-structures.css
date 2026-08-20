@@ -67,12 +67,24 @@ figure.study-sketch img {
   isolation: auto;
 }
 
+/* Tables are ruled directly onto the notebook paper. Their cells and header
+   must never become an opaque white card: the page rules/grain stay visible
+   through the full table and the pencil frame/grid provides the structure. */
 .table-scroll {
   position: relative;
   isolation: isolate;
   border: 0;
-  background: color-mix(in srgb, var(--study-paper) 97%, white 3%);
+  background: transparent;
   padding: 2px;
+}
+
+.table-scroll table,
+.table-scroll thead,
+.table-scroll tbody,
+.table-scroll tr,
+.table-scroll th,
+.table-scroll td {
+  background: transparent;
 }
 
 .table-scroll::before,
@@ -145,10 +157,6 @@ figure.study-sketch img {
   background: var(--study-rule);
   -webkit-mask: var(--notebook-table-grid-h) center / 100% 100% no-repeat;
   mask: var(--notebook-table-grid-h) center / 100% 100% no-repeat;
-}
-
-.table-scroll th {
-  background: color-mix(in srgb, var(--study-rule) 18%, var(--study-paper));
 }
 
 /* Summary section labels: the old § glyph stays gone, but the small technical
