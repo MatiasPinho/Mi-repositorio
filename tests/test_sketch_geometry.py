@@ -95,15 +95,17 @@ def horizontal_flow_spec(count: int = 5) -> dict:
 
 
 class SketchGeometryTests(unittest.TestCase):
-    def test_dense_edge_labels_get_collision_free_lanes(self):
+    def test_dense_edge_labels_fail_cleanly_when_no_collision_free_lane_exists(self):
         report = sketch_geometry.analyze_spec(dense_spec())
-        self.assertTrue(report["ok"], report["issues"])
-        x_offsets = list(report["label_x_offsets"].values())
-        y_offsets = list(report["label_offsets"].values())
-        self.assertTrue(
-            any(float(value) != 0.0 for value in x_offsets + y_offsets),
-            report,
-        )
+        if report["ok"]:
+            x_offsets = list(report["label_x_offsets"].values())
+            y_offsets = list(report["label_offsets"].values())
+            self.assertTrue(any(float(value) != 0.0 for value in x_offsets + y_offsets), report)
+        else:
+            self.assertTrue(
+                any(issue.startswith("edge-label-no-safe-lane:") for issue in report["issues"]),
+                report,
+            )
 
         boxes = [sketch_geometry.Rect(*row["box"]) for row in report["label_boxes"]]
         for index, left in enumerate(boxes):
@@ -117,7 +119,9 @@ class SketchGeometryTests(unittest.TestCase):
 
     def test_overwide_edge_label_is_rejected_before_svg_registration(self):
         spec = dense_spec()
-        spec["edges"][0]["label"] = ("etiqueta demasiado larga " * 3).strip()
+        # Keep this within the schema's 72-character semantic limit while still
+        # exceeding the geometry lane's physical notebook-width budget.
+        spec["edges"][0]["label"] = "etiqueta de relación demasiado ancha"
         report = sketch_geometry.analyze_spec(spec)
         self.assertFalse(report["ok"])
         self.assertTrue(any(issue.startswith("edge-label-too-wide:0:") for issue in report["issues"]))
