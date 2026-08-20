@@ -469,12 +469,40 @@ article {
   padding: calc(var(--notebook-line-pitch) * 2) var(--notebook-paper-padding-end) 4rem var(--notebook-paper-padding-start);
   overflow: hidden;
   color: var(--study-ink);
+
+  /* The notebook stays the same document; only the material underneath gains
+     physical depth. Rules remain the top paint layer so grain never muddies
+     the baseline grid. */
   background-color: var(--study-paper);
-  background-image: var(--notebook-rule-image);
-  background-origin: content-box;
-  background-size: calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch);
-  background-position: calc(-1 * var(--notebook-paper-padding-start)) 0;
-  background-repeat: repeat-y;
+  background-image:
+    var(--notebook-rule-image),
+    radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 4%, transparent) 0 1px, transparent 1.15px),
+    radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 2.5%, transparent) 0 1px, transparent 1.15px),
+    linear-gradient(
+      100deg,
+      rgba(0, 0, 0, .045) 0%,
+      rgba(0, 0, 0, 0) 14%,
+      rgba(0, 0, 0, 0) 86%,
+      rgba(0, 0, 0, .055) 100%
+    ),
+    radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, .06) 0%, rgba(0, 0, 0, 0) 58%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--study-paper) 94%, white 6%), var(--study-paper));
+  background-origin: content-box, border-box, border-box, border-box, border-box, border-box;
+  background-size:
+    calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch),
+    7px 7px,
+    11px 11px,
+    100% 100%,
+    13rem 13rem,
+    100% 100%;
+  background-position:
+    calc(-1 * var(--notebook-paper-padding-start)) 0,
+    0 0,
+    4px 6px,
+    0 0,
+    100% 100%,
+    0 0;
+  background-repeat: repeat-y, repeat, repeat, no-repeat, no-repeat, no-repeat;
   border: 1px solid var(--study-rule);
   border-radius: 1px 7px 7px 1px;
   box-shadow: var(--notebook-shadow);
@@ -1128,6 +1156,12 @@ figure.wide { max-width: none; }
     border-radius: 0;
     box-shadow: none;
     overflow: visible;
+    background-color: #fff;
+    background-image: var(--notebook-rule-image);
+    background-origin: content-box;
+    background-size: calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch);
+    background-position: calc(-1 * var(--notebook-paper-padding-start)) 0;
+    background-repeat: repeat-y;
   }
   article::before {
     display: block;
@@ -1173,6 +1207,664 @@ figure.wide { max-width: none; }
     print-color-adjust: exact;
   }
 }
+
+/* CARPETA_HANDDRAWN_STRUCTURES_V1
+   Semantic HTML keeps the document accessible; only visible structure is
+   redrawn so tables belong to the same pencil language as scenes/callouts. */
+
+/* Handwritten study typography. These faces are loaded directly so generated
+   artifacts keep the existing offline fallbacks while gaining the intended
+   notebook voice whenever webfonts are available. IBM Plex Mono remains the
+   untouched utility/code face for folios, units, counters and code. */
+@font-face {
+  font-family: "Neucha";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Neucha"),
+    url("https://fonts.gstatic.com/s/neucha/v18/q5uGsou0JOdh94bfvQlt.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Architects Daughter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Architects Daughter"),
+    url("https://fonts.gstatic.com/s/architectsdaughter/v19/KtkxAKiDZI_td1Lkx62xHZHDtgO_Y-bvfY5q4szgE-Q.ttf") format("truetype");
+}
+
+:root {
+  --study-font-body: "Neucha", "Segoe Print", "Comic Sans MS", cursive;
+  --study-font-display: "Architects Daughter", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --study-font-hand: var(--study-font-display);
+
+  --notebook-table-frame-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M5 5 C76 2 145 6 219 4 C292 2 360 4 396 7 C399 28 397 67 395 95 C315 98 237 94 158 97 C90 99 28 97 5 93 C2 67 3 30 5 5' fill='none' stroke='black' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --notebook-table-frame-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M7 2 C84 0 153 4 225 2 C300 1 365 2 398 5 C400 31 398 65 397 92 C319 96 241 92 161 95 C91 97 29 94 6 90 C3 62 4 27 7 2' fill='none' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --notebook-table-grid-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 8' preserveAspectRatio='none'%3E%3Cpath d='M0 4 C48 2.8 93 5.2 139 3.8 C188 2.7 233 5 279 3.6 C323 2.8 363 4.9 400 3.9' fill='none' stroke='black' stroke-width='1.15' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --notebook-table-grid-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 400' preserveAspectRatio='none'%3E%3Cpath d='M4 0 C2.9 47 5.1 91 3.7 137 C2.8 184 5 228 3.8 274 C3 318 4.9 360 3.9 400' fill='none' stroke='black' stroke-width='1.15' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+}
+
+/* Architects Daughter is deliberately confined to short, high-salience text.
+   Neucha remains the prose face through --study-font-body. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--study-font-display);
+  font-weight: 400;
+}
+
+figcaption,
+.callout.exam {
+  font-family: var(--study-font-hand);
+}
+
+/* Notebook sketches must read as graphite drawn directly on the sheet, never
+   as a white card pasted over it. The SVG renderer already emits transparent
+   node fills; multiply is an intentional compatibility fallback for older
+   registered SVGs that may still contain opaque white pixels. */
+figure.study-sketch,
+figure.study-sketch .plate,
+figure.study-sketch img,
+figure.study-sketch svg {
+  background: transparent !important;
+}
+
+figure.study-sketch img {
+  mix-blend-mode: multiply;
+  isolation: auto;
+}
+
+/* Final study documents inline deterministic SVGs so their text participates
+   in the same typography context as the notebook instead of falling back to a
+   browser-default font inside an external <img>. The semantic diagram kind is
+   still present in SVG metadata, but is intentionally not student-facing. */
+figure.study-sketch svg.notebook-sketch-svg {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  margin-inline: 0;
+  overflow: visible;
+  mix-blend-mode: multiply;
+}
+
+figure.study-sketch svg.notebook-sketch-svg .sketch-kind {
+  display: none !important;
+}
+
+figure.study-sketch svg.notebook-sketch-svg .sketch-title {
+  font-family: var(--study-font-display) !important;
+  font-weight: 400 !important;
+}
+
+figure.study-sketch svg.notebook-sketch-svg :is(
+  .sketch-label,
+  .sketch-detail,
+  .sketch-edge-label,
+  .sketch-group-label
+) {
+  font-family: var(--study-font-body) !important;
+}
+
+/* Tables are ruled directly onto the notebook paper. Their cells and header
+   must never become an opaque white card: the page rules/grain stay visible
+   through the full table and the pencil frame/grid provides the structure. */
+.table-scroll {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: transparent;
+  padding: 2px;
+}
+
+.table-scroll table,
+.table-scroll thead,
+.table-scroll tbody,
+.table-scroll tr,
+.table-scroll th,
+.table-scroll td {
+  background: transparent;
+}
+
+.table-scroll::before,
+.table-scroll::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: var(--study-rule-strong);
+  -webkit-mask-position: center;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+
+.table-scroll::before {
+  -webkit-mask-image: var(--notebook-table-frame-a);
+  mask-image: var(--notebook-table-frame-a);
+}
+
+.table-scroll::after {
+  opacity: .34;
+  transform: translate(.35px, -.25px);
+  -webkit-mask-image: var(--notebook-table-frame-b);
+  mask-image: var(--notebook-table-frame-b);
+}
+
+.table-scroll table {
+  position: relative;
+  z-index: 1;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-scroll th,
+.table-scroll td {
+  position: relative;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.table-scroll th:not(:last-child)::after,
+.table-scroll td:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: -3px;
+  bottom: 0;
+  width: 6px;
+  pointer-events: none;
+  background: var(--study-rule);
+  -webkit-mask: var(--notebook-table-grid-v) center / 100% 100% no-repeat;
+  mask: var(--notebook-table-grid-v) center / 100% 100% no-repeat;
+}
+
+.table-scroll thead th::before,
+.table-scroll tbody tr:not(:last-child) > td::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 6px;
+  pointer-events: none;
+  background: var(--study-rule);
+  -webkit-mask: var(--notebook-table-grid-h) center / 100% 100% no-repeat;
+  mask: var(--notebook-table-grid-h) center / 100% 100% no-repeat;
+}
+
+/* Summary section labels: the old § glyph stays gone, but the small technical
+   counter remains IBM Plex Mono while the actual section title uses Architects
+   Daughter. */
+article[data-kind="summary"] .section-head {
+  display: block;
+  width: min(100%, var(--notebook-measure));
+}
+
+article[data-kind="summary"] .section-head > .num {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--study-font-utility);
+  font-size: .72rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+  letter-spacing: .055em;
+  color: var(--study-accent);
+  font-variant-numeric: tabular-nums;
+  transform: none;
+}
+
+article[data-kind="summary"] .section-head > .num::before {
+  content: "Tema " counter(study-section);
+}
+
+article[data-kind="summary"] .section-head > h2 {
+  width: 100%;
+  max-width: var(--notebook-measure);
+}
+
+/* Physical-page reader layered on top of the existing notebook design. */
+:root {
+  --notebook-page-lines: 48;
+  --notebook-page-height: calc(var(--notebook-line-pitch) * var(--notebook-page-lines));
+  --notebook-page-safe-bottom: .875rem;
+  --notebook-leaf-peek: 2.85rem;
+  --notebook-leaf-hover-extra: .75rem;
+  --notebook-leaf-scale: .972;
+}
+
+/* Three binder holes are enough to communicate paper without creating a visual rail. */
+article::after {
+  top: 0;
+  bottom: 0;
+  width: 1.45rem;
+  background:
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 14% / 1.45rem 1.45rem no-repeat,
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 50% / 1.45rem 1.45rem no-repeat,
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 86% / 1.45rem 1.45rem no-repeat;
+}
+
+/* The running labels stay, but the dark divider under them is intentionally
+   removed so the ruled paper remains the only horizontal structure there. */
+.book-running-line { border-bottom: 0; }
+
+/* Unordered lists use a small irregular ink mark instead of the browser's
+   perfectly geometric bullet. The mark is optically centred on the glyphs of
+   the first text line rather than the full 27px notebook line box. Ordered
+   lists keep native numbers. */
+article ul {
+  list-style: none;
+  padding-left: 1.45rem;
+}
+
+article ul > li {
+  position: relative;
+}
+
+article ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.08rem;
+  top: .5em;
+  width: .38rem;
+  height: .35rem;
+  transform: translateY(-50%) rotate(-9deg);
+  border-radius: 58% 43% 61% 46% / 47% 60% 44% 56%;
+  background:
+    radial-gradient(circle at 36% 38%,
+      color-mix(in srgb, var(--study-accent) 90%, var(--study-ink) 10%) 0 54%,
+      transparent 58%),
+    radial-gradient(circle at 66% 64%,
+      color-mix(in srgb, var(--study-accent) 82%, var(--study-ink) 18%) 0 50%,
+      transparent 55%);
+  box-shadow:
+    .025rem .02rem 0 color-mix(in srgb, var(--study-ink) 18%, transparent),
+    -.015rem .015rem 0 color-mix(in srgb, var(--study-accent) 22%, transparent);
+  opacity: .94;
+}
+
+article ul > li:nth-child(even)::before {
+  transform: translateY(-50%) rotate(7deg) scale(.94, 1.05);
+  border-radius: 45% 61% 48% 57% / 59% 43% 56% 46%;
+}
+
+/* Make the warm white stock read more clearly as real paper on screen. This is
+   intentionally a small step up from the base theme: slightly stronger fibres,
+   edge falloff and cast shadow, without tinting the page grey or muddying the
+   ruled baseline. Continuous and physical-page modes share the same material. */
+@media screen and (min-width: 48.01rem) {
+  html:not([data-study-theme="dark"]) article {
+    background-image:
+      var(--notebook-rule-image),
+      radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 6%, transparent) 0 1px, transparent 1.15px),
+      radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 3.75%, transparent) 0 1px, transparent 1.15px),
+      linear-gradient(
+        100deg,
+        rgba(0, 0, 0, .065) 0%,
+        rgba(0, 0, 0, 0) 15%,
+        rgba(0, 0, 0, 0) 85%,
+        rgba(0, 0, 0, .078) 100%
+      ),
+      radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, .095) 0%, rgba(0, 0, 0, 0) 60%),
+      linear-gradient(to bottom, color-mix(in srgb, var(--study-paper) 92%, white 8%), var(--study-paper));
+    box-shadow:
+      0 18px 38px rgba(0, 0, 0, .34),
+      0 3px 0 rgba(255, 255, 255, .52) inset,
+      0 -1px 0 rgba(0, 0, 0, .08) inset;
+  }
+}
+
+/* Kept only as hidden semantic state for compatibility. Reading-mode changes
+   are user-facing through the V shortcut, not through persistent UI chrome. */
+.notebook-view-switch { display: none; }
+
+.notebook-mode-toast {
+  position: fixed;
+  z-index: 130;
+  top: .9rem;
+  left: 50%;
+  transform: translate(-50%, -.45rem);
+  padding: .48rem .72rem;
+  border: 1px solid color-mix(in srgb, var(--study-paper) 20%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--study-canvas) 90%, #111 10%);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .2);
+  color: var(--study-paper);
+  font-family: var(--study-font-utility);
+  font-size: .68rem;
+  line-height: 1;
+  letter-spacing: .04em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.notebook-mode-toast.is-visible {
+  opacity: .94;
+  transform: translate(-50%, 0);
+}
+
+.notebook-reader {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: .8rem;
+}
+
+.notebook-reader.is-measuring {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Reserve inline room for the immediately adjacent sheets. Hidden sheets are
+   never translated, so only these two peeks can contribute to visual overflow. */
+.notebook-stack {
+  position: relative;
+  width: min(
+    calc(
+      100%
+      - var(--notebook-leaf-peek)
+      - var(--notebook-leaf-peek)
+      - var(--notebook-leaf-hover-extra)
+      - var(--notebook-leaf-hover-extra)
+    ),
+    var(--notebook-paper-width)
+  );
+  max-width: 100%;
+  height: var(--notebook-page-height);
+  perspective: 2200px;
+  perspective-origin: 50% 46%;
+  overflow: visible;
+}
+
+/* The sheet spins on its own vertical axis. A spine origin made the page swing
+   out of the stack and cover the sheets on its left, which is not how a loose
+   notebook page behaves when you turn it. */
+.notebook-leaf {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  transition:
+    transform .52s cubic-bezier(.22, 1.06, .36, 1),
+    filter .28s ease,
+    opacity .28s ease;
+  will-change: transform;
+}
+
+.notebook-leaf.is-hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.notebook-leaf.is-active {
+  z-index: 20;
+  filter: none;
+}
+
+.notebook-leaf.is-neighbor {
+  z-index: 10;
+  cursor: pointer;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .18));
+}
+
+/* The visible strip of a peeking sheet is narrower than its own turn handle, so
+   leaving those handles interactive swallowed every click meant to change the
+   page. Only the sheet you are reading can be turned. */
+.notebook-leaf:not(.is-active) .notebook-turn-corner { pointer-events: none; }
+
+.notebook-leaf.is-neighbor:hover {
+  filter: drop-shadow(0 16px 25px rgba(0, 0, 0, .28));
+}
+
+.notebook-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.notebook-face.notebook-back-face { transform: rotateY(180deg); }
+
+article.notebook-page {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  flex: none;
+  overflow: hidden;
+}
+
+/* A deterministic sketch that is taller than one physical leaf gets the
+   available block height and scales through its viewBox. The caption keeps its
+   natural size; only the drawing occupies the flexible row. This class is
+   temporary presentation state applied by the paginator. */
+article.notebook-page > figure.notebook-fit-page {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  block-size: var(--notebook-fit-block-height) !important;
+  height: var(--notebook-fit-block-height);
+  min-height: 0;
+  margin-block: var(--notebook-line-pitch);
+}
+
+article.notebook-page > figure.notebook-fit-page .plate {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  block-size: auto;
+  overflow: hidden;
+}
+
+article.notebook-page > figure.notebook-fit-page .plate > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Every physical page is its own article and would otherwise restart the CSS
+   figure counter. The paginator stamps the continuous-document ordinal so the
+   apparatus label remains stable across leaves. */
+article.notebook-page figcaption[data-notebook-figure-number]::before {
+  content: "fig. " attr(data-notebook-figure-number) " —";
+}
+
+/* The reverse keeps its own physical face while preserving the current content system. */
+article.notebook-page.notebook-back {
+  --notebook-paper-padding-start: clamp(1.25rem, 4vw, 2.5rem);
+  --notebook-paper-padding-end: clamp(5.4rem, 10vw, 7.2rem);
+  border-radius: 7px 1px 1px 7px;
+}
+
+article.notebook-page.notebook-back::before {
+  left: auto;
+  right: clamp(4.05rem, 7.2vw, 5.35rem);
+}
+
+article.notebook-page.notebook-back::after {
+  left: auto;
+  right: clamp(.8rem, 1.7vw, 1.35rem);
+}
+
+/* Reader chrome belongs to the 3D face, not to the article itself. Keeping it
+   outside the content scroller means page numbers/turn controls cannot change
+   the page's measured scrollHeight after pagination. */
+.notebook-page-number {
+  position: absolute;
+  z-index: 40;
+  right: clamp(1.25rem, 4vw, 2.5rem);
+  bottom: calc(var(--notebook-line-pitch) * .45);
+  font-family: var(--study-font-utility);
+  font-size: .66rem;
+  line-height: 1;
+  letter-spacing: .08em;
+  color: var(--study-ink-muted);
+  pointer-events: none;
+}
+
+.notebook-back-face .notebook-page-number {
+  right: auto;
+  left: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+/* Both outer paper edges are page-turn handles. This keeps the centre of the
+   sheet free for text selection and future annotations, while making the
+   gesture reachable from either side and without scrolling to the bottom of a
+   tall page. The small folded corner remains only as a visual affordance. */
+.notebook-turn-corner {
+  position: absolute;
+  z-index: 45;
+  top: 0;
+  bottom: 0;
+  width: 2.5rem;
+  height: auto;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  cursor: grab;
+  touch-action: none;
+  background: transparent;
+}
+
+.notebook-turn-corner[data-edge="end"] {
+  right: 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.notebook-turn-corner[data-edge="start"] {
+  left: 0;
+  border-radius: 6px 0 0 6px;
+}
+
+.notebook-turn-corner::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 3.25rem;
+  height: 3.25rem;
+  background:
+    linear-gradient(315deg,
+      color-mix(in srgb, var(--study-paper) 84%, var(--study-rule) 16%) 0 44%,
+      transparent 44%);
+  opacity: .72;
+  pointer-events: none;
+  transition: opacity .18s ease, background .18s ease;
+}
+
+.notebook-turn-corner[data-edge="end"]::after {
+  right: 0;
+  border-radius: 0 0 6px 0;
+}
+
+.notebook-turn-corner[data-edge="start"]::after {
+  left: 0;
+  border-radius: 0 0 0 6px;
+  transform: scaleX(-1);
+}
+
+.notebook-turn-corner:hover::after,
+.notebook-turn-corner:focus-visible::after {
+  opacity: 1;
+  background:
+    linear-gradient(315deg,
+      color-mix(in srgb, var(--study-paper) 72%, var(--study-rule) 28%) 0 53%,
+      transparent 53%);
+}
+
+/* The reverse face is mirrored by its own rotateY(180deg), so its handles line
+   up with the opposite screen edges without any positional override. */
+.notebook-back-face .notebook-turn-corner { transform: none; }
+
+.notebook-turn-corner.is-dragging { cursor: grabbing; }
+
+.notebook-reader-status {
+  min-height: 1rem;
+  font-family: var(--study-font-utility);
+  font-size: .68rem;
+  letter-spacing: .055em;
+  color: color-mix(in srgb, var(--study-paper) 76%, var(--study-canvas));
+  text-align: center;
+}
+
+/* Measurement now happens inside the exact final stack. This guarantees the
+   width used for line wrapping is the width the physical page will actually
+   have after the reader is mounted. */
+.notebook-measure-host {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  pointer-events: none;
+  contain: layout style;
+}
+
+.notebook-measure-host article.notebook-page {
+  position: absolute;
+  inset: 0;
+}
+
+/* On tablet the notebook remains physical, but the peek becomes quieter and
+   the sheet itself gets the room it needs. Mobile still uses the proven
+   continuous renderer below 48rem. */
+@media (min-width: 48.01rem) and (max-width: 64rem) {
+  :root {
+    --notebook-leaf-peek: clamp(1.35rem, 3vw, 2rem);
+    --notebook-leaf-scale: .98;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notebook-leaf { transition: none; }
+  .notebook-turn-corner::after,
+  .notebook-mode-toast { transition: none; }
+}
+
+@media (max-width: 48rem) {
+  .notebook-mode-toast { display: none; }
+  .notebook-reader { display: block; }
+  .notebook-stack { width: 100%; height: auto; perspective: none; }
+}
+
+@media print {
+  .notebook-view-switch,
+  .notebook-mode-toast,
+  .notebook-reader-status,
+  .notebook-turn-corner { display: none !important; }
+}
 </style></head>
 <body><main class="study-shell"><div class="study-grid without-toc"><article data-kind="summary"><div class="book-frontmatter"><div class="book-running-line"><span class="book-course">Arquitectura de Computadoras</span><span class="book-kind">Resumen · Unidad 4</span></div></div><header class="study-header"><div class="mark">Capítulo 4</div><div class="body"><h1 id="jerarquía-de-memoria">Jerarquía de memoria</h1><p class="study-lede">El caso que estresa diagramas técnicos, captions y relaciones espaciales.</p></div></header>
 <div class="section-head"><div class="num"></div><h2 id="por-qué-existe-una-jerarquía">Por qué existe una jerarquía</h2></div>
@@ -1183,4 +1875,603 @@ figure.wide { max-width: none; }
 <aside class="callout warning"><div class="callout-title">Cuidado</div><div class="callout-body"><p class="term">Error frecuente</p><p>La figura representa una relación conceptual entre niveles. No implica que todos los equipos tengan exactamente la misma cantidad de niveles o tecnologías.</p></div></aside>
 <div class="section-head"><div class="num"></div><h2 id="qué-aporta-el-diagrama">Qué aporta el diagrama</h2></div>
 <div class="row"><div class="mark"></div><div class="body"><p>En puro texto habría que reconstruir mentalmente qué está arriba, qué está abajo y qué variable cambia en cada dirección. El diagrama descarga esa reconstrucción y deja la explicación escrita para interpretar la relación.</p></div></div>
-<aside class="callout recall"><div class="callout-title">Recuperación</div><div class="callout-body"><p class="term">Dibujalo</p><p class="prompt">Cerrá el apunte e intentá reconstruir la jerarquía y las dos tendencias principales sin mirar la figura.</p><p class="hint">Respondé sin mirar antes de seguir leyendo.</p></div></aside></article></div></main></body></html>
+<aside class="callout recall"><div class="callout-title">Recuperación</div><div class="callout-body"><p class="term">Dibujalo</p><p class="prompt">Cerrá el apunte e intentá reconstruir la jerarquía y las dos tendencias principales sin mirar la figura.</p><p class="hint">Respondé sin mirar antes de seguir leyendo.</p></div></aside></article></div></main><script>(() => {
+  const PAGED_KINDS = new Set(['summary', 'rapid-review', 'learn', 'explain']);
+  const STORAGE_KEY = 'university-study:reader-mode';
+  const desktop = window.matchMedia('(min-width: 48.01rem)');
+  const print = window.matchMedia('print');
+
+  let mounted = false;
+  let mounting = false;
+  let originalTemplate = null;
+  let reader = null;
+  let readerCleanup = null;
+  let viewSwitch = null;
+  let toastTimer = null;
+  let pageModeUnavailable = null;
+
+  const readStoredMode = () => {
+    try {
+      const value = window.localStorage?.getItem(STORAGE_KEY);
+      return value === 'continuous' || value === 'pages' ? value : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const writeStoredMode = (value) => {
+    try { window.localStorage?.setItem(STORAGE_KEY, value); } catch (_) {}
+  };
+
+  // Pages remain the desktop/tablet default so existing artifacts keep the
+  // experience they already had. Mobile keeps the continuous renderer until a
+  // dedicated small-screen physical reader exists.
+  let preferredMode = readStoredMode() || 'pages';
+
+  const effectiveMode = () => (
+    preferredMode === 'pages' && desktop.matches && !print.matches ? 'pages' : 'continuous'
+  );
+
+  const waitForAssets = async (root) => {
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    if (document.fonts?.ready) {
+      try { await Promise.race([document.fonts.ready, delay(900)]); } catch (_) {}
+    }
+    const images = Array.from(root.querySelectorAll('img'));
+    for (const img of images) img.loading = 'eager';
+    await Promise.all(images.map(async (img) => {
+      if (!img.complete) {
+        await Promise.race([
+          new Promise((resolve) => {
+            img.addEventListener('load', resolve, {once: true});
+            img.addEventListener('error', resolve, {once: true});
+          }),
+          delay(1800),
+        ]);
+      }
+      if (typeof img.decode === 'function' && img.complete) {
+        try { await Promise.race([img.decode(), delay(900)]); } catch (_) {}
+      }
+    }));
+  };
+
+  const cssLengthPx = (style, name, fallback) => {
+    const rootPx = parseFloat(style.fontSize) || 16;
+    const token = style.getPropertyValue(name).trim();
+    if (token.endsWith('rem')) return parseFloat(token) * rootPx;
+    if (token.endsWith('px')) return parseFloat(token);
+    return parseFloat(token) || fallback;
+  };
+
+  const isHeadingLike = (node) => node?.matches?.('.section-head, .subsection-head, .minor-head');
+
+  const makePage = (source, pageIndex) => {
+    const page = source.cloneNode(false);
+    const back = pageIndex % 2 === 1;
+    page.className = `notebook-page ${back ? 'notebook-back' : 'notebook-front'}`;
+    page.dataset.page = String(pageIndex + 1);
+    page.dataset.side = back ? 'back' : 'front';
+    page.removeAttribute('id');
+    return page;
+  };
+
+  const restorePageContent = (source, pages) => {
+    for (const page of pages || []) {
+      for (const node of Array.from(page.children)) source.appendChild(node);
+    }
+  };
+
+  const clearPageFit = (node) => {
+    node?.classList?.remove('notebook-fit-page');
+    node?.style?.removeProperty('--notebook-fit-block-height');
+  };
+
+  const clearPaginationMarks = (root) => {
+    root?.querySelectorAll?.('.notebook-fit-page').forEach(clearPageFit);
+    root?.querySelectorAll?.('[data-notebook-figure-number]').forEach((figure) => {
+      delete figure.dataset.notebookFigureNumber;
+    });
+  };
+
+  const restoreScrollPosition = ({left, top}) => {
+    window.scrollTo({left, top, behavior: 'instant'});
+    window.requestAnimationFrame(() => window.scrollTo({left, top, behavior: 'instant'}));
+  };
+
+  const syncViewSwitch = () => {
+    if (!viewSwitch) return;
+    const actualMode = mounted ? 'pages' : 'continuous';
+    viewSwitch.dataset.mode = actualMode;
+    viewSwitch.querySelectorAll('[data-reader-mode]').forEach((button) => {
+      const mode = button.dataset.readerMode;
+      button.setAttribute('aria-pressed', mode === actualMode ? 'true' : 'false');
+      if (mode === 'pages') {
+        button.disabled = !desktop.matches;
+        button.title = desktop.matches
+          ? 'Leer como hojas físicas'
+          : 'La vista por hojas está disponible en tablet y escritorio';
+      }
+    });
+  };
+
+  // The old visual switch is kept as hidden semantic state for compatibility;
+  // the user-facing interaction is now the V keyboard shortcut.
+  const createViewSwitch = () => {
+    if (viewSwitch) return viewSwitch;
+    const control = document.createElement('div');
+    control.className = 'notebook-view-switch';
+    control.setAttribute('role', 'group');
+    control.setAttribute('aria-label', 'Modo de lectura');
+    control.innerHTML = `
+      <span class="notebook-view-switch-label">Vista</span>
+      <button type="button" data-reader-mode="continuous" aria-pressed="false">Continua</button>
+      <button type="button" data-reader-mode="pages" aria-pressed="false">Hojas</button>
+    `;
+    document.body.appendChild(control);
+    viewSwitch = control;
+    syncViewSwitch();
+    return control;
+  };
+
+  const showModeToast = (mode) => {
+    let toast = document.querySelector('.notebook-mode-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'notebook-mode-toast';
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      document.body.appendChild(toast);
+    }
+    toast.textContent = mode === 'pages' ? 'Vista Hojas · V' : 'Vista Continua · V';
+    toast.classList.add('is-visible');
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1200);
+  };
+
+  const createReaderShell = () => {
+    const shell = document.createElement('section');
+    shell.className = 'notebook-reader is-measuring';
+    shell.setAttribute('aria-label', 'Cuaderno paginado');
+
+    const stack = document.createElement('div');
+    stack.className = 'notebook-stack';
+    shell.appendChild(stack);
+
+    const status = document.createElement('div');
+    status.className = 'notebook-reader-status';
+    status.setAttribute('aria-live', 'polite');
+    shell.appendChild(status);
+
+    return {shell, stack, status};
+  };
+
+  const paginate = (source, stack) => {
+    const nodes = Array.from(source.children);
+    source.querySelectorAll('figure').forEach((figure, index) => {
+      const number = String(index + 1);
+      figure.dataset.notebookFigureNumber = number;
+      const caption = figure.querySelector(':scope > figcaption');
+      if (caption) caption.dataset.notebookFigureNumber = number;
+    });
+    const measure = document.createElement('div');
+    measure.className = 'notebook-measure-host';
+    stack.appendChild(measure);
+
+    // notebook-page already has a fixed border-box height. Its scrollHeight is
+    // therefore equal to clientHeight even when it is empty. The real scroll
+    // overflow is the deterministic packing signal.
+    const overflows = (page) => page.scrollHeight > page.clientHeight + 1;
+
+    const pages = [];
+    let current = makePage(source, 0);
+    measure.appendChild(current);
+    pages.push(current);
+
+    const fitStudySketch = (page, node) => {
+      if (!node.matches?.('figure.study-sketch')) return false;
+
+      const originalHeight = node.getBoundingClientRect().height;
+      const firstTarget = Math.floor(originalHeight - (page.scrollHeight - page.clientHeight) - 2);
+      const minimumReadableHeight = Math.floor(page.clientHeight * .55);
+      if (firstTarget < minimumReadableHeight) return false;
+
+      node.style.setProperty('--notebook-fit-block-height', `${firstTarget}px`);
+      node.classList.add('notebook-fit-page');
+
+      // Grid/caption rounding can leave a residual pixel or two. Tighten the
+      // fitted block once more using the rendered overflow instead of clipping.
+      if (overflows(page)) {
+        const renderedHeight = node.getBoundingClientRect().height;
+        const correctedTarget = Math.floor(renderedHeight - (page.scrollHeight - page.clientHeight) - 2);
+        if (correctedTarget < minimumReadableHeight) {
+          clearPageFit(node);
+          return false;
+        }
+        node.style.setProperty('--notebook-fit-block-height', `${correctedTarget}px`);
+      }
+
+      if (!overflows(page)) return true;
+      clearPageFit(node);
+      return false;
+    };
+
+    const fail = (reason) => {
+      restorePageContent(source, pages);
+      clearPaginationMarks(source);
+      measure.remove();
+      source.dataset.notebookReaderFallback = reason;
+      document.documentElement.dataset.notebookReader = 'continuous-fallback';
+      return null;
+    };
+
+    for (const node of nodes) {
+      current.appendChild(node);
+      if (!overflows(current)) continue;
+
+      current.removeChild(node);
+
+      // Never strand a heading at the bottom of a physical page.
+      let carry = null;
+      const last = current.lastElementChild;
+      if (isHeadingLike(last) && current.children.length > 1) {
+        carry = last;
+        current.removeChild(last);
+      }
+
+      current = makePage(source, pages.length);
+      measure.appendChild(current);
+      pages.push(current);
+      if (carry) current.appendChild(carry);
+      current.appendChild(node);
+
+      // Tall deterministic sketches may shrink to a dedicated leaf while their
+      // SVG keeps its aspect ratio. Any other indivisible oversize component
+      // falls back to the proven continuous renderer.
+      if (overflows(current) && !fitStudySketch(current, node)) {
+        return fail(`oversize-block:${node.className || node.tagName.toLowerCase()}`);
+      }
+    }
+
+    if (pages.some(overflows)) return fail('post-pagination-overflow');
+    measure.remove();
+    return pages;
+  };
+
+  // `edge` is the handle's position inside its own face. The reverse face is
+  // mirrored by rotateY(180deg), so its start edge is drawn on the screen right.
+  const makeTurnCorner = (face, side, edge, getRotation, setRotation) => {
+    const screenSign = (side === 'back' ? -1 : 1) * (edge === 'end' ? 1 : -1);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'notebook-turn-corner';
+    button.dataset.edge = edge;
+    button.setAttribute(
+      'aria-label',
+      side === 'back' ? 'Volver al frente de la hoja' : 'Dar vuelta la hoja'
+    );
+    face.appendChild(button);
+
+    let dragged = false;
+    let x0 = 0;
+    let base = 0;
+    let angle = 0;
+
+    const move = (event) => {
+      const dx = event.clientX - x0;
+      if (!dragged && Math.abs(dx) < 7) return;
+      dragged = true;
+      button.classList.add('is-dragging');
+      angle = Math.max(base - 180, Math.min(base + 180, base - dx * .42));
+      setRotation(angle, true);
+    };
+
+    const finish = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', finish);
+      button.classList.remove('is-dragging');
+      if (!dragged) return;
+      setRotation(Math.round(angle / 180) * 180);
+      setTimeout(() => { dragged = false; }, 0);
+    };
+
+    button.addEventListener('pointerdown', (event) => {
+      if (event.button > 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      x0 = event.clientX;
+      base = getRotation();
+      angle = base;
+      dragged = false;
+      button.setPointerCapture?.(event.pointerId);
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', finish, {once: true});
+      window.addEventListener('pointercancel', finish, {once: true});
+    });
+
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (dragged) return;
+      setRotation(getRotation() + screenSign * 180);
+    });
+  };
+
+  const buildReader = (source, pages, shell, stack, status) => {
+    const pagePairs = [];
+    for (let i = 0; i < pages.length; i += 2) {
+      pagePairs.push([pages[i], pages[i + 1] || makePage(source, i + 1)]);
+    }
+
+    let active = 0;
+    const rotations = Array(pagePairs.length).fill(0);
+    const leaves = [];
+    const sideIsBack = (deg) => Math.abs(Math.round(deg / 180)) % 2 === 1;
+
+    const update = () => {
+      const rootStyle = getComputedStyle(document.documentElement);
+      const peek = cssLengthPx(rootStyle, '--notebook-leaf-peek', 45.6);
+      const hoverExtra = cssLengthPx(rootStyle, '--notebook-leaf-hover-extra', 12);
+
+      leaves.forEach((leaf, index) => {
+        const d = index - active;
+        const distance = Math.abs(d);
+        leaf.classList.toggle('is-active', d === 0);
+        leaf.classList.toggle('is-neighbor', distance === 1);
+        leaf.classList.toggle('is-hidden', distance > 1);
+        // Keep distant sheets out of sight via opacity while leaving their text
+        // in the rendered DOM. aria-hidden still excludes them from assistive
+        // navigation until the sheet becomes active or adjacent.
+        leaf.style.visibility = distance > 1 ? 'visible' : '';
+        leaf.style.zIndex = String(20 - Math.min(distance, 19));
+        leaf.tabIndex = distance === 1 ? 0 : -1;
+        leaf.setAttribute('aria-hidden', distance > 1 ? 'true' : 'false');
+
+        if (d === 0) {
+          leaf.style.transform = `translateX(0) scale(1) rotateY(${rotations[index].toFixed(2)}deg)`;
+          return;
+        }
+
+        // visibility:hidden still has geometry. Hidden sheets therefore stay at
+        // x=0 so only the two intentional neighbour peeks affect the stack.
+        if (distance > 1) {
+          leaf.style.transform = 'translateX(0) scale(var(--notebook-leaf-scale)) rotateY(0deg)';
+          return;
+        }
+
+        const hoverBoost = leaf.matches(':hover') ? hoverExtra : 0;
+        leaf.style.transform = `translateX(${d * (peek + hoverBoost)}px) scale(var(--notebook-leaf-scale)) rotateY(0deg)`;
+      });
+
+      const back = sideIsBack(rotations[active]);
+      const physicalPage = active * 2 + (back ? 2 : 1);
+      status.textContent = `Hoja ${active + 1} de ${leaves.length} · ${back ? 'dorso' : 'frente'} · p. ${Math.min(physicalPage, pages.length)}`;
+      shell.dataset.activeLeaf = String(active + 1);
+      shell.dataset.activeSide = back ? 'back' : 'front';
+    };
+
+    const go = (index) => {
+      const next = Math.max(0, Math.min(leaves.length - 1, index));
+      if (next === active) return;
+      rotations[active] = 0;
+      active = next;
+      rotations[active] = 0;
+      update();
+    };
+
+    pagePairs.forEach(([front, back], index) => {
+      const leaf = document.createElement('div');
+      leaf.className = 'notebook-leaf';
+      leaf.dataset.leaf = String(index + 1);
+
+      const frontFace = document.createElement('div');
+      frontFace.className = 'notebook-face notebook-front-face notebook-front';
+      front.classList.add('notebook-front');
+      front.dataset.page = String(index * 2 + 1);
+      frontFace.appendChild(front);
+
+      const backFace = document.createElement('div');
+      backFace.className = 'notebook-face notebook-back-face notebook-back';
+      back.classList.add('notebook-back');
+      back.dataset.page = String(index * 2 + 2);
+      backFace.appendChild(back);
+
+      const numberFront = document.createElement('div');
+      numberFront.className = 'notebook-page-number';
+      numberFront.textContent = `— ${index * 2 + 1} —`;
+      frontFace.appendChild(numberFront);
+
+      const numberBack = document.createElement('div');
+      numberBack.className = 'notebook-page-number';
+      numberBack.textContent = `— ${index * 2 + 2} —`;
+      backFace.appendChild(numberBack);
+
+      const setRotation = (value, dragging = false) => {
+        rotations[index] = value;
+        leaf.style.transition = dragging ? 'none' : '';
+        update();
+        if (!dragging) requestAnimationFrame(() => { leaf.style.transition = ''; });
+      };
+      const getRotation = () => rotations[index];
+      for (const edge of ['start', 'end']) {
+        makeTurnCorner(frontFace, 'front', edge, getRotation, setRotation);
+        makeTurnCorner(backFace, 'back', edge, getRotation, setRotation);
+      }
+
+      leaf.append(frontFace, backFace);
+      leaf.addEventListener('pointerdown', (event) => {
+        if (index === active || event.target.closest('.notebook-turn-corner')) return;
+        event.preventDefault();
+        go(index);
+      });
+      leaf.addEventListener('keydown', (event) => {
+        if (index !== active && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault();
+          go(index);
+        }
+      });
+      leaf.addEventListener('mouseenter', update);
+      leaf.addEventListener('mouseleave', update);
+      leaves.push(leaf);
+      stack.appendChild(leaf);
+    });
+
+    const onKeydown = (event) => {
+      if (!shell.isConnected || event.altKey || event.ctrlKey || event.metaKey) return;
+      const activeElement = document.activeElement;
+      const tag = activeElement?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || activeElement?.isContentEditable) return;
+      if (event.key === 'ArrowRight') { event.preventDefault(); go(active + 1); }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); go(active - 1); }
+    };
+    document.addEventListener('keydown', onKeydown);
+    readerCleanup = () => document.removeEventListener('keydown', onKeydown);
+
+    update();
+    shell.classList.remove('is-measuring');
+    return shell;
+  };
+
+  const restoreContinuous = (state = 'continuous') => {
+    readerCleanup?.();
+    readerCleanup = null;
+    if (mounted && reader?.isConnected && originalTemplate) {
+      reader.replaceWith(originalTemplate.cloneNode(true));
+    }
+    mounted = false;
+    reader = null;
+    document.documentElement.dataset.notebookReader = state;
+    delete document.documentElement.dataset.notebookPages;
+    syncViewSwitch();
+  };
+
+  const mount = async ({persistFallback = false} = {}) => {
+    if (mounted) return true;
+    if (mounting || effectiveMode() !== 'pages' || pageModeUnavailable) return false;
+    const grid = document.querySelector('.study-grid');
+    const source = grid?.querySelector(':scope > article');
+    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return false;
+
+    if (!originalTemplate) originalTemplate = source.cloneNode(true);
+    mounting = true;
+    await waitForAssets(source);
+    if (effectiveMode() !== 'pages' || !source.isConnected) {
+      mounting = false;
+      syncViewSwitch();
+      return false;
+    }
+
+    delete source.dataset.notebookReaderFallback;
+    const scrollPosition = {left: window.scrollX, top: window.scrollY};
+    const {shell, stack, status} = createReaderShell();
+    grid.insertBefore(shell, source);
+    const pages = paginate(source, stack);
+    if (!pages) {
+      pageModeUnavailable = source.dataset.notebookReaderFallback || 'pagination-failed';
+      shell.remove();
+      mounting = false;
+      preferredMode = 'continuous';
+      if (persistFallback) writeStoredMode('continuous');
+      syncViewSwitch();
+      restoreScrollPosition(scrollPosition);
+      return false;
+    }
+
+    // A one-page artifact gains nothing from the reader.
+    if (pages.length < 2) {
+      restorePageContent(source, pages);
+      clearPaginationMarks(source);
+      shell.remove();
+      mounting = false;
+      pageModeUnavailable = 'single-page';
+      preferredMode = 'continuous';
+      if (persistFallback) writeStoredMode('continuous');
+      document.documentElement.dataset.notebookReader = 'continuous';
+      syncViewSwitch();
+      restoreScrollPosition(scrollPosition);
+      return false;
+    }
+
+    reader = buildReader(source, pages, shell, stack, status);
+    source.remove();
+    mounted = true;
+    mounting = false;
+    document.documentElement.dataset.notebookReader = 'ready';
+    document.documentElement.dataset.notebookPages = String(pages.length);
+    syncViewSwitch();
+    return true;
+  };
+
+  const setViewMode = async (mode, {persist = true} = {}) => {
+    if (mode !== 'continuous' && mode !== 'pages') return mounted ? 'pages' : 'continuous';
+    if (mode === 'pages' && (!desktop.matches || pageModeUnavailable)) {
+      preferredMode = 'continuous';
+      if (persist) writeStoredMode('continuous');
+      syncViewSwitch();
+      return 'continuous';
+    }
+    preferredMode = mode;
+    if (persist) writeStoredMode(mode);
+
+    if (effectiveMode() === 'pages') {
+      const ready = await mount({persistFallback: persist});
+      return ready ? 'pages' : 'continuous';
+    } else {
+      restoreContinuous('continuous');
+    }
+    syncViewSwitch();
+    return 'continuous';
+  };
+
+  const toggleViewMode = async () => {
+    if (!desktop.matches || print.matches) return;
+    const next = mounted || mounting ? 'continuous' : 'pages';
+    const actual = await setViewMode(next);
+    showModeToast(actual);
+  };
+
+  const isEditableTarget = (target) => {
+    const tag = target?.tagName?.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
+  };
+
+  const onViewShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target)) return;
+    if (event.key?.toLowerCase() !== 'v') return;
+    if (!desktop.matches || print.matches) return;
+    event.preventDefault();
+    void toggleViewMode();
+  };
+
+  const restoreForPrint = () => {
+    if (mounted) restoreContinuous('print-continuous');
+  };
+
+  const init = () => {
+    const source = document.querySelector('.study-grid > article');
+    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
+    originalTemplate = source.cloneNode(true);
+    createViewSwitch();
+    document.addEventListener('keydown', onViewShortcut);
+    if (effectiveMode() === 'pages') void mount();
+    else {
+      document.documentElement.dataset.notebookReader = 'continuous';
+      syncViewSwitch();
+    }
+  };
+
+  window.addEventListener('beforeprint', restoreForPrint);
+  window.addEventListener('afterprint', () => {
+    if (effectiveMode() === 'pages') mount();
+  });
+  desktop.addEventListener?.('change', () => {
+    pageModeUnavailable = null;
+    if (effectiveMode() === 'pages') void mount();
+    else restoreContinuous('continuous');
+    syncViewSwitch();
+  });
+
+  init();
+})();
+</script></body></html>

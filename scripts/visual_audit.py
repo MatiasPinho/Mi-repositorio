@@ -335,7 +335,7 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
                     paragraphLineHeight: parseFloat(ps.lineHeight),
                     paragraphFontSize: parseFloat(ps.fontSize),
                     headings: document.querySelectorAll('h1,h2,h3').length,
-                    figures: document.querySelectorAll('figure img').length,
+                    figures: document.querySelectorAll('figure').length,
                     images: images.length,
                     loadedImages: images.filter(img => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0).length,
                     callouts: document.querySelectorAll('.callout').length,

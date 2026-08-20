@@ -146,6 +146,9 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn(".notebook-mode-toast", css)
         self.assertIn("Vista Hojas · V", js)
         self.assertIn("Vista Continua · V", js)
+        self.assertIn("pageModeUnavailable", js)
+        self.assertIn("restoreScrollPosition", js)
+        self.assertIn("data-notebook-figure-number", css)
 
     def test_browser_can_switch_continuous_and_pages_with_v_without_regenerating_content(self):
         try:
@@ -209,6 +212,158 @@ class NotebookReaderTests(unittest.TestCase):
                 self.assertIn("Párrafo 89", page.locator("body").inner_text())
                 self.assertIn("Vista Hojas", page.locator(".notebook-mode-toast").inner_text())
                 self.assertIn("Unidad 3", original_text)
+                browser.close()
+
+    def test_tall_study_sketch_fits_a_leaf_and_v_reports_the_actual_mode(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            svg = td / "tall-sketch.svg"
+            html = td / "summary.html"
+            svg.write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1408" '
+                'viewBox="0 0 680 1408" data-study-sketch="1" data-transparent-canvas="1">'
+                '<title>Figura vertical</title><desc>Prueba de paginación</desc>'
+                '<rect x="20" y="20" width="640" height="1368" fill="none" stroke="black"/>'
+                '<text x="340" y="704" text-anchor="middle">Contenido legible</text></svg>',
+                encoding="utf-8",
+            )
+            md.write_text(
+                "# Unidad 1\n\nIntroducción.\n\n## Tema\n\n"
+                + "\n\n".join(f"Párrafo previo {i} con contenido de prueba." for i in range(1, 12))
+                + '\n\n![Figura vertical](tall-sketch.svg "Debe caber completa en una hoja física.")\n\n'
+                + "\n\n".join(f"Párrafo posterior {i} con contenido de prueba." for i in range(1, 45)),
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+            html_text = html.read_text(encoding="utf-8")
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                page = browser.new_page(viewport={"width": 1200, "height": 1000})
+                page.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => ['ready', 'continuous-fallback'].includes(document.documentElement.dataset.notebookReader)",
+                    timeout=6000,
+                )
+                reader_state = page.evaluate(
+                    "() => ({state: document.documentElement.dataset.notebookReader, "
+                    "reason: document.querySelector('.study-grid > article')?.dataset.notebookReaderFallback || null})"
+                )
+                self.assertEqual(reader_state["state"], "ready", reader_state)
+                self.assertEqual(page.locator(".notebook-fit-page").count(), 1)
+                self.assertEqual(
+                    page.locator("figure.study-sketch").get_attribute("data-notebook-figure-number"),
+                    "1",
+                )
+                caption = page.locator("figure.study-sketch figcaption")
+                self.assertEqual(caption.get_attribute("data-notebook-figure-number"), "1")
+                self.assertIn(
+                    "1",
+                    caption.evaluate("node => getComputedStyle(node, '::before').content"),
+                )
+                self.assertEqual(
+                    page.locator(".notebook-page").evaluate_all(
+                        "nodes => nodes.filter(node => node.scrollHeight > node.clientHeight + 1).length"
+                    ),
+                    0,
+                )
+
+                page.keyboard.press("v")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
+                self.assertEqual(page.locator("h1").inner_text(), "Unidad 1")
+
+                page.keyboard.press("v")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+                self.assertIn("Vista Hojas", page.locator(".notebook-mode-toast").inner_text())
+                self.assertEqual(page.locator(".notebook-fit-page").count(), 1)
+                browser.close()
+
+    def test_impossible_page_fallback_keeps_scroll_and_reports_continuous_mode(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            html = td / "summary.html"
+            oversized_code = "\n".join(f"línea_{i} = {i}" for i in range(1, 180))
+            md.write_text(
+                "# Unidad 1\n\nIntroducción.\n\n## Bloque indivisible\n\n"
+                + "\n\n".join(f"Párrafo {i} para habilitar desplazamiento." for i in range(1, 24))
+                + f"\n\n```text\n{oversized_code}\n```\n",
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                context = browser.new_context(viewport={"width": 1200, "height": 900})
+                context.add_init_script(
+                    "localStorage.setItem('university-study:reader-mode', 'continuous')"
+                )
+                page = context.new_page()
+                page.goto(html.resolve().as_uri(), wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                page.evaluate("window.scrollTo(0, 700)")
+                before = page.evaluate("window.scrollY")
+
+                page.keyboard.press("v")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous-fallback'",
+                    timeout=6000,
+                )
+                page.wait_for_timeout(100)
+                after = page.evaluate("window.scrollY")
+                self.assertLessEqual(abs(after - before), 2)
+                self.assertEqual(page.locator(".notebook-reader").count(), 0)
+                self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
+
+                page.keyboard.press("v")
+                page.wait_for_timeout(100)
+                self.assertEqual(
+                    page.evaluate("document.documentElement.dataset.notebookReader"),
+                    "continuous-fallback",
+                )
+                self.assertEqual(page.locator(".notebook-reader").count(), 0)
+                self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
                 browser.close()
 
     def test_tablet_browser_audit_has_no_horizontal_or_page_overflow(self):

@@ -11,6 +11,7 @@
   let readerCleanup = null;
   let viewSwitch = null;
   let toastTimer = null;
+  let pageModeUnavailable = null;
 
   const readStoredMode = () => {
     try {
@@ -83,6 +84,23 @@
     }
   };
 
+  const clearPageFit = (node) => {
+    node?.classList?.remove('notebook-fit-page');
+    node?.style?.removeProperty('--notebook-fit-block-height');
+  };
+
+  const clearPaginationMarks = (root) => {
+    root?.querySelectorAll?.('.notebook-fit-page').forEach(clearPageFit);
+    root?.querySelectorAll?.('[data-notebook-figure-number]').forEach((figure) => {
+      delete figure.dataset.notebookFigureNumber;
+    });
+  };
+
+  const restoreScrollPosition = ({left, top}) => {
+    window.scrollTo({left, top, behavior: 'instant'});
+    window.requestAnimationFrame(() => window.scrollTo({left, top, behavior: 'instant'}));
+  };
+
   const syncViewSwitch = () => {
     if (!viewSwitch) return;
     const actualMode = mounted ? 'pages' : 'continuous';
@@ -152,6 +170,12 @@
 
   const paginate = (source, stack) => {
     const nodes = Array.from(source.children);
+    source.querySelectorAll('figure').forEach((figure, index) => {
+      const number = String(index + 1);
+      figure.dataset.notebookFigureNumber = number;
+      const caption = figure.querySelector(':scope > figcaption');
+      if (caption) caption.dataset.notebookFigureNumber = number;
+    });
     const measure = document.createElement('div');
     measure.className = 'notebook-measure-host';
     stack.appendChild(measure);
@@ -166,8 +190,37 @@
     measure.appendChild(current);
     pages.push(current);
 
+    const fitStudySketch = (page, node) => {
+      if (!node.matches?.('figure.study-sketch')) return false;
+
+      const originalHeight = node.getBoundingClientRect().height;
+      const firstTarget = Math.floor(originalHeight - (page.scrollHeight - page.clientHeight) - 2);
+      const minimumReadableHeight = Math.floor(page.clientHeight * .55);
+      if (firstTarget < minimumReadableHeight) return false;
+
+      node.style.setProperty('--notebook-fit-block-height', `${firstTarget}px`);
+      node.classList.add('notebook-fit-page');
+
+      // Grid/caption rounding can leave a residual pixel or two. Tighten the
+      // fitted block once more using the rendered overflow instead of clipping.
+      if (overflows(page)) {
+        const renderedHeight = node.getBoundingClientRect().height;
+        const correctedTarget = Math.floor(renderedHeight - (page.scrollHeight - page.clientHeight) - 2);
+        if (correctedTarget < minimumReadableHeight) {
+          clearPageFit(node);
+          return false;
+        }
+        node.style.setProperty('--notebook-fit-block-height', `${correctedTarget}px`);
+      }
+
+      if (!overflows(page)) return true;
+      clearPageFit(node);
+      return false;
+    };
+
     const fail = (reason) => {
       restorePageContent(source, pages);
+      clearPaginationMarks(source);
       measure.remove();
       source.dataset.notebookReaderFallback = reason;
       document.documentElement.dataset.notebookReader = 'continuous-fallback';
@@ -194,9 +247,10 @@
       if (carry) current.appendChild(carry);
       current.appendChild(node);
 
-      // A component that cannot fit on an empty physical page falls back to the
-      // proven continuous renderer instead of clipping or inner scrolling.
-      if (overflows(current)) {
+      // Tall deterministic sketches may shrink to a dedicated leaf while their
+      // SVG keeps its aspect ratio. Any other indivisible oversize component
+      // falls back to the proven continuous renderer.
+      if (overflows(current) && !fitStudySketch(current, node)) {
         return fail(`oversize-block:${node.className || node.tagName.toLowerCase()}`);
       }
     }
@@ -414,11 +468,12 @@
     syncViewSwitch();
   };
 
-  const mount = async () => {
-    if (mounted || mounting || effectiveMode() !== 'pages') return;
+  const mount = async ({persistFallback = false} = {}) => {
+    if (mounted) return true;
+    if (mounting || effectiveMode() !== 'pages' || pageModeUnavailable) return false;
     const grid = document.querySelector('.study-grid');
     const source = grid?.querySelector(':scope > article');
-    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
+    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return false;
 
     if (!originalTemplate) originalTemplate = source.cloneNode(true);
     mounting = true;
@@ -426,27 +481,38 @@
     if (effectiveMode() !== 'pages' || !source.isConnected) {
       mounting = false;
       syncViewSwitch();
-      return;
+      return false;
     }
 
+    delete source.dataset.notebookReaderFallback;
+    const scrollPosition = {left: window.scrollX, top: window.scrollY};
     const {shell, stack, status} = createReaderShell();
     grid.insertBefore(shell, source);
     const pages = paginate(source, stack);
     if (!pages) {
+      pageModeUnavailable = source.dataset.notebookReaderFallback || 'pagination-failed';
       shell.remove();
       mounting = false;
+      preferredMode = 'continuous';
+      if (persistFallback) writeStoredMode('continuous');
       syncViewSwitch();
-      return;
+      restoreScrollPosition(scrollPosition);
+      return false;
     }
 
     // A one-page artifact gains nothing from the reader.
     if (pages.length < 2) {
       restorePageContent(source, pages);
+      clearPaginationMarks(source);
       shell.remove();
       mounting = false;
+      pageModeUnavailable = 'single-page';
+      preferredMode = 'continuous';
+      if (persistFallback) writeStoredMode('continuous');
       document.documentElement.dataset.notebookReader = 'continuous';
       syncViewSwitch();
-      return;
+      restoreScrollPosition(scrollPosition);
+      return false;
     }
 
     reader = buildReader(source, pages, shell, stack, status);
@@ -456,27 +522,35 @@
     document.documentElement.dataset.notebookReader = 'ready';
     document.documentElement.dataset.notebookPages = String(pages.length);
     syncViewSwitch();
+    return true;
   };
 
-  const setViewMode = (mode, {persist = true} = {}) => {
-    if (mode !== 'continuous' && mode !== 'pages') return;
-    if (mode === 'pages' && !desktop.matches) return;
+  const setViewMode = async (mode, {persist = true} = {}) => {
+    if (mode !== 'continuous' && mode !== 'pages') return mounted ? 'pages' : 'continuous';
+    if (mode === 'pages' && (!desktop.matches || pageModeUnavailable)) {
+      preferredMode = 'continuous';
+      if (persist) writeStoredMode('continuous');
+      syncViewSwitch();
+      return 'continuous';
+    }
     preferredMode = mode;
     if (persist) writeStoredMode(mode);
 
     if (effectiveMode() === 'pages') {
-      mount();
+      const ready = await mount({persistFallback: persist});
+      return ready ? 'pages' : 'continuous';
     } else {
       restoreContinuous('continuous');
     }
     syncViewSwitch();
+    return 'continuous';
   };
 
-  const toggleViewMode = () => {
+  const toggleViewMode = async () => {
     if (!desktop.matches || print.matches) return;
     const next = mounted || mounting ? 'continuous' : 'pages';
-    setViewMode(next);
-    showModeToast(next);
+    const actual = await setViewMode(next);
+    showModeToast(actual);
   };
 
   const isEditableTarget = (target) => {
@@ -490,7 +564,7 @@
     if (event.key?.toLowerCase() !== 'v') return;
     if (!desktop.matches || print.matches) return;
     event.preventDefault();
-    toggleViewMode();
+    void toggleViewMode();
   };
 
   const restoreForPrint = () => {
@@ -503,7 +577,7 @@
     originalTemplate = source.cloneNode(true);
     createViewSwitch();
     document.addEventListener('keydown', onViewShortcut);
-    if (effectiveMode() === 'pages') mount();
+    if (effectiveMode() === 'pages') void mount();
     else {
       document.documentElement.dataset.notebookReader = 'continuous';
       syncViewSwitch();
@@ -515,7 +589,8 @@
     if (effectiveMode() === 'pages') mount();
   });
   desktop.addEventListener?.('change', () => {
-    if (effectiveMode() === 'pages') mount();
+    pageModeUnavailable = null;
+    if (effectiveMode() === 'pages') void mount();
     else restoreContinuous('continuous');
     syncViewSwitch();
   });

@@ -229,6 +229,44 @@ article.notebook-page {
   overflow: hidden;
 }
 
+/* A deterministic sketch that is taller than one physical leaf gets the
+   available block height and scales through its viewBox. The caption keeps its
+   natural size; only the drawing occupies the flexible row. This class is
+   temporary presentation state applied by the paginator. */
+article.notebook-page > figure.notebook-fit-page {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  block-size: var(--notebook-fit-block-height) !important;
+  height: var(--notebook-fit-block-height);
+  min-height: 0;
+  margin-block: var(--notebook-line-pitch);
+}
+
+article.notebook-page > figure.notebook-fit-page .plate {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  block-size: auto;
+  overflow: hidden;
+}
+
+article.notebook-page > figure.notebook-fit-page .plate > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Every physical page is its own article and would otherwise restart the CSS
+   figure counter. The paginator stamps the continuous-document ordinal so the
+   apparatus label remains stable across leaves. */
+article.notebook-page figcaption[data-notebook-figure-number]::before {
+  content: "fig. " attr(data-notebook-figure-number) " —";
+}
+
 /* The reverse keeps its own physical face while preserving the current content system. */
 article.notebook-page.notebook-back {
   --notebook-paper-padding-start: clamp(1.25rem, 4vw, 2.5rem);
