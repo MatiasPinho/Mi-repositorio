@@ -34,7 +34,7 @@ The active path is **Hybrid V1**:
 - schema-2/V2 free-composition remains compatibility/testing code, not this pipeline's critical path.
 
 ## AUTHORITATIVE RUNTIME GUARD
-For `/resumen`, `scripts/resumen_guard.py` is authoritative for environment preflight, plan validation/lock, bounded provider fallback, visual build, candidate render and review binding. `scripts/resumen_finalize.py` is authoritative for finish/status.
+For `/resumen`, `scripts/resumen_guard.py` is authoritative for environment preflight, plan validation/lock, bounded provider fallback, candidate render and review binding. `scripts/resumen_visual_build.py` is the unit-scoped visual materialization entrypoint. `scripts/resumen_finalize.py` is authoritative for finish/status.
 
 Correctness must not depend on agent obedience.
 
@@ -92,15 +92,15 @@ This validates canonical coverage + hybrid schemas and writes `02-plan-lock.json
 
 ### 5. GUARDED VISUAL BUILD
 
-`python scripts/venv_exec.py scripts/resumen_guard.py build --run <run-dir>`
+`python scripts/venv_exec.py scripts/resumen_visual_build.py --run <run-dir>`
 
-The guard preserves figure-registry root metadata while allowing only planned derived additions.
+This entrypoint scopes registration to the active unit only, preserves figure-registry root metadata and allows only planned derived additions. It must not rewrite figure registries belonging to other units.
 
 If and only if the build reports an unavailable optional illustration, the sole allowed post-lock mutation is:
 
 `python scripts/venv_exec.py scripts/resumen_guard.py fallback --run <run-dir> --concept <concept-id>`
 
-Then rerun guarded build once. The fallback command itself edits the narrow allowed fields and updates the lock. Do not edit the plan manually. Stop on deterministic diagram, registry, collision or engine failure.
+Then rerun the unit-scoped guarded build once. The fallback command itself edits the narrow allowed fields and updates the lock. Do not edit the plan manually. Stop on deterministic diagram, registry, collision or engine failure.
 
 ### 6. DRAFT
 Write `03-draft.md` only after `02-visual-build.json -> ok: true`. Use canonical knowledge, fidelity constraints and the exact derived assets returned by the build. Generated illustrations are recognition support, never exact evidence.
