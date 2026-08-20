@@ -7,12 +7,12 @@ from scripts import scene_pencil, sketch_figure, sketch_notebook_polish
 from scripts import visual_plan_hybrid_runtime as runtime
 
 
-def sample_spec() -> dict:
+def sample_spec(title: str = "El sistema operativo entre programas y hardware") -> dict:
     refs = ["concept:runtime"]
     return {
         "schema_version": 1,
         "id": "runtime-notebook-polish",
-        "title": "El sistema operativo entre programas y hardware",
+        "title": title,
         "kind": "flow",
         "visual_treatment": "reinterpret",
         "role": "essential",
@@ -126,6 +126,19 @@ class NotebookPencilPrimitiveTests(unittest.TestCase):
                 safe_width + sketch_notebook_polish.DETAIL_CHAR_WIDTH,
             )
 
+    def test_title_kind_uses_inline_baseline_when_there_is_room(self):
+        placement, y = sketch_notebook_polish.title_meta_placement(sample_spec("Ciclo de instrucción"), 900.0)
+        self.assertEqual(placement, "inline")
+        self.assertEqual(y, sketch_notebook_polish.TITLE_INLINE_Y)
+
+    def test_title_kind_moves_to_meta_lane_when_title_would_collide(self):
+        placement, y = sketch_notebook_polish.title_meta_placement(
+            sample_spec("El sistema operativo entre programas y hardware"),
+            680.0,
+        )
+        self.assertEqual(placement, "top-right")
+        self.assertEqual(y, sketch_notebook_polish.TITLE_META_LANE_Y)
+
 
 class ActiveHybridNotebookPolishTests(unittest.TestCase):
     @classmethod
@@ -136,16 +149,16 @@ class ActiveHybridNotebookPolishTests(unittest.TestCase):
         svg, report = sketch_figure.render_svg(sample_spec())
         text = svg.decode("utf-8")
 
-        self.assertIn('data-sketch-polish="carpeta-sketch-polish-v1"', text)
+        self.assertIn('data-sketch-polish="carpeta-sketch-polish-v2"', text)
         self.assertIn('data-node-text-policy="fit-first-v2"', text)
         self.assertIn('data-shape-policy="pencil-shape-variants-v1"', text)
-        self.assertIn('data-title-meta-policy="baseline-safe-v1"', text)
+        self.assertIn('data-title-meta-policy="collision-safe-v2"', text)
         self.assertIn('data-svg-typography="carpeta-svg-fonts-v1"', text)
         self.assertIn('font-family:"Neucha"', text)
         self.assertIn('font-family:"Architects Daughter"', text)
         self.assertRegex(
             text,
-            r'<text class="sketch-kind"[^>]*y="52\.00"[^>]*data-role="figure-kind"',
+            r'<text class="sketch-kind"[^>]*data-role="figure-kind"[^>]*data-placement="(?:inline|top-right)"',
         )
 
         variants = re.findall(r'data-pencil-variant="([abc])"', text)
