@@ -27,30 +27,36 @@ Then load only these summary-specific rules/contracts before semantic work:
 - `contracts/hybrid-visuals.md`
 
 ## SHARED LIFECYCLE
-Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps below specialize that lifecycle for summaries. They do not replace or weaken any shared academic review, gate, publication, environment or failure requirement.
+Execute `pipelines/_shared/semantic-document-lifecycle.md` exactly. The steps below specialize that lifecycle for summaries. They do not replace or weaken any shared academic, publication or source-truth requirement.
 
 ## ACTIVE VISUAL ARCHITECTURE
-The current summary path is hybrid. The visual and notebook improvements already present in this branch remain active; only the expensive free-composition V2 scene-authoring/review path is removed from the normal critical path.
+The active summary path is **Hybrid V1**.
 
-- **Exact academic structure** → `visual_medium: diagram` → compact schema-1 structured spec → deterministic notebook-style SVG through the existing `scripts/visual_plan.py` backend, dispatched by `scripts/visual_plan_hybrid.py`.
-- **Physical/recognizable support** → `visual_medium: illustration` → compact semantic illustration object → one bounded generated-image provider call → deterministic crop/background removal → transparent notebook overlay.
-- **Source figures** → provenance/evidence only. Raw source pixels are never published by `/resumen`; reconstruct them as a notebook-style deterministic diagram when truth can be preserved, otherwise use `visual_not_needed` and keep the explanation in text.
+- Exact academic structure → `visual_medium: diagram` → schema-1 semantic sketch → deterministic notebook SVG.
+- Optional physical recognition → `visual_medium: illustration` → bounded Cloudflare Workers AI illustration → deterministic crop/transparency → notebook SVG overlay.
+- Source figures are evidence/provenance only; raw source pixels are not published by `/resumen`.
 - Every selected published visual uses `visual_treatment: reinterpret` and is registered as `origin: derived`.
-- Generated illustrations are always optional `visual_helpful`; they never carry required academic truth.
-- The old schema-2 free-composition engine stays in the repository for compatibility/testing but is not required for new summary visuals.
+- Generated illustrations are always optional `visual_helpful`; required academic truth must remain deterministic.
+- Schema-2/V2 free-composition remains in the repository for compatibility/testing but is not on this pipeline's critical path.
+
+## HARD RUNTIME BOUNDARY
+For this pipeline, `scripts/resumen_guard.py` is authoritative for preflight, plan lock, hybrid build, candidate render, review binding, effective status and finish.
+
+The guard exists specifically so correctness does not depend on agent obedience.
+
+Hard prohibitions during an active run:
+- Never edit `scripts/`, `pipelines/`, `rules/`, `contracts/`, `core/`, `design/`, `study_mcp/`, tests or other engine files.
+- Never hand-write or patch `02-visual-build.json`.
+- Never create repo-root `assets/` copies or run-local symlinks to make images resolve.
+- Never edit `manifest.json` to mark a run finished.
+- Never re-lock an already locked plan.
+- Never edit `02-plan.json` after the plan lock. The only allowed post-lock mutation is the single bounded provider fallback performed by `resumen_guard.py fallback`.
+- Never call legacy `pipeline_run.py finish` as the authoritative finish for this hybrid pipeline. A stored manifest status without a valid guard attestation is not a finished run.
 
 ## RUNTIME BUDGET
 A standard `resumen` should normally finish in roughly **10–20 minutes** on a capable hosted model; **30 minutes** is a performance warning and **60+ minutes is a runtime/product failure**.
 
-Runtime optimization never changes the pedagogical visual decision. Never choose `visual_not_needed` merely to save tokens, time, provider calls or implementation work.
-
-The summary model must not author raw SVG, explicit coordinate-heavy scene graphs, separate wide/narrow scene geometry or per-image visual-review loops. Browser auditing is final integration QA, not another illustration-generation session.
-
-## GATE INTEGRITY
-A study agent may repair run-local candidate data, but it must never repair the engine in order to make the current run pass.
-- Never edit `scripts/`, `pipelines/`, `rules/`, `contracts/`, `core/`, `design/`, `study_mcp/`, tests or other protected engine files during a running study pipeline.
-- Never hand-write or patch `02-visual-build.json`; it must come from `scripts/visual_plan_hybrid.py`.
-- Never patch validators/renderers to accommodate a candidate. A legitimate engine defect stops the run and is fixed outside that run.
+Runtime optimization never changes the pedagogical visual decision. Never choose `visual_not_needed` merely to save time, tokens or implementation work.
 
 ## DEPTH
 `resumen` is the single public long-form study-document action.
@@ -58,92 +64,175 @@ A study agent may repair run-local candidate data, but it must never repair the 
 - Explicit `detallado`, `profundo`, former “guía”, or equivalent wording selects `detailed` while preserving scope and every gate.
 - Detailed mode may add useful explanation/examples but cannot invent syllabus scope or become a transcript rewrite.
 - Record `depth: "standard"|"detailed"` in `02-plan.json`.
-- The published artifact remains the unit's canonical `resumen`; detailed mode changes depth, not the public artifact type.
 
-## Pipeline-specific RUN specialization
-1. **SCOPE + PREREQUISITE** → resolve course + scope to exactly one stable `unit_id`; summary scope is unit-only. Apply the shared **NEEDS_INGESTION** boundary before starting. Use canonical concepts plus observed topics from `conocimiento/topics.json` as a coverage guard. If Study MCP is connected, prefer `study_get_unit_context(course, scope)` / `study_list_artifacts(course)` for canonical context. Figure migration is legacy metadata normalization only; it must not reread sources.
+## PIPELINE
 
-2. **START RUN** → `python scripts/venv_exec.py scripts/pipeline_run.py start --course <course-folder> --pipeline resumen --scope "<scope>"`. The run records deterministic fingerprints of engine and canonical inputs. Figure mutation is allowed only through the planned hybrid visual build.
+### 1. SCOPE + PREREQUISITE + ENVIRONMENT PREFLIGHT
+Resolve course + scope to exactly one stable `unit_id`. Apply **NEEDS_INGESTION** before starting if canonical concepts are missing.
 
-3. **PLAN** → write `02-plan.json`, including `depth`. Use canonical knowledge to decide ordering, examples, traps and omissions. For every major concept decide `visual_required`, `visual_helpful` or `visual_not_needed`; for every selected visual record treatment, reason and provenance.
+Before starting the run, execute:
 
-   In this **same PLAN pass**, perform one compact physical-recognition review over the canonical knowledge and source descriptions already loaded. Do not spawn another agent, another model call, another source-reading pass or a separate visual-review loop. Consider recognizable physical subjects such as CPU packages, RAM modules, disks, peripherals, punched cards, magnetic tape or similar objects. A candidate belongs on the illustration path only when recognizing its physical form helps learning and no exact labels, arrows, chronology, quantities or topology need to live inside the generated pixels.
+`python scripts/venv_exec.py scripts/resumen_guard.py preflight --course <course>`
 
-   Record that check in `02-plan.json` as:
+This preflight is non-blocking for optional illustrations. If Cloudflare credentials are missing, surface the warning explicitly to the user and continue with deterministic diagrams/text. Do not wait until visual build to discover missing credentials.
 
-   ```json
-   "physical_recognition_review": {
-     "complete": true,
-     "candidates": [
-       {
-         "subject": "punched cards",
-         "decision": "illustration",
-         "reason": "Physical recognition helps a modern student understand the historical medium.",
-         "derived_figure_id": "punched-cards"
-       },
-       {
-         "subject": "magnetic tape",
-         "decision": "visual_not_needed",
-         "reason": "The physical form adds no useful recognition value in this scope."
-       }
-     ]
-   }
-   ```
+Use canonical concepts plus observed topics as the coverage boundary. Do not silently enrich canonical claims with unsupported model knowledge.
 
-   Use an empty `candidates` array only when the already-loaded unit material contains no physical/recognizable subject worth considering. Every `decision: "illustration"` must point to a selected `visual_medium: illustration` row with the same `derived_figure_id`; the deterministic hybrid validator enforces this. This review is intentionally tiny and runs inside the existing PLAN reasoning so it does not recreate the expensive V2 workflow.
+### 2. START RUN
+Execute:
 
-   Select the medium by teaching job:
-   - exact flow/cycle/timeline/hierarchy/relationship/architecture/state/order/topology → `visual_medium: diagram`;
-   - optional physical recognition of a CPU, RAM, disk, keyboard, monitor, printer or similar subject → `visual_medium: illustration`;
-   - source material whose exact pixels cannot be safely reconstructed → `visual_not_needed` for the summary visual while preserving the supported meaning in prose.
+`python scripts/venv_exec.py scripts/pipeline_run.py start --course <course> --pipeline resumen --scope "<scope>"`
 
-   `source-first` selects evidence and provenance, never final pixels. A source figure may be cited only as `figure:<id>` inside `based_on`. Selected summary visuals must use `visual_treatment: reinterpret`; `preserve` and `preserve+derived_sketch` are invalid in `/resumen`.
+The run fingerprints engine and canonical inputs.
 
-   For `diagram`, create a compact schema-1 spec under `<run-dir>/02-sketches/<id>.json`. The model supplies semantic nodes/edges/groups only; do not write raw SVG or explicit scene coordinates. Rule: never create normal diagrams with an image-generation model.
+### 3. PLAN + SCHEMA VALIDATION + LOCK
+Write `<run-dir>/02-plan.json` in one semantic pass.
 
-   For `illustration`, write only the compact semantic object defined in `contracts/hybrid-visuals.md`. It must be `visual_helpful` + `reinterpret`. Do not write a provider prompt. Do not ask generated pixels to contain academic text, numbers, arrows, formulas, chronology or exact topology.
+Requirements:
+- include `depth`;
+- assign **every canonical concept** to `concept_order`;
+- include **every observed topic** in `topic_coverage`;
+- `unassigned_concepts` must be empty;
+- decide `visual_required`, `visual_helpful` or `visual_not_needed` for every major concept;
+- selected visuals record treatment, medium, reason and provenance;
+- source figures may appear only as `figure:<id>` provenance inside `based_on`.
 
-4. **FIDELITY LEDGER** → before prose, run:
-   `python scripts/venv_exec.py scripts/fidelity_constraints.py --course <course> --scope "<scope>" --write <run-dir>/02-fidelity-constraints.json`.
-   Use it to preserve unresolved/split-view high-risk claims exactly as required by `summary-runtime-optimization.md`.
+For physical-recognition candidates, record one compact `physical_recognition_review` in the same PLAN pass. Use `illustration` only when recognizing the physical form helps learning and no exact labels/arrows/quantities/topology need to live inside generated pixels.
 
-5. **VISUAL BUILD** → run:
-   `python scripts/venv_exec.py scripts/visual_plan_hybrid.py --course <course> --unit "<scope>" --plan <run-dir>/02-plan.json --write <run-dir>/02-visual-build.json`.
+For diagrams, write schema-1 specs under `<run-dir>/02-sketches/<id>.json`. Validate against the real contract before materialization; do not discover basic schema errors by repeatedly running the builder.
 
-   The hybrid materializer delegates deterministic diagrams to the existing `scripts/visual_plan.py` / `study.py figures generate-sketch` implementation and generated illustrations to the bounded illustration backend. It never materializes source-origin pixels into the summary output.
+Then execute exactly once:
 
-   For a new illustration there is exactly one provider request. Exact registered spec/asset reuse makes zero provider calls. There is no independent per-illustration vision-review/regeneration loop.
+`python scripts/venv_exec.py scripts/resumen_guard.py validate-plan --run <run-dir>`
 
-   If `02-visual-build.json` reports an unavailable illustration, make at most one run-local fallback decision for that optional visual: switch it to a deterministic diagram only when the same supported meaning is naturally diagrammable; otherwise mark that optional illustration `visual_not_needed` for this run, remove its derived illustration fields and rerun the hybrid build once. A provider failure must not block the textual summary.
+This command validates the hybrid plan/specs, checks canonical concept/topic coverage and writes `<run-dir>/02-plan-lock.json`. Once locked, arbitrary plan/spec edits are rejected.
 
-   Stop on a genuine deterministic diagram, registry, collision or engine failure. Continue only with a final build report whose `ok` is true.
+### 4. FIDELITY LEDGER
+Before prose, execute:
 
-6. **DRAFT** → write `03-draft.md` from plan, canonical knowledge, fidelity constraints and the successful `02-visual-build.json`. The draft must stand alone for a student who has not read the sources and remain fully understandable if an optional illustration was omitted. Use the exact registered derived `asset` returned by the build and place each figure beside its explanation. Generated illustrations supply recognition only and are never cited as exact evidence.
+`python scripts/venv_exec.py scripts/fidelity_constraints.py --course <course> --scope "<scope>" --write <run-dir>/02-fidelity-constraints.json`
 
-7. **HUMANIZE + FIDELITY GUARD** → execute the shared Humanizer stage to `04-humanized.md`, then run:
-   `python scripts/venv_exec.py scripts/fidelity_guard.py --markdown <run-dir>/04-humanized.md --constraints <run-dir>/02-fidelity-constraints.json --write <run-dir>/04-fidelity-guard.json`.
-   `ok: false` is a hard pre-review failure; repair only the cited wording before spending an academic-review call.
+Use it to preserve unresolved/split-view high-risk claims exactly.
 
-8. **REVIEW** → execute the shared independent academic/pedagogical review. `visual_support` evaluates whether the chosen medium supports learning and preserves truth. Do not start a separate generated-image aesthetics loop. If the first academic review requires `06-repair.md`, run the fidelity guard on that repair before the second/final review.
+### 5. GUARDED HYBRID VISUAL BUILD
+Execute:
 
-9. **RENDER CANDIDATE** → preserve the branch's notebook renderer and code-highlighting improvements. Render the accepted Markdown to `<run-dir>/09-rendered-base.html`:
-   `python scripts/venv_exec.py scripts/render_study.py <accepted-md> <run-dir>/09-rendered-base.html --kind summary --course "<course-display-name>" --scope "<scope>" --check`.
+`python scripts/venv_exec.py scripts/resumen_guard.py build --run <run-dir>`
 
-   Then run:
-   `python scripts/venv_exec.py scripts/code_highlight_v2.py <run-dir>/09-rendered-base.html <run-dir>/09-rendered.html --report <run-dir>/09-code-highlight.json`.
+The guard delegates to the hybrid materializer, preserves figure-registry root metadata and writes the real `02-visual-build.json`.
 
-   Do **not** run `scene_responsive.py` for the active hybrid path; diagrams and illustration overlays are single responsive assets handled by normal document CSS.
+If and only if the build returns an unavailable **optional illustration**, the only permitted fallback is:
 
-10. **INTEGRITY GATE** → run:
-   `python scripts/venv_exec.py scripts/artifact_integrity.py --course <course> --markdown <accepted-md> --html <run-dir>/09-rendered.html --scope "<scope>" --type summary --plan <run-dir>/02-plan.json --write <run-dir>/10-integrity.json`.
-   Integrity binds final Markdown figure usage to the hybrid plan/registry: deterministic diagrams must use their registered deterministic SVG; illustrations must use the registered generated-illustration overlay; every published figure must be `origin: derived`; any source-origin figure used by the summary is a hard integrity failure.
+`python scripts/venv_exec.py scripts/resumen_guard.py fallback --run <run-dir> --concept <concept-id>`
 
-11. **BROWSER VISUAL GATE** → run `python scripts/venv_exec.py scripts/visual_audit.py <run-dir>/09-rendered.html --out <run-dir>/visual-audit` and require `audit.json -> ok: true`. Inspect desktop/mobile integration. Reject obvious clipping, broken images, misleading generated text/labels, blank illustrations or pasted opaque white cards. If an optional generated illustration is visibly invalid, omit it instead of starting an open-ended generation/review loop.
+Then rerun the guarded build once.
 
-12. **ATOMIC PUBLISH** → after all gates pass, publish the accepted Markdown and final `09-rendered.html` with `scripts/publish_artifact.py` and write `<run-dir>/11-publication.json`.
+The fallback command itself performs the narrow plan mutation and updates the lock. Do not edit the plan or `physical_recognition_review` manually. Only one provider fallback is allowed per run.
 
-13. **RUNTIME REPORT** → run `python scripts/venv_exec.py scripts/run_timing.py --run <run-dir> --write <run-dir>/12-runtime.json` so the benchmark uses measured milestone times rather than estimates.
+Stop on deterministic diagram, registry, collision or engine failure. Continue only when the final guarded build reports `ok: true`.
 
-14. **MARK** → mark the published HTML through Study MCP when connected or the deterministic artifact-state CLI otherwise.
+### 6. DRAFT
+Write `<run-dir>/03-draft.md` from the locked plan, canonical knowledge, fidelity constraints and successful build report.
 
-15. **FINISH** → `python scripts/venv_exec.py scripts/pipeline_run.py finish --run <run-dir>`. Shared finish requirements remain mandatory: no engine mutation, no academic/concept/topic drift, no source-figure edit/removal, no unplanned figure registration, successful integrity/browser evidence and atomic publication.
+The draft must stand alone for a student who has not read the source files. Use the exact derived assets returned by the build and place each figure beside its explanation.
+
+Generated illustrations supply recognition only and are never exact academic evidence.
+
+### 7. HUMANIZE + FIDELITY GUARD
+Execute the shared Humanizer stage to `<run-dir>/04-humanized.md`, then:
+
+`python scripts/venv_exec.py scripts/fidelity_guard.py --markdown <run-dir>/04-humanized.md --constraints <run-dir>/02-fidelity-constraints.json --write <run-dir>/04-fidelity-guard.json`
+
+`ok: false` is a hard failure before review.
+
+### 8. REVIEW HANDOFF + REVIEW
+Before the first review, execute:
+
+`python scripts/venv_exec.py scripts/resumen_guard.py prepare-review --run <run-dir> --slot 1`
+
+This writes an immutable handoff bound to the candidate hash.
+
+Prefer a genuinely isolated reviewer/context when the environment supports it. If isolation is unavailable, use `portable-handoff` mode and **do not claim independence**.
+
+Every `05-review.json` must include:
+
+```json
+{
+  "handoff_sha256": "<sha256 reported by prepare-review>",
+  "reviewer": {
+    "mode": "isolated|portable-handoff",
+    "independent": true
+  }
+}
+```
+
+For `portable-handoff`, `independent` must be `false`. For `isolated`, it must be `true`.
+
+Then execute:
+
+`python scripts/venv_exec.py scripts/resumen_guard.py validate-review --run <run-dir> --slot 1`
+
+If repair is required, write `06-repair.md`, run the fidelity guard on it, prepare slot 2 with:
+
+`python scripts/venv_exec.py scripts/resumen_guard.py prepare-review --run <run-dir> --slot 2`
+
+then write `07-review.json` and validate slot 2 with the same guard.
+
+The review cannot award full coverage to a plan with missing/unassigned canonical concepts because the plan lock itself rejects that state before drafting.
+
+### 9. FINAL MARKDOWN + GUARDED RENDER
+Use `06-final.md` after an accepted first review, or `08-final.md` after a repaired second review.
+
+Render through the guard, not directly through `render_study.py`:
+
+`python scripts/venv_exec.py scripts/resumen_guard.py render --run <run-dir> --markdown <accepted-md> --html <run-dir>/09-rendered-base.html --kind summary --course-title "<course-display-name>" --scope-title "<scope>"`
+
+The guard resolves unit-relative figure assets deterministically. Do not create copies or symlinks.
+
+Then run:
+
+`python scripts/venv_exec.py scripts/code_highlight_v2.py <run-dir>/09-rendered-base.html <run-dir>/09-rendered.html --report <run-dir>/09-code-highlight.json`
+
+Do not run `scene_responsive.py` on the active Hybrid V1 path.
+
+### 10. INTEGRITY GATE
+Execute:
+
+`python scripts/venv_exec.py scripts/artifact_integrity.py --course <course> --markdown <accepted-md> --html <run-dir>/09-rendered.html --scope "<scope>" --type summary --plan <run-dir>/02-plan.json --write <run-dir>/10-integrity.json`
+
+Require `ok: true` and `visual_plan_checked: true`.
+
+### 11. BROWSER VISUAL GATE
+Execute:
+
+`python scripts/venv_exec.py scripts/visual_audit.py <run-dir>/09-rendered.html --out <run-dir>/visual-audit`
+
+Require `audit.json -> ok: true`. Browser audit is integration QA, not a substitute for academic review.
+
+### 12. ATOMIC PUBLISH
+Only after all prior gates pass, publish accepted Markdown + final HTML with `scripts/publish_artifact.py` and write `<run-dir>/11-publication.json`.
+
+### 13. RUNTIME REPORT
+Execute:
+
+`python scripts/venv_exec.py scripts/run_timing.py --run <run-dir> --write <run-dir>/12-runtime.json`
+
+### 14. MARK
+If Study MCP is connected and `study_mark_artifact` succeeds, do not run a speculative CLI fallback afterward.
+
+If no supported deterministic mark operation is available, report that limitation instead of inventing a `study.py artifacts mark` command.
+
+### 15. GUARDED FINISH + AUTHORITATIVE STATUS
+Execute:
+
+`python scripts/venv_exec.py scripts/resumen_guard.py finish --run <run-dir>`
+
+The guard re-runs the structural/canonical/publication checks, validates review handoffs, uses the correct selected Hybrid V1 derived set, and writes `<run-dir>/13-finish.json` only after a real pass.
+
+Finally execute:
+
+`python scripts/venv_exec.py scripts/resumen_guard.py status --run <run-dir>`
+
+Only `effective_status: finished` is a successful run.
+
+A manually edited `manifest.json` without a matching valid attestation is not finished. A published HTML can exist while the run is still failed.
