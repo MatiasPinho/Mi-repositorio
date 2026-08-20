@@ -324,6 +324,15 @@ article::after {
     padding-left: var(--notebook-paper-padding-start);
   }
   article::before { display: none; }
+  .book-running-line {
+    height: auto;
+    min-height: calc(var(--notebook-line-pitch) * 2);
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+  .book-kind { text-align: left; }
   .section-head { gap: .3rem; }
   .section-head > .num { min-width: 1.65rem; }
 }

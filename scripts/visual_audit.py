@@ -214,6 +214,155 @@ def _reader_metrics(page) -> dict:
     )
 
 
+def _topic_metrics(page) -> dict:
+    return page.evaluate(
+        """() => {
+          const headings = Array.from(document.querySelectorAll(
+            '.notebook-page > .section-head > h2[id], .study-grid > article > .section-head > h2[id]'
+          ));
+          const nav = document.querySelector('.notebook-topic-tabs');
+          const panel = document.querySelector('#notebook-topic-index-panel');
+          const inlineTabs = Array.from(document.querySelectorAll('.section-head.notebook-section-tab'));
+          return {
+            topics: headings.length,
+            tabs: inlineTabs.length,
+            detachedTabs: nav?.querySelectorAll('.notebook-topic-tab').length || 0,
+            listItems: panel?.querySelectorAll('.notebook-topic-list-button').length || 0,
+            activeTabs: inlineTabs.filter(node => node.classList.contains('is-current-topic')).length,
+            activeItems: panel?.querySelectorAll('[aria-current="location"]').length || 0,
+            hiddenCounters: inlineTabs.filter(node => {
+              const mark = node.querySelector(':scope > .num');
+              return mark && getComputedStyle(mark).display === 'none';
+            }).length,
+            fullTitleTabs: inlineTabs.filter(node => Boolean(node.querySelector(':scope > h2[id]')?.textContent.trim())).length,
+            leftProtrudingTabs: inlineTabs.filter(node => {
+              const style = getComputedStyle(node);
+              return parseFloat(style.marginInlineStart) < -4;
+            }).length,
+            alignedTabTitles: inlineTabs.filter(node => {
+              const style = getComputedStyle(node);
+              const inset = parseFloat(style.marginInlineStart) + parseFloat(style.paddingInlineStart);
+              return Math.abs(inset) <= 1.5;
+            }).length,
+            rhythmicTabs: inlineTabs.filter(node => {
+              const style = getComputedStyle(node);
+              const heading = node.querySelector(':scope > h2');
+              const pitch = parseFloat(getComputedStyle(heading).lineHeight);
+              return Math.abs(parseFloat(style.marginTop) - pitch) <= .75
+                && Math.abs(parseFloat(style.marginBottom) - pitch) <= .75;
+            }).length,
+            pencilTabs: inlineTabs.filter(node => {
+              const style = getComputedStyle(node);
+              const contour = getComputedStyle(node, '::before');
+              return style.backgroundColor === 'rgba(0, 0, 0, 0)'
+                && parseFloat(style.borderLeftWidth) === 0
+                && parseFloat(contour.borderLeftWidth) > 0
+                && contour.backgroundImage.includes('repeating-linear-gradient')
+                && contour.backgroundColor !== 'rgba(0, 0, 0, 0)';
+            }).length,
+            stableIndexLines: inlineTabs.filter(node => {
+              const outer = getComputedStyle(node, '::before');
+              const inner = getComputedStyle(node, '::after');
+              const rail = getComputedStyle(node);
+              return parseFloat(outer.borderLeftWidth) > 0
+                && parseFloat(inner.borderLeftWidth) > 0
+                && rail.backgroundImage.includes('linear-gradient');
+            }).length,
+            persistentTriggers: document.querySelectorAll('.notebook-topic-index-trigger').length,
+            panelHidden: panel?.hidden ?? true,
+            activeTopic: document.documentElement.dataset.notebookTopic || null
+          };
+        }"""
+    )
+
+
+def _exercise_topic_navigation(page, metrics: dict) -> list[str]:
+    """Exercise the topic index entirely from its documented keyboard contract."""
+    if int(metrics.get("topics") or 0) < 2:
+        return []
+    issues: list[str] = []
+
+    if (
+        metrics.get("tabs") != metrics.get("topics")
+        or metrics.get("listItems") != metrics.get("topics")
+        or metrics.get("fullTitleTabs") != metrics.get("topics")
+    ):
+        issues.append("topic-index:incomplete")
+        return issues
+    if metrics.get("detachedTabs"):
+        issues.append("topic-index:detached-number-tabs-remain")
+    if metrics.get("hiddenCounters") != metrics.get("topics"):
+        issues.append("topic-index:legacy-counter-visible")
+    if metrics.get("leftProtrudingTabs") != metrics.get("topics"):
+        issues.append("topic-index:tabs-do-not-protrude-left")
+    if metrics.get("alignedTabTitles") != metrics.get("topics"):
+        issues.append("topic-index:titles-lost-original-alignment")
+    if metrics.get("rhythmicTabs") != metrics.get("topics"):
+        issues.append("topic-index:tabs-break-line-rhythm")
+    if metrics.get("pencilTabs") != metrics.get("topics"):
+        issues.append("topic-index:full-pencil-fill-missing")
+    if metrics.get("stableIndexLines") != metrics.get("topics"):
+        issues.append("topic-index:menu-lines-unstable")
+    if metrics.get("activeTabs") != 1 or metrics.get("activeItems") != 1:
+        issues.append("topic-index:active-state-invalid")
+    if metrics.get("persistentTriggers"):
+        issues.append("topic-index:persistent-shortcut-trigger-remains")
+
+    page.keyboard.press("t")
+    try:
+        page.wait_for_function(
+            """() => {
+          const panel = document.querySelector('#notebook-topic-index-panel');
+          return Boolean(panel && !panel.hidden
+            && document.activeElement?.matches('.notebook-topic-list-button'));
+        }""",
+            timeout=800,
+        )
+        opened = True
+    except Exception:
+        opened = False
+    if not opened:
+        issues.append("topic-index:keyboard-open-failed")
+        return issues
+
+    page.keyboard.press("Home")
+    page.keyboard.press("ArrowDown")
+    page.keyboard.press("Enter")
+    try:
+        page.wait_for_function(
+            """() => {
+          const headings = Array.from(document.querySelectorAll(
+            '.notebook-page > .section-head > h2[id], .study-grid > article > .section-head > h2[id]'
+          ));
+          const second = headings[1];
+          return Boolean(second
+            && document.documentElement.dataset.notebookTopic === '2'
+            && document.activeElement?.id === second.id
+            && document.querySelector('#notebook-topic-index-panel')?.hidden);
+        }""",
+            timeout=1200,
+        )
+        jumped = True
+    except Exception:
+        jumped = False
+    if not jumped:
+        issues.append("topic-index:keyboard-jump-failed")
+    elif page.evaluate(
+        "getComputedStyle(document.activeElement).outlineStyle !== 'none' "
+        "&& parseFloat(getComputedStyle(document.activeElement).outlineWidth) > 0"
+    ):
+        issues.append("topic-index:duplicate-heading-focus-outline")
+
+    page.keyboard.press("t")
+    page.keyboard.press("Escape")
+    closed = page.evaluate(
+        """() => document.querySelector('#notebook-topic-index-panel')?.hidden"""
+    )
+    if not closed:
+        issues.append("topic-index:escape-close-failed")
+    return issues
+
+
 def _exercise_notebook_reader(page, metrics: dict) -> list[str]:
     """Smoke-test neighbour navigation and front/back flipping without touching prose."""
     if metrics.get("state") != "ready":
@@ -345,6 +494,7 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
             )
             metrics["image_states"] = image_states
             metrics["notebook_reader"] = reader
+            metrics["topic_navigation"] = _topic_metrics(page)
 
             if metrics["scrollWidth"] > metrics["clientWidth"] + 2:
                 report["issues"].append(f"{name}:horizontal-overflow")
@@ -391,6 +541,11 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
             if reader.get("state") == "ready":
                 report["issues"].extend(
                     f"{name}:{issue}" for issue in _exercise_notebook_reader(page, reader)
+                )
+            if name != "print":
+                report["issues"].extend(
+                    f"{name}:{issue}"
+                    for issue in _exercise_topic_navigation(page, metrics["topic_navigation"])
                 )
 
             report["screenshots"][name] = str(shot)

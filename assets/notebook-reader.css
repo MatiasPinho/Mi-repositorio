@@ -6,6 +6,8 @@
   --notebook-leaf-peek: 2.85rem;
   --notebook-leaf-hover-extra: .75rem;
   --notebook-leaf-scale: .972;
+  --notebook-section-tab-overhang: 2.15rem;
+  --notebook-section-tab-max: 24rem;
 }
 
 /* Three binder holes are enough to communicate paper without creating a visual rail. */
@@ -131,7 +133,292 @@ article ul > li:nth-child(even)::before {
   transform: translate(-50%, 0);
 }
 
+/* Each semantic H2 becomes the physical index tab at the exact point where its
+   topic starts. T opens the full navigable index without adding persistent
+   shortcut chrome to the reading surface. */
+.notebook-topic-tabs[hidden],
+.notebook-topic-panel[hidden] { display: none !important; }
+
+/* Every physical leaf owns a fresh CSS counter scope. Preserve the semantic
+   topic ordinal stamped before pagination so the visible label never restarts
+   at Tema 1 (or §1) after a page break. */
+article.notebook-page .section-head > .num[data-notebook-topic-number]::before {
+  content: "§" attr(data-notebook-topic-number);
+}
+
+article.notebook-page[data-kind="summary"] .section-head > .num[data-notebook-topic-number]::before {
+  content: "Tema " attr(data-notebook-topic-number);
+}
+
+article.notebook-topic-host:not(.notebook-page) { overflow: visible; }
+
+/* Pagination measures with clipped pages, then exposes only the intentional
+   section-tab overhang once the final leaf stack is stable. */
+.notebook-reader:not(.is-measuring) article.notebook-page { overflow: visible; }
+
+.section-head.notebook-section-tab {
+  --notebook-section-tab-pencil-ink: color-mix(in srgb, var(--study-warning) 46%, var(--study-ink-soft) 54%);
+  --notebook-section-tab-outline: var(--study-accent);
+  --notebook-section-tab-pencil-fill: color-mix(in srgb, var(--study-marker) 34%, transparent);
+  position: relative;
+  z-index: 4;
+  display: flex !important;
+  align-items: center;
+  width: fit-content !important;
+  max-width: min(
+    calc(var(--notebook-section-tab-max) + var(--notebook-section-tab-overhang)),
+    calc(100% + var(--notebook-section-tab-overhang))
+  ) !important;
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  margin-block: var(--notebook-line-pitch) !important;
+  margin-inline-start: calc(-1 * var(--notebook-section-tab-overhang)) !important;
+  margin-inline-end: 0 !important;
+  padding: .3rem .9rem .34rem var(--notebook-section-tab-overhang);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  isolation: isolate;
+}
+
+/* A translucent warm-pencil wash lets the notebook rules and red margin remain
+   visible through the tab. Its squarer attachment and imperfect double trace
+   make it feel drawn into the sheet instead of pasted on top of it. */
+.section-head.notebook-section-tab::before,
+.section-head.notebook-section-tab::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: .18rem .06rem .2rem .08rem;
+  border: 1.2px solid color-mix(in srgb, var(--notebook-section-tab-outline) 82%, transparent);
+  border-radius: 2px 8px 6px 2px / 3px 7px 9px 4px;
+  background: transparent;
+  transform: rotate(-.1deg) skewX(-.12deg);
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.section-head.notebook-section-tab::before {
+  background-color: var(--notebook-section-tab-pencil-fill);
+  background-image:
+    repeating-linear-gradient(
+      176deg,
+      transparent 0 .9px,
+      color-mix(in srgb, var(--notebook-section-tab-pencil-ink) 18%, transparent) .9px 1.48px,
+      transparent 1.62px 4.2px
+    ),
+    repeating-linear-gradient(
+      171deg,
+      transparent 0 2.65px,
+      color-mix(in srgb, var(--notebook-section-tab-pencil-ink) 8%, transparent) 2.65px 3.02px,
+      transparent 3.2px 6.35px
+    );
+}
+
+.section-head.notebook-section-tab::after {
+  inset: .24rem .14rem .14rem .16rem;
+  border-width: .7px;
+  border-color: color-mix(in srgb, var(--notebook-section-tab-outline) 54%, transparent);
+  border-radius: 3px 7px 5px 1px / 2px 9px 6px 4px;
+  opacity: .85;
+  transform: rotate(.16deg) skewX(.08deg);
+}
+
+.section-head.notebook-section-tab > .num { display: none; }
+
+.section-head.notebook-section-tab > h2 {
+  position: relative;
+  z-index: 2;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Topic navigation focuses the destination heading after a jump. The tab
+   itself already supplies the visible blue destination treatment, so the
+   global focus rectangle would only draw a misleading second box. */
+.section-head.notebook-section-tab > h2:focus,
+.section-head.notebook-section-tab > h2:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.section-head.notebook-section-tab.is-current-topic {
+  --notebook-section-tab-pencil-ink: color-mix(in srgb, var(--study-warning) 58%, var(--study-ink-soft) 42%);
+  --notebook-section-tab-pencil-fill: color-mix(in srgb, var(--study-marker) 48%, transparent);
+}
+
+/* Match every physical tab to the index rows with a stable blue double contour
+   and inset rail. The lines no longer depend on scroll-derived active state;
+   the current topic is distinguished by the slightly denser pencil fill. */
+@media screen {
+  .section-head.notebook-section-tab {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0 .34rem,
+      color-mix(in srgb, var(--study-accent) 94%, transparent) .34rem .48rem,
+      transparent .48rem 100%
+    );
+    background-repeat: no-repeat;
+    background-position: 0 50%;
+    background-size: 100% calc(100% - .7rem);
+  }
+}
+
+.notebook-topic-tabs {
+  display: none !important;
+}
+
+.notebook-topic-list-button,
+.notebook-topic-panel-close {
+  appearance: none;
+  color: inherit;
+  font: inherit;
+}
+
+.notebook-topic-list-button:focus-visible,
+.notebook-topic-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-topic-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.notebook-topic-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(29rem, calc(100vw - 2rem));
+  max-height: min(78vh, 40rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-topic-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-topic-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-topic-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-topic-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-topic-list {
+  margin: .35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notebook-topic-list > li { margin: 0; }
+
+.notebook-topic-list-button {
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: 4.2rem minmax(0, 1fr);
+  gap: .7rem;
+  align-items: center;
+  padding: .36rem .45rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-topic-list-button:hover,
+.notebook-topic-list-button:focus-visible,
+.notebook-topic-list-button[aria-current="location"] {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-topic-list-button[aria-current="location"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+.notebook-topic-item-number {
+  color: var(--study-accent);
+  font-family: var(--study-font-utility);
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.notebook-topic-item-label {
+  color: var(--study-ink-strong);
+  font-size: .93rem;
+  line-height: 1.35;
+}
+
+.notebook-topic-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
 .notebook-reader {
+  position: relative;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -409,7 +696,10 @@ article.notebook-page.notebook-back::after {
   :root {
     --notebook-leaf-peek: clamp(1.35rem, 3vw, 2rem);
     --notebook-leaf-scale: .98;
+    --notebook-section-tab-overhang: 1.55rem;
+    --notebook-section-tab-max: 21rem;
   }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -419,14 +709,68 @@ article.notebook-page.notebook-back::after {
 }
 
 @media (max-width: 48rem) {
+  :root { --notebook-section-tab-overhang: 1rem; }
+
   .notebook-mode-toast { display: none; }
   .notebook-reader { display: block; }
   .notebook-stack { width: 100%; height: auto; perspective: none; }
+
+  article.notebook-topic-host:not(.notebook-page) > .section-head.notebook-section-tab {
+    width: fit-content !important;
+    max-width: calc(100% + var(--notebook-section-tab-overhang)) !important;
+    min-height: calc(var(--notebook-line-pitch) * 2);
+    margin-inline-start: calc(-1 * var(--notebook-section-tab-overhang)) !important;
+    margin-inline-end: 0 !important;
+    padding-inline: var(--notebook-section-tab-overhang) .7rem;
+  }
+
+  .notebook-topic-panel {
+    top: auto;
+    right: .65rem;
+    bottom: .65rem;
+    left: .65rem;
+    width: auto;
+    max-height: calc(100vh - 1.3rem);
+    transform: none;
+    padding: .85rem .85rem .7rem;
+  }
+
+  .notebook-topic-panel-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .notebook-topic-panel-shortcut { display: none; }
+
+  .notebook-topic-list-button {
+    grid-template-columns: 3.65rem minmax(0, 1fr);
+    min-height: calc(var(--notebook-line-pitch) * 2);
+  }
+
+  .notebook-topic-panel-hint { text-align: left; }
 }
 
 @media print {
   .notebook-view-switch,
   .notebook-mode-toast,
+  .notebook-topic-tabs,
+  .notebook-topic-panel,
   .notebook-reader-status,
   .notebook-turn-corner { display: none !important; }
+
+  .section-head.notebook-section-tab {
+    width: min(100%, var(--notebook-measure)) !important;
+    max-width: var(--notebook-measure) !important;
+    min-height: 0;
+    margin: var(--notebook-line-pitch) 0 !important;
+    padding: 0 0 .12rem .62rem;
+    border: 0;
+    border-inline-start: 2px solid var(--notebook-section-tab-outline);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .section-head.notebook-section-tab::before,
+  .section-head.notebook-section-tab::after { display: none; }
 }

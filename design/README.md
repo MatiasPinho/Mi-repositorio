@@ -45,6 +45,7 @@ Navigation follows the paper metaphor:
 - clicking a visible neighbouring sheet brings that physical leaf to the front;
 - only the bottom corner of the active sheet controls front/back flipping, leaving the page body free for text selection and future highlighting or handwriting;
 - left/right keyboard arrows provide an accessible secondary way to move between physical leaves;
+- each top-level topic heading is its own full-title index tab at the exact point where that topic starts; its title keeps the original left alignment while a translucent warm-pencil tab protrudes into the left margin and lets the ruled paper and margin line remain visible through its shading; every tab permanently repeats the menu index's blue double contour and inset blue rail, while the current topic uses denser pencil shading; tab spacing stays on whole notebook-line increments so later prose never drifts off the ruled rhythm, and `T` opens that full keyboard-accessible index in both physical and continuous views without a permanently visible shortcut label;
 - pagination never introduces inner scrolling or clips an oversized semantic block. If a safe page split cannot be produced, the reader falls back to the proven continuous document;
 - print stays continuous and paged-media driven rather than printing the interactive 3D stack;
 - mobile keeps the continuous reading surface rather than shrinking a desktop-sized physical sheet.

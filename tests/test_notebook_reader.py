@@ -150,6 +150,185 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("restoreScrollPosition", js)
         self.assertIn("data-notebook-figure-number", css)
 
+    def test_topic_tabs_are_semantic_keyboard_navigation(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+        self.assertIn(":scope > .section-head > h2[id]", js)
+        self.assertIn("Índice de temas", js)
+        self.assertIn("event.key?.toLowerCase()", js)
+        self.assertIn("setTopicPanel", js)
+        self.assertIn("navigateToTopic", js)
+        self.assertIn("readerNavigatePage", js)
+        self.assertIn("aria-current", js)
+        self.assertIn("data-notebook-topic-number", css)
+        self.assertIn(".section-head.notebook-section-tab", css)
+        self.assertIn(".notebook-topic-panel", css)
+        self.assertIn("margin-inline-start: calc(-1 * var(--notebook-section-tab-overhang))", css)
+        self.assertIn("background: transparent", css)
+        self.assertIn("--notebook-section-tab-pencil-fill", css)
+        self.assertIn("--notebook-section-tab-outline", css)
+        self.assertIn("margin-block: var(--notebook-line-pitch)", css)
+        self.assertIn("h2:focus-visible", css)
+        self.assertIn("repeating-linear-gradient", css)
+        self.assertIn("transparent 0 .34rem", css)
+        self.assertNotIn("notebook-topic-index-trigger", js)
+        self.assertNotIn("makeTopicButton(topic, 'notebook-topic-tab'", js)
+        self.assertIn("@media print", css)
+
+    def test_browser_topic_index_jumps_to_exact_topic_and_survives_view_switch(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            html = td / "summary.html"
+            blocks = []
+            for topic in range(1, 4):
+                blocks.append(f"## Tema extenso {topic}")
+                blocks.extend(
+                    f"Párrafo {topic}.{i} con contenido suficiente para distribuir cada tema entre hojas físicas."
+                    for i in range(1, 22)
+                )
+            md.write_text(
+                "# Unidad con índice\n\nIntroducción.\n\n" + "\n\n".join(blocks),
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+            html_text = html.read_text(encoding="utf-8")
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                page = browser.new_page(viewport={"width": 1200, "height": 1000})
+                page.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+
+                tabs = page.locator(".section-head.notebook-section-tab")
+                self.assertEqual(tabs.count(), 3)
+                self.assertEqual(
+                    tabs.locator("h2").all_inner_texts(),
+                    ["Tema extenso 1", "Tema extenso 2", "Tema extenso 3"],
+                )
+                self.assertEqual(page.locator(".notebook-topic-tab").count(), 0)
+                self.assertEqual(page.locator(".notebook-topic-index-trigger").count(), 0)
+                self.assertEqual(page.locator(".notebook-section-tab.is-current-topic").count(), 1)
+                self.assertFalse(tabs.first.locator(":scope > .num").is_visible())
+                self.assertTrue(
+                    tabs.first.evaluate(
+                        "node => { const style = getComputedStyle(node); "
+                        "const title = node.querySelector(':scope > h2').getBoundingClientRect(); "
+                        "const tab = node.getBoundingClientRect(); "
+                        "const inset = parseFloat(style.marginInlineStart) + parseFloat(style.paddingInlineStart); "
+                        "return tab.left < title.left - 16 && Math.abs(inset) <= 1.5; }"
+                    ),
+                )
+                self.assertTrue(
+                    tabs.evaluate_all(
+                        "nodes => nodes.every(node => "
+                        "getComputedStyle(node).backgroundImage.includes('linear-gradient'))"
+                    )
+                )
+                self.assertTrue(
+                    tabs.evaluate_all(
+                        "nodes => nodes.every(node => { "
+                        "const style = getComputedStyle(node); "
+                        "const heading = node.querySelector(':scope > h2'); "
+                        "const pitch = parseFloat(getComputedStyle(heading).lineHeight); "
+                        "return Math.abs(parseFloat(style.marginTop) - pitch) <= .75 "
+                        "&& Math.abs(parseFloat(style.marginBottom) - pitch) <= .75; })"
+                    )
+                )
+
+                page.keyboard.press("t")
+                panel = page.locator("#notebook-topic-index-panel")
+                self.assertTrue(panel.is_visible())
+                page.wait_for_function(
+                    "() => document.activeElement?.dataset.topicIndex === '0'",
+                    timeout=1000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.topicIndex"),
+                    "0",
+                )
+                page.keyboard.press("Home")
+                page.keyboard.press("ArrowDown")
+                page.keyboard.press("Enter")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookTopic === '2' "
+                    "&& document.activeElement?.id",
+                    timeout=2000,
+                )
+                second_heading_id = page.locator(".notebook-page .section-head > h2[id]").nth(1).get_attribute("id")
+                self.assertEqual(page.evaluate("document.activeElement?.id"), second_heading_id)
+                self.assertEqual(
+                    page.locator(f"#{second_heading_id}").evaluate(
+                        "node => getComputedStyle(node).outlineStyle"
+                    ),
+                    "none",
+                )
+                self.assertFalse(panel.is_visible())
+                self.assertTrue(tabs.nth(1).evaluate("node => node.classList.contains('is-current-topic')"))
+                self.assertFalse(tabs.nth(1).locator(":scope > .num").is_visible())
+                self.assertEqual(
+                    page.locator('.notebook-topic-list-button[aria-current="location"]').count(),
+                    1,
+                )
+                self.assertLessEqual(
+                    page.evaluate("document.documentElement.scrollWidth"),
+                    page.evaluate("document.documentElement.clientWidth") + 2,
+                )
+
+                page.keyboard.press("v")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                self.assertEqual(page.locator(".notebook-topic-tabs.is-continuous").count(), 1)
+                self.assertEqual(page.locator(".section-head.notebook-section-tab").count(), 3)
+                self.assertEqual(page.locator(".notebook-topic-tab").count(), 0)
+                self.assertEqual(page.locator(".notebook-topic-index-trigger").count(), 0)
+                page.keyboard.press("t")
+                self.assertTrue(panel.is_visible())
+                page.keyboard.press("Escape")
+                self.assertFalse(panel.is_visible())
+
+                mobile = browser.new_page(viewport={"width": 390, "height": 844})
+                mobile.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
+                mobile.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                self.assertEqual(mobile.locator(".notebook-topic-index-trigger").count(), 0)
+                self.assertTrue(mobile.locator(".section-head.notebook-section-tab").first.is_visible())
+                self.assertEqual(mobile.locator(".notebook-topic-tab").count(), 0)
+                running_parts = mobile.locator(".book-running-line > span").evaluate_all(
+                    "nodes => nodes.map(node => node.getBoundingClientRect())"
+                )
+                self.assertLessEqual(running_parts[0]["bottom"], running_parts[1]["top"] + 1)
+                self.assertLessEqual(
+                    mobile.evaluate("document.documentElement.scrollWidth"),
+                    mobile.evaluate("document.documentElement.clientWidth") + 2,
+                )
+                mobile.keyboard.press("t")
+                self.assertTrue(mobile.locator("#notebook-topic-index-panel").is_visible())
+                mobile.close()
+                browser.close()
+
     def test_browser_can_switch_continuous_and_pages_with_v_without_regenerating_content(self):
         try:
             from playwright.sync_api import sync_playwright

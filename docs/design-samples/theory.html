@@ -761,6 +761,15 @@ article::after {
     padding-left: var(--notebook-paper-padding-start);
   }
   article::before { display: none; }
+  .book-running-line {
+    height: auto;
+    min-height: calc(var(--notebook-line-pitch) * 2);
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+  .book-kind { text-align: left; }
   .section-head { gap: .3rem; }
   .section-head > .num { min-width: 1.65rem; }
 }
@@ -1441,6 +1450,8 @@ article[data-kind="summary"] .section-head > h2 {
   --notebook-leaf-peek: 2.85rem;
   --notebook-leaf-hover-extra: .75rem;
   --notebook-leaf-scale: .972;
+  --notebook-section-tab-overhang: 2.15rem;
+  --notebook-section-tab-max: 24rem;
 }
 
 /* Three binder holes are enough to communicate paper without creating a visual rail. */
@@ -1566,7 +1577,292 @@ article ul > li:nth-child(even)::before {
   transform: translate(-50%, 0);
 }
 
+/* Each semantic H2 becomes the physical index tab at the exact point where its
+   topic starts. T opens the full navigable index without adding persistent
+   shortcut chrome to the reading surface. */
+.notebook-topic-tabs[hidden],
+.notebook-topic-panel[hidden] { display: none !important; }
+
+/* Every physical leaf owns a fresh CSS counter scope. Preserve the semantic
+   topic ordinal stamped before pagination so the visible label never restarts
+   at Tema 1 (or §1) after a page break. */
+article.notebook-page .section-head > .num[data-notebook-topic-number]::before {
+  content: "§" attr(data-notebook-topic-number);
+}
+
+article.notebook-page[data-kind="summary"] .section-head > .num[data-notebook-topic-number]::before {
+  content: "Tema " attr(data-notebook-topic-number);
+}
+
+article.notebook-topic-host:not(.notebook-page) { overflow: visible; }
+
+/* Pagination measures with clipped pages, then exposes only the intentional
+   section-tab overhang once the final leaf stack is stable. */
+.notebook-reader:not(.is-measuring) article.notebook-page { overflow: visible; }
+
+.section-head.notebook-section-tab {
+  --notebook-section-tab-pencil-ink: color-mix(in srgb, var(--study-warning) 46%, var(--study-ink-soft) 54%);
+  --notebook-section-tab-outline: var(--study-accent);
+  --notebook-section-tab-pencil-fill: color-mix(in srgb, var(--study-marker) 34%, transparent);
+  position: relative;
+  z-index: 4;
+  display: flex !important;
+  align-items: center;
+  width: fit-content !important;
+  max-width: min(
+    calc(var(--notebook-section-tab-max) + var(--notebook-section-tab-overhang)),
+    calc(100% + var(--notebook-section-tab-overhang))
+  ) !important;
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  margin-block: var(--notebook-line-pitch) !important;
+  margin-inline-start: calc(-1 * var(--notebook-section-tab-overhang)) !important;
+  margin-inline-end: 0 !important;
+  padding: .3rem .9rem .34rem var(--notebook-section-tab-overhang);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  isolation: isolate;
+}
+
+/* A translucent warm-pencil wash lets the notebook rules and red margin remain
+   visible through the tab. Its squarer attachment and imperfect double trace
+   make it feel drawn into the sheet instead of pasted on top of it. */
+.section-head.notebook-section-tab::before,
+.section-head.notebook-section-tab::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: .18rem .06rem .2rem .08rem;
+  border: 1.2px solid color-mix(in srgb, var(--notebook-section-tab-outline) 82%, transparent);
+  border-radius: 2px 8px 6px 2px / 3px 7px 9px 4px;
+  background: transparent;
+  transform: rotate(-.1deg) skewX(-.12deg);
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.section-head.notebook-section-tab::before {
+  background-color: var(--notebook-section-tab-pencil-fill);
+  background-image:
+    repeating-linear-gradient(
+      176deg,
+      transparent 0 .9px,
+      color-mix(in srgb, var(--notebook-section-tab-pencil-ink) 18%, transparent) .9px 1.48px,
+      transparent 1.62px 4.2px
+    ),
+    repeating-linear-gradient(
+      171deg,
+      transparent 0 2.65px,
+      color-mix(in srgb, var(--notebook-section-tab-pencil-ink) 8%, transparent) 2.65px 3.02px,
+      transparent 3.2px 6.35px
+    );
+}
+
+.section-head.notebook-section-tab::after {
+  inset: .24rem .14rem .14rem .16rem;
+  border-width: .7px;
+  border-color: color-mix(in srgb, var(--notebook-section-tab-outline) 54%, transparent);
+  border-radius: 3px 7px 5px 1px / 2px 9px 6px 4px;
+  opacity: .85;
+  transform: rotate(.16deg) skewX(.08deg);
+}
+
+.section-head.notebook-section-tab > .num { display: none; }
+
+.section-head.notebook-section-tab > h2 {
+  position: relative;
+  z-index: 2;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Topic navigation focuses the destination heading after a jump. The tab
+   itself already supplies the visible blue destination treatment, so the
+   global focus rectangle would only draw a misleading second box. */
+.section-head.notebook-section-tab > h2:focus,
+.section-head.notebook-section-tab > h2:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.section-head.notebook-section-tab.is-current-topic {
+  --notebook-section-tab-pencil-ink: color-mix(in srgb, var(--study-warning) 58%, var(--study-ink-soft) 42%);
+  --notebook-section-tab-pencil-fill: color-mix(in srgb, var(--study-marker) 48%, transparent);
+}
+
+/* Match every physical tab to the index rows with a stable blue double contour
+   and inset rail. The lines no longer depend on scroll-derived active state;
+   the current topic is distinguished by the slightly denser pencil fill. */
+@media screen {
+  .section-head.notebook-section-tab {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0 .34rem,
+      color-mix(in srgb, var(--study-accent) 94%, transparent) .34rem .48rem,
+      transparent .48rem 100%
+    );
+    background-repeat: no-repeat;
+    background-position: 0 50%;
+    background-size: 100% calc(100% - .7rem);
+  }
+}
+
+.notebook-topic-tabs {
+  display: none !important;
+}
+
+.notebook-topic-list-button,
+.notebook-topic-panel-close {
+  appearance: none;
+  color: inherit;
+  font: inherit;
+}
+
+.notebook-topic-list-button:focus-visible,
+.notebook-topic-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-topic-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.notebook-topic-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(29rem, calc(100vw - 2rem));
+  max-height: min(78vh, 40rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-topic-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-topic-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-topic-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-topic-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-topic-list {
+  margin: .35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notebook-topic-list > li { margin: 0; }
+
+.notebook-topic-list-button {
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: 4.2rem minmax(0, 1fr);
+  gap: .7rem;
+  align-items: center;
+  padding: .36rem .45rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-topic-list-button:hover,
+.notebook-topic-list-button:focus-visible,
+.notebook-topic-list-button[aria-current="location"] {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-topic-list-button[aria-current="location"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+.notebook-topic-item-number {
+  color: var(--study-accent);
+  font-family: var(--study-font-utility);
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.notebook-topic-item-label {
+  color: var(--study-ink-strong);
+  font-size: .93rem;
+  line-height: 1.35;
+}
+
+.notebook-topic-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
 .notebook-reader {
+  position: relative;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -1844,7 +2140,10 @@ article.notebook-page.notebook-back::after {
   :root {
     --notebook-leaf-peek: clamp(1.35rem, 3vw, 2rem);
     --notebook-leaf-scale: .98;
+    --notebook-section-tab-overhang: 1.55rem;
+    --notebook-section-tab-max: 21rem;
   }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1854,16 +2153,70 @@ article.notebook-page.notebook-back::after {
 }
 
 @media (max-width: 48rem) {
+  :root { --notebook-section-tab-overhang: 1rem; }
+
   .notebook-mode-toast { display: none; }
   .notebook-reader { display: block; }
   .notebook-stack { width: 100%; height: auto; perspective: none; }
+
+  article.notebook-topic-host:not(.notebook-page) > .section-head.notebook-section-tab {
+    width: fit-content !important;
+    max-width: calc(100% + var(--notebook-section-tab-overhang)) !important;
+    min-height: calc(var(--notebook-line-pitch) * 2);
+    margin-inline-start: calc(-1 * var(--notebook-section-tab-overhang)) !important;
+    margin-inline-end: 0 !important;
+    padding-inline: var(--notebook-section-tab-overhang) .7rem;
+  }
+
+  .notebook-topic-panel {
+    top: auto;
+    right: .65rem;
+    bottom: .65rem;
+    left: .65rem;
+    width: auto;
+    max-height: calc(100vh - 1.3rem);
+    transform: none;
+    padding: .85rem .85rem .7rem;
+  }
+
+  .notebook-topic-panel-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .notebook-topic-panel-shortcut { display: none; }
+
+  .notebook-topic-list-button {
+    grid-template-columns: 3.65rem minmax(0, 1fr);
+    min-height: calc(var(--notebook-line-pitch) * 2);
+  }
+
+  .notebook-topic-panel-hint { text-align: left; }
 }
 
 @media print {
   .notebook-view-switch,
   .notebook-mode-toast,
+  .notebook-topic-tabs,
+  .notebook-topic-panel,
   .notebook-reader-status,
   .notebook-turn-corner { display: none !important; }
+
+  .section-head.notebook-section-tab {
+    width: min(100%, var(--notebook-measure)) !important;
+    max-width: var(--notebook-measure) !important;
+    min-height: 0;
+    margin: var(--notebook-line-pitch) 0 !important;
+    padding: 0 0 .12rem .62rem;
+    border: 0;
+    border-inline-start: 2px solid var(--notebook-section-tab-outline);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .section-head.notebook-section-tab::before,
+  .section-head.notebook-section-tab::after { display: none; }
 }
 </style></head>
 <body><main class="study-shell"><div class="study-grid without-toc"><article data-kind="summary"><div class="book-frontmatter"><div class="book-running-line"><span class="book-course">Algoritmos y Estructuras de Datos</span><span class="book-kind">Resumen · Unidad 1</span></div></div><header class="study-header"><div class="mark">Capítulo 1</div><div class="body"><h1 id="programar-antes-de-escribir-código">Programar antes de escribir código</h1><p class="study-lede">Cómo se comporta el sistema con teoría continua, definiciones y distinciones, sin depender de imágenes.</p></div></header>
@@ -1897,6 +2250,13 @@ article.notebook-page.notebook-back::after {
   let viewSwitch = null;
   let toastTimer = null;
   let pageModeUnavailable = null;
+  let topicNavigator = null;
+  let topicPanel = null;
+  let topicPanelReturnFocus = null;
+  let topicScrollCleanup = null;
+  let readerNavigatePage = null;
+  let topics = [];
+  let activeTopicIndex = 0;
 
   const readStoredMode = () => {
     try {
@@ -1951,6 +2311,11 @@ article.notebook-page.notebook-back::after {
     return parseFloat(token) || fallback;
   };
 
+  const isEditableTarget = (target) => {
+    const tag = target?.tagName?.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
+  };
+
   const isHeadingLike = (node) => node?.matches?.('.section-head, .subsection-head, .minor-head');
 
   const makePage = (source, pageIndex) => {
@@ -1979,11 +2344,290 @@ article.notebook-page.notebook-back::after {
     root?.querySelectorAll?.('[data-notebook-figure-number]').forEach((figure) => {
       delete figure.dataset.notebookFigureNumber;
     });
+    root?.querySelectorAll?.('[data-notebook-topic-number]').forEach((mark) => {
+      delete mark.dataset.notebookTopicNumber;
+    });
   };
 
   const restoreScrollPosition = ({left, top}) => {
     window.scrollTo({left, top, behavior: 'instant'});
     window.requestAnimationFrame(() => window.scrollTo({left, top, behavior: 'instant'}));
+  };
+
+  const collectTopics = (source) => Array.from(
+    source.querySelectorAll(':scope > .section-head > h2[id]')
+  ).map((heading, index) => {
+    const section = heading.parentElement;
+    section?.classList.add('notebook-section-tab');
+    if (section) {
+      section.dataset.topicIndex = String(index);
+      section.dataset.topicNumber = String(index + 1);
+    }
+    return {
+      id: heading.id,
+      index,
+      label: heading.textContent.trim(),
+      number: index + 1,
+      page: null,
+    };
+  });
+
+  const setActiveTopic = (index) => {
+    if (!topics.length) return;
+    activeTopicIndex = Math.max(0, Math.min(topics.length - 1, index));
+    const current = String(activeTopicIndex);
+    document.querySelectorAll('.section-head.notebook-section-tab[data-topic-index]').forEach((section) => {
+      section.classList.toggle('is-current-topic', section.dataset.topicIndex === current);
+    });
+    for (const root of [topicNavigator, topicPanel]) {
+      if (!root) continue;
+      root.querySelectorAll('[data-topic-index]').forEach((button) => {
+        const active = button.dataset.topicIndex === current;
+        if (active) button.setAttribute('aria-current', 'location');
+        else button.removeAttribute('aria-current');
+      });
+      root.dataset.activeTopic = String(activeTopicIndex + 1);
+    }
+    document.documentElement.dataset.notebookTopic = String(activeTopicIndex + 1);
+  };
+
+  const setTopicPanel = (open, {focus = true} = {}) => {
+    if (!topicNavigator || !topicPanel) return;
+    if (open && topicPanel.hidden) {
+      const active = document.activeElement;
+      topicPanelReturnFocus = active instanceof HTMLElement
+        && active !== document.body
+        && active !== document.documentElement
+        ? active
+        : null;
+    }
+    topicPanel.hidden = !open;
+    topicNavigator.dataset.open = open ? 'true' : 'false';
+    if (open) {
+      document.documentElement.dataset.notebookTopicIndex = 'open';
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          topicPanel.querySelector(`[data-topic-index="${activeTopicIndex}"]`)?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookTopicIndex;
+      if (focus && topicPanelReturnFocus?.isConnected) {
+        topicPanelReturnFocus.focus({preventScroll: true});
+      }
+      topicPanelReturnFocus = null;
+    }
+  };
+
+  const focusTopicHeading = (topic, root = document) => {
+    const heading = Array.from(root.querySelectorAll?.('h2[id]') || [])
+      .find((node) => node.id === topic.id);
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({preventScroll: true});
+  };
+
+  const navigateToTopic = (index) => {
+    const topic = topics[index];
+    if (!topic) return;
+    setActiveTopic(index);
+    setTopicPanel(false, {focus: false});
+
+    if (mounted && topic.page && readerNavigatePage) {
+      readerNavigatePage(topic.page);
+      window.requestAnimationFrame(() => focusTopicHeading(topic, reader || document));
+      return;
+    }
+
+    const heading = document.getElementById(topic.id);
+    if (!heading) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    heading.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+    window.setTimeout(() => focusTopicHeading(topic), reduced ? 0 : 320);
+  };
+
+  const makeTopicButton = (topic, className) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.dataset.topicIndex = String(topic.index);
+    button.setAttribute('aria-controls', topic.id);
+    button.setAttribute('aria-label', `Ir al Tema ${topic.number}: ${topic.label}`);
+    button.title = `Tema ${topic.number} · ${topic.label}`;
+    const ordinal = document.createElement('span');
+    ordinal.className = 'notebook-topic-item-number';
+    ordinal.textContent = `Tema ${topic.number}`;
+    const label = document.createElement('span');
+    label.className = 'notebook-topic-item-label';
+    label.textContent = topic.label;
+    button.append(ordinal, label);
+    button.addEventListener('click', () => navigateToTopic(topic.index));
+    return button;
+  };
+
+  const createTopicNavigation = () => {
+    if (topicNavigator || topics.length < 2) return;
+
+    // Keep a zero-chrome host for reader-mode state. The index is deliberately
+    // summoned only with T: a permanently visible shortcut label competes with
+    // the physical topic tabs and will be replaced by the shared shortcuts UI.
+    const nav = document.createElement('div');
+    nav.className = 'notebook-topic-tabs is-detached';
+    nav.setAttribute('aria-hidden', 'true');
+    nav.hidden = true;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-topic-index-panel';
+    panel.className = 'notebook-topic-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-topic-index-title');
+    panel.setAttribute('aria-keyshortcuts', 'T');
+    panel.hidden = true;
+
+    const panelHead = document.createElement('div');
+    panelHead.className = 'notebook-topic-panel-head';
+    const panelTitle = document.createElement('h2');
+    panelTitle.id = 'notebook-topic-index-title';
+    panelTitle.textContent = 'Índice de temas';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-topic-panel-shortcut';
+    shortcut.innerHTML = '<kbd>T</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-topic-panel-close';
+    close.setAttribute('aria-label', 'Cerrar índice de temas');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setTopicPanel(false));
+    panelHead.append(panelTitle, shortcut, close);
+
+    const list = document.createElement('ol');
+    list.className = 'notebook-topic-list';
+    topics.forEach((topic) => {
+      const item = document.createElement('li');
+      item.appendChild(makeTopicButton(topic, 'notebook-topic-list-button'));
+      list.appendChild(item);
+    });
+    const hint = document.createElement('p');
+    hint.className = 'notebook-topic-panel-hint';
+    hint.textContent = '↑ ↓ para recorrer · Enter para ir · Esc para cerrar';
+    panel.append(panelHead, list, hint);
+
+    document.body.append(nav, panel);
+    topicNavigator = nav;
+    topicPanel = panel;
+    setActiveTopic(0);
+
+    document.addEventListener('pointerdown', (event) => {
+      if (topicPanel?.hidden !== false) return;
+      if (topicPanel.contains(event.target) || topicNavigator.contains(event.target)) return;
+      setTopicPanel(false, {focus: false});
+    });
+  };
+
+  const detachTopicNavigation = () => {
+    topicScrollCleanup?.();
+    topicScrollCleanup = null;
+    if (topicNavigator) {
+      topicNavigator.hidden = true;
+      topicNavigator.classList.add('is-detached');
+    }
+    topicNavigator?.remove();
+    document.querySelectorAll('.notebook-topic-host').forEach((host) => {
+      host.classList.remove('notebook-topic-host');
+    });
+  };
+
+  const bindContinuousTopicTracking = () => {
+    topicScrollCleanup?.();
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const threshold = Math.min(window.innerHeight * .28, 240);
+      let current = 0;
+      topics.forEach((topic, index) => {
+        const heading = document.getElementById(topic.id);
+        if (heading && heading.getBoundingClientRect().top <= threshold) current = index;
+      });
+      // The last heading of a short document cannot always reach the threshold.
+      // Treat the physical end of the article as the final topic so a direct
+      // jump and manual scrolling agree on the selected tab.
+      const atDocumentEnd = window.scrollY + window.innerHeight
+        >= document.documentElement.scrollHeight - 2;
+      if (atDocumentEnd) current = topics.length - 1;
+      setActiveTopic(current);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', schedule, {passive: true});
+    window.addEventListener('resize', schedule);
+    topicScrollCleanup = () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+    update();
+  };
+
+  const attachTopicNavigation = (mode, host) => {
+    if (!topicNavigator || !host) return;
+    detachTopicNavigation();
+    topicNavigator.hidden = false;
+    topicNavigator.classList.remove('is-detached');
+    topicNavigator.classList.toggle('is-paged', mode === 'pages');
+    topicNavigator.classList.toggle('is-continuous', mode === 'continuous');
+    host.appendChild(topicNavigator);
+    if (mode === 'continuous') {
+      host.classList.add('notebook-topic-host');
+      topicNavigator.dataset.readerSide = 'front';
+      bindContinuousTopicTracking();
+    }
+  };
+
+  const mapTopicPages = (pages) => {
+    topics.forEach((topic) => {
+      const page = pages.find((candidate) => Array.from(candidate.querySelectorAll('h2[id]'))
+        .some((heading) => heading.id === topic.id));
+      topic.page = page ? Number(page.dataset.page) : null;
+    });
+  };
+
+  const syncTopicFromPage = (physicalPage, back) => {
+    if (!topics.length) return;
+    let current = 0;
+    topics.forEach((topic, index) => {
+      if (topic.page && topic.page <= physicalPage) current = index;
+    });
+    if (topicNavigator) topicNavigator.dataset.readerSide = back ? 'back' : 'front';
+    setActiveTopic(current);
+  };
+
+  const onTopicShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || !topicNavigator || print.matches) return;
+    const key = event.key?.toLowerCase();
+    if (key === 't') {
+      event.preventDefault();
+      setTopicPanel(topicPanel?.hidden !== false);
+      return;
+    }
+    if (topicPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setTopicPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(topicPanel.querySelectorAll('[data-topic-index]'));
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else next = (current - 1 + buttons.length) % buttons.length;
+    buttons[next]?.focus();
   };
 
   const syncViewSwitch = () => {
@@ -2055,6 +2699,10 @@ article.notebook-page.notebook-back::after {
 
   const paginate = (source, stack) => {
     const nodes = Array.from(source.children);
+    source.querySelectorAll(':scope > .section-head').forEach((heading, index) => {
+      const mark = heading.querySelector(':scope > .num');
+      if (mark) mark.dataset.notebookTopicNumber = String(index + 1);
+    });
     source.querySelectorAll('figure').forEach((figure, index) => {
       const number = String(index + 1);
       figure.dataset.notebookFigureNumber = number;
@@ -2256,15 +2904,23 @@ article.notebook-page.notebook-back::after {
       status.textContent = `Hoja ${active + 1} de ${leaves.length} · ${back ? 'dorso' : 'frente'} · p. ${Math.min(physicalPage, pages.length)}`;
       shell.dataset.activeLeaf = String(active + 1);
       shell.dataset.activeSide = back ? 'back' : 'front';
+      syncTopicFromPage(Math.min(physicalPage, pages.length), back);
     };
 
-    const go = (index) => {
+    const go = (index, {back = false} = {}) => {
       const next = Math.max(0, Math.min(leaves.length - 1, index));
-      if (next === active) return;
-      rotations[active] = 0;
-      active = next;
-      rotations[active] = 0;
+      const targetRotation = back ? 180 : 0;
+      if (next !== active) {
+        rotations[active] = 0;
+        active = next;
+      }
+      rotations[active] = targetRotation;
       update();
+    };
+
+    readerNavigatePage = (pageNumber) => {
+      const targetPage = Math.max(1, Math.min(pages.length, Number(pageNumber) || 1));
+      go(Math.floor((targetPage - 1) / 2), {back: targetPage % 2 === 0});
     };
 
     pagePairs.forEach(([front, back], index) => {
@@ -2325,7 +2981,8 @@ article.notebook-page.notebook-back::after {
     });
 
     const onKeydown = (event) => {
-      if (!shell.isConnected || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (!shell.isConnected || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (topicPanel?.hidden === false) return;
       const activeElement = document.activeElement;
       const tag = activeElement?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || activeElement?.isContentEditable) return;
@@ -2341,8 +2998,11 @@ article.notebook-page.notebook-back::after {
   };
 
   const restoreContinuous = (state = 'continuous') => {
+    setTopicPanel(false, {focus: false});
+    detachTopicNavigation();
     readerCleanup?.();
     readerCleanup = null;
+    readerNavigatePage = null;
     if (mounted && reader?.isConnected && originalTemplate) {
       reader.replaceWith(originalTemplate.cloneNode(true));
     }
@@ -2351,6 +3011,7 @@ article.notebook-page.notebook-back::after {
     document.documentElement.dataset.notebookReader = state;
     delete document.documentElement.dataset.notebookPages;
     syncViewSwitch();
+    attachTopicNavigation('continuous', document.querySelector('.study-grid > article'));
   };
 
   const mount = async ({persistFallback = false} = {}) => {
@@ -2366,9 +3027,12 @@ article.notebook-page.notebook-back::after {
     if (effectiveMode() !== 'pages' || !source.isConnected) {
       mounting = false;
       syncViewSwitch();
+      if (source.isConnected) attachTopicNavigation('continuous', source);
       return false;
     }
 
+    setTopicPanel(false, {focus: false});
+    detachTopicNavigation();
     delete source.dataset.notebookReaderFallback;
     const scrollPosition = {left: window.scrollX, top: window.scrollY};
     const {shell, stack, status} = createReaderShell();
@@ -2381,6 +3045,7 @@ article.notebook-page.notebook-back::after {
       preferredMode = 'continuous';
       if (persistFallback) writeStoredMode('continuous');
       syncViewSwitch();
+      attachTopicNavigation('continuous', source);
       restoreScrollPosition(scrollPosition);
       return false;
     }
@@ -2396,11 +3061,14 @@ article.notebook-page.notebook-back::after {
       if (persistFallback) writeStoredMode('continuous');
       document.documentElement.dataset.notebookReader = 'continuous';
       syncViewSwitch();
+      attachTopicNavigation('continuous', source);
       restoreScrollPosition(scrollPosition);
       return false;
     }
 
+    mapTopicPages(pages);
     reader = buildReader(source, pages, shell, stack, status);
+    attachTopicNavigation('pages', stack);
     source.remove();
     mounted = true;
     mounting = false;
@@ -2438,11 +3106,6 @@ article.notebook-page.notebook-back::after {
     showModeToast(actual);
   };
 
-  const isEditableTarget = (target) => {
-    const tag = target?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
-  };
-
   const onViewShortcut = (event) => {
     if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
     if (isEditableTarget(event.target)) return;
@@ -2458,7 +3121,20 @@ article.notebook-page.notebook-back::after {
 
   const init = () => {
     const source = document.querySelector('.study-grid > article');
-    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
+    if (!source) return;
+    const pagedEligible = PAGED_KINDS.has(source.dataset.kind || '');
+    topics = collectTopics(source);
+    createTopicNavigation();
+    document.addEventListener('keydown', onTopicShortcut);
+
+    // Long guides keep their established continuous surface and TOC, while
+    // sharing the same edge-tab/topic-index contract requested for every
+    // semantic top-level topic.
+    if (!pagedEligible) {
+      attachTopicNavigation('continuous', source);
+      return;
+    }
+
     originalTemplate = source.cloneNode(true);
     createViewSwitch();
     document.addEventListener('keydown', onViewShortcut);
@@ -2466,12 +3142,13 @@ article.notebook-page.notebook-back::after {
     else {
       document.documentElement.dataset.notebookReader = 'continuous';
       syncViewSwitch();
+      attachTopicNavigation('continuous', source);
     }
   };
 
   window.addEventListener('beforeprint', restoreForPrint);
   window.addEventListener('afterprint', () => {
-    if (effectiveMode() === 'pages') mount();
+    if (effectiveMode() === 'pages') void mount();
   });
   desktop.addEventListener?.('change', () => {
     pageModeUnavailable = null;

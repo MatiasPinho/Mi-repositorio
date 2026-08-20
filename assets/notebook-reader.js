@@ -12,6 +12,13 @@
   let viewSwitch = null;
   let toastTimer = null;
   let pageModeUnavailable = null;
+  let topicNavigator = null;
+  let topicPanel = null;
+  let topicPanelReturnFocus = null;
+  let topicScrollCleanup = null;
+  let readerNavigatePage = null;
+  let topics = [];
+  let activeTopicIndex = 0;
 
   const readStoredMode = () => {
     try {
@@ -66,6 +73,11 @@
     return parseFloat(token) || fallback;
   };
 
+  const isEditableTarget = (target) => {
+    const tag = target?.tagName?.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
+  };
+
   const isHeadingLike = (node) => node?.matches?.('.section-head, .subsection-head, .minor-head');
 
   const makePage = (source, pageIndex) => {
@@ -94,11 +106,290 @@
     root?.querySelectorAll?.('[data-notebook-figure-number]').forEach((figure) => {
       delete figure.dataset.notebookFigureNumber;
     });
+    root?.querySelectorAll?.('[data-notebook-topic-number]').forEach((mark) => {
+      delete mark.dataset.notebookTopicNumber;
+    });
   };
 
   const restoreScrollPosition = ({left, top}) => {
     window.scrollTo({left, top, behavior: 'instant'});
     window.requestAnimationFrame(() => window.scrollTo({left, top, behavior: 'instant'}));
+  };
+
+  const collectTopics = (source) => Array.from(
+    source.querySelectorAll(':scope > .section-head > h2[id]')
+  ).map((heading, index) => {
+    const section = heading.parentElement;
+    section?.classList.add('notebook-section-tab');
+    if (section) {
+      section.dataset.topicIndex = String(index);
+      section.dataset.topicNumber = String(index + 1);
+    }
+    return {
+      id: heading.id,
+      index,
+      label: heading.textContent.trim(),
+      number: index + 1,
+      page: null,
+    };
+  });
+
+  const setActiveTopic = (index) => {
+    if (!topics.length) return;
+    activeTopicIndex = Math.max(0, Math.min(topics.length - 1, index));
+    const current = String(activeTopicIndex);
+    document.querySelectorAll('.section-head.notebook-section-tab[data-topic-index]').forEach((section) => {
+      section.classList.toggle('is-current-topic', section.dataset.topicIndex === current);
+    });
+    for (const root of [topicNavigator, topicPanel]) {
+      if (!root) continue;
+      root.querySelectorAll('[data-topic-index]').forEach((button) => {
+        const active = button.dataset.topicIndex === current;
+        if (active) button.setAttribute('aria-current', 'location');
+        else button.removeAttribute('aria-current');
+      });
+      root.dataset.activeTopic = String(activeTopicIndex + 1);
+    }
+    document.documentElement.dataset.notebookTopic = String(activeTopicIndex + 1);
+  };
+
+  const setTopicPanel = (open, {focus = true} = {}) => {
+    if (!topicNavigator || !topicPanel) return;
+    if (open && topicPanel.hidden) {
+      const active = document.activeElement;
+      topicPanelReturnFocus = active instanceof HTMLElement
+        && active !== document.body
+        && active !== document.documentElement
+        ? active
+        : null;
+    }
+    topicPanel.hidden = !open;
+    topicNavigator.dataset.open = open ? 'true' : 'false';
+    if (open) {
+      document.documentElement.dataset.notebookTopicIndex = 'open';
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          topicPanel.querySelector(`[data-topic-index="${activeTopicIndex}"]`)?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookTopicIndex;
+      if (focus && topicPanelReturnFocus?.isConnected) {
+        topicPanelReturnFocus.focus({preventScroll: true});
+      }
+      topicPanelReturnFocus = null;
+    }
+  };
+
+  const focusTopicHeading = (topic, root = document) => {
+    const heading = Array.from(root.querySelectorAll?.('h2[id]') || [])
+      .find((node) => node.id === topic.id);
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({preventScroll: true});
+  };
+
+  const navigateToTopic = (index) => {
+    const topic = topics[index];
+    if (!topic) return;
+    setActiveTopic(index);
+    setTopicPanel(false, {focus: false});
+
+    if (mounted && topic.page && readerNavigatePage) {
+      readerNavigatePage(topic.page);
+      window.requestAnimationFrame(() => focusTopicHeading(topic, reader || document));
+      return;
+    }
+
+    const heading = document.getElementById(topic.id);
+    if (!heading) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    heading.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+    window.setTimeout(() => focusTopicHeading(topic), reduced ? 0 : 320);
+  };
+
+  const makeTopicButton = (topic, className) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.dataset.topicIndex = String(topic.index);
+    button.setAttribute('aria-controls', topic.id);
+    button.setAttribute('aria-label', `Ir al Tema ${topic.number}: ${topic.label}`);
+    button.title = `Tema ${topic.number} · ${topic.label}`;
+    const ordinal = document.createElement('span');
+    ordinal.className = 'notebook-topic-item-number';
+    ordinal.textContent = `Tema ${topic.number}`;
+    const label = document.createElement('span');
+    label.className = 'notebook-topic-item-label';
+    label.textContent = topic.label;
+    button.append(ordinal, label);
+    button.addEventListener('click', () => navigateToTopic(topic.index));
+    return button;
+  };
+
+  const createTopicNavigation = () => {
+    if (topicNavigator || topics.length < 2) return;
+
+    // Keep a zero-chrome host for reader-mode state. The index is deliberately
+    // summoned only with T: a permanently visible shortcut label competes with
+    // the physical topic tabs and will be replaced by the shared shortcuts UI.
+    const nav = document.createElement('div');
+    nav.className = 'notebook-topic-tabs is-detached';
+    nav.setAttribute('aria-hidden', 'true');
+    nav.hidden = true;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-topic-index-panel';
+    panel.className = 'notebook-topic-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-topic-index-title');
+    panel.setAttribute('aria-keyshortcuts', 'T');
+    panel.hidden = true;
+
+    const panelHead = document.createElement('div');
+    panelHead.className = 'notebook-topic-panel-head';
+    const panelTitle = document.createElement('h2');
+    panelTitle.id = 'notebook-topic-index-title';
+    panelTitle.textContent = 'Índice de temas';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-topic-panel-shortcut';
+    shortcut.innerHTML = '<kbd>T</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-topic-panel-close';
+    close.setAttribute('aria-label', 'Cerrar índice de temas');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setTopicPanel(false));
+    panelHead.append(panelTitle, shortcut, close);
+
+    const list = document.createElement('ol');
+    list.className = 'notebook-topic-list';
+    topics.forEach((topic) => {
+      const item = document.createElement('li');
+      item.appendChild(makeTopicButton(topic, 'notebook-topic-list-button'));
+      list.appendChild(item);
+    });
+    const hint = document.createElement('p');
+    hint.className = 'notebook-topic-panel-hint';
+    hint.textContent = '↑ ↓ para recorrer · Enter para ir · Esc para cerrar';
+    panel.append(panelHead, list, hint);
+
+    document.body.append(nav, panel);
+    topicNavigator = nav;
+    topicPanel = panel;
+    setActiveTopic(0);
+
+    document.addEventListener('pointerdown', (event) => {
+      if (topicPanel?.hidden !== false) return;
+      if (topicPanel.contains(event.target) || topicNavigator.contains(event.target)) return;
+      setTopicPanel(false, {focus: false});
+    });
+  };
+
+  const detachTopicNavigation = () => {
+    topicScrollCleanup?.();
+    topicScrollCleanup = null;
+    if (topicNavigator) {
+      topicNavigator.hidden = true;
+      topicNavigator.classList.add('is-detached');
+    }
+    topicNavigator?.remove();
+    document.querySelectorAll('.notebook-topic-host').forEach((host) => {
+      host.classList.remove('notebook-topic-host');
+    });
+  };
+
+  const bindContinuousTopicTracking = () => {
+    topicScrollCleanup?.();
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const threshold = Math.min(window.innerHeight * .28, 240);
+      let current = 0;
+      topics.forEach((topic, index) => {
+        const heading = document.getElementById(topic.id);
+        if (heading && heading.getBoundingClientRect().top <= threshold) current = index;
+      });
+      // The last heading of a short document cannot always reach the threshold.
+      // Treat the physical end of the article as the final topic so a direct
+      // jump and manual scrolling agree on the selected tab.
+      const atDocumentEnd = window.scrollY + window.innerHeight
+        >= document.documentElement.scrollHeight - 2;
+      if (atDocumentEnd) current = topics.length - 1;
+      setActiveTopic(current);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', schedule, {passive: true});
+    window.addEventListener('resize', schedule);
+    topicScrollCleanup = () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+    update();
+  };
+
+  const attachTopicNavigation = (mode, host) => {
+    if (!topicNavigator || !host) return;
+    detachTopicNavigation();
+    topicNavigator.hidden = false;
+    topicNavigator.classList.remove('is-detached');
+    topicNavigator.classList.toggle('is-paged', mode === 'pages');
+    topicNavigator.classList.toggle('is-continuous', mode === 'continuous');
+    host.appendChild(topicNavigator);
+    if (mode === 'continuous') {
+      host.classList.add('notebook-topic-host');
+      topicNavigator.dataset.readerSide = 'front';
+      bindContinuousTopicTracking();
+    }
+  };
+
+  const mapTopicPages = (pages) => {
+    topics.forEach((topic) => {
+      const page = pages.find((candidate) => Array.from(candidate.querySelectorAll('h2[id]'))
+        .some((heading) => heading.id === topic.id));
+      topic.page = page ? Number(page.dataset.page) : null;
+    });
+  };
+
+  const syncTopicFromPage = (physicalPage, back) => {
+    if (!topics.length) return;
+    let current = 0;
+    topics.forEach((topic, index) => {
+      if (topic.page && topic.page <= physicalPage) current = index;
+    });
+    if (topicNavigator) topicNavigator.dataset.readerSide = back ? 'back' : 'front';
+    setActiveTopic(current);
+  };
+
+  const onTopicShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || !topicNavigator || print.matches) return;
+    const key = event.key?.toLowerCase();
+    if (key === 't') {
+      event.preventDefault();
+      setTopicPanel(topicPanel?.hidden !== false);
+      return;
+    }
+    if (topicPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setTopicPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(topicPanel.querySelectorAll('[data-topic-index]'));
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else next = (current - 1 + buttons.length) % buttons.length;
+    buttons[next]?.focus();
   };
 
   const syncViewSwitch = () => {
@@ -170,6 +461,10 @@
 
   const paginate = (source, stack) => {
     const nodes = Array.from(source.children);
+    source.querySelectorAll(':scope > .section-head').forEach((heading, index) => {
+      const mark = heading.querySelector(':scope > .num');
+      if (mark) mark.dataset.notebookTopicNumber = String(index + 1);
+    });
     source.querySelectorAll('figure').forEach((figure, index) => {
       const number = String(index + 1);
       figure.dataset.notebookFigureNumber = number;
@@ -371,15 +666,23 @@
       status.textContent = `Hoja ${active + 1} de ${leaves.length} · ${back ? 'dorso' : 'frente'} · p. ${Math.min(physicalPage, pages.length)}`;
       shell.dataset.activeLeaf = String(active + 1);
       shell.dataset.activeSide = back ? 'back' : 'front';
+      syncTopicFromPage(Math.min(physicalPage, pages.length), back);
     };
 
-    const go = (index) => {
+    const go = (index, {back = false} = {}) => {
       const next = Math.max(0, Math.min(leaves.length - 1, index));
-      if (next === active) return;
-      rotations[active] = 0;
-      active = next;
-      rotations[active] = 0;
+      const targetRotation = back ? 180 : 0;
+      if (next !== active) {
+        rotations[active] = 0;
+        active = next;
+      }
+      rotations[active] = targetRotation;
       update();
+    };
+
+    readerNavigatePage = (pageNumber) => {
+      const targetPage = Math.max(1, Math.min(pages.length, Number(pageNumber) || 1));
+      go(Math.floor((targetPage - 1) / 2), {back: targetPage % 2 === 0});
     };
 
     pagePairs.forEach(([front, back], index) => {
@@ -440,7 +743,8 @@
     });
 
     const onKeydown = (event) => {
-      if (!shell.isConnected || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (!shell.isConnected || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (topicPanel?.hidden === false) return;
       const activeElement = document.activeElement;
       const tag = activeElement?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || activeElement?.isContentEditable) return;
@@ -456,8 +760,11 @@
   };
 
   const restoreContinuous = (state = 'continuous') => {
+    setTopicPanel(false, {focus: false});
+    detachTopicNavigation();
     readerCleanup?.();
     readerCleanup = null;
+    readerNavigatePage = null;
     if (mounted && reader?.isConnected && originalTemplate) {
       reader.replaceWith(originalTemplate.cloneNode(true));
     }
@@ -466,6 +773,7 @@
     document.documentElement.dataset.notebookReader = state;
     delete document.documentElement.dataset.notebookPages;
     syncViewSwitch();
+    attachTopicNavigation('continuous', document.querySelector('.study-grid > article'));
   };
 
   const mount = async ({persistFallback = false} = {}) => {
@@ -481,9 +789,12 @@
     if (effectiveMode() !== 'pages' || !source.isConnected) {
       mounting = false;
       syncViewSwitch();
+      if (source.isConnected) attachTopicNavigation('continuous', source);
       return false;
     }
 
+    setTopicPanel(false, {focus: false});
+    detachTopicNavigation();
     delete source.dataset.notebookReaderFallback;
     const scrollPosition = {left: window.scrollX, top: window.scrollY};
     const {shell, stack, status} = createReaderShell();
@@ -496,6 +807,7 @@
       preferredMode = 'continuous';
       if (persistFallback) writeStoredMode('continuous');
       syncViewSwitch();
+      attachTopicNavigation('continuous', source);
       restoreScrollPosition(scrollPosition);
       return false;
     }
@@ -511,11 +823,14 @@
       if (persistFallback) writeStoredMode('continuous');
       document.documentElement.dataset.notebookReader = 'continuous';
       syncViewSwitch();
+      attachTopicNavigation('continuous', source);
       restoreScrollPosition(scrollPosition);
       return false;
     }
 
+    mapTopicPages(pages);
     reader = buildReader(source, pages, shell, stack, status);
+    attachTopicNavigation('pages', stack);
     source.remove();
     mounted = true;
     mounting = false;
@@ -553,11 +868,6 @@
     showModeToast(actual);
   };
 
-  const isEditableTarget = (target) => {
-    const tag = target?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
-  };
-
   const onViewShortcut = (event) => {
     if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
     if (isEditableTarget(event.target)) return;
@@ -573,7 +883,20 @@
 
   const init = () => {
     const source = document.querySelector('.study-grid > article');
-    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
+    if (!source) return;
+    const pagedEligible = PAGED_KINDS.has(source.dataset.kind || '');
+    topics = collectTopics(source);
+    createTopicNavigation();
+    document.addEventListener('keydown', onTopicShortcut);
+
+    // Long guides keep their established continuous surface and TOC, while
+    // sharing the same edge-tab/topic-index contract requested for every
+    // semantic top-level topic.
+    if (!pagedEligible) {
+      attachTopicNavigation('continuous', source);
+      return;
+    }
+
     originalTemplate = source.cloneNode(true);
     createViewSwitch();
     document.addEventListener('keydown', onViewShortcut);
@@ -581,12 +904,13 @@
     else {
       document.documentElement.dataset.notebookReader = 'continuous';
       syncViewSwitch();
+      attachTopicNavigation('continuous', source);
     }
   };
 
   window.addEventListener('beforeprint', restoreForPrint);
   window.addEventListener('afterprint', () => {
-    if (effectiveMode() === 'pages') mount();
+    if (effectiveMode() === 'pages') void mount();
   });
   desktop.addEventListener?.('change', () => {
     pageModeUnavailable = null;
