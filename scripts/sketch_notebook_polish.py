@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
 """Notebook-specific polish for schema-1 deterministic sketch diagrams.
 
-This module intentionally owns only presentation invariants that were easy to
-lose while switching between visual-system generations: text must fit inside
-nodes, every geometric node must retain a visibly hand-drawn pencil outline,
-standalone SVG images must carry the notebook fonts themselves, and the small
-figure-kind label must share a stable title baseline.
-
-The semantic graph, node ranks, relationships and connector routing remain
-owned by ``sketch_figure`` / the active hybrid runtime.  No model calls are
-introduced here.
+Presentation invariants that belong to Carpeta rather than to semantic plans:
+text fits before fonts shrink, geometric nodes use deterministic pencil
+variants, standalone SVGs carry notebook fonts, and the small figure-kind label
+never collides with the handwritten title.
 """
 from __future__ import annotations
 
 import hashlib
-import html
 import math
 import re
 import xml.etree.ElementTree as ET
@@ -22,24 +16,31 @@ from typing import Any
 
 from scripts import sketch_figure as sketch
 
-POLICY_VERSION = "carpeta-sketch-polish-v1"
+POLICY_VERSION = "carpeta-sketch-polish-v2"
 TEXT_FIT_POLICY = "fit-first-v2"
 SHAPE_POLICY = "pencil-shape-variants-v1"
-TITLE_META_POLICY = "baseline-safe-v1"
+TITLE_META_POLICY = "collision-safe-v2"
 TYPOGRAPHY_POLICY = "carpeta-svg-fonts-v1"
 
 NEUCHA_WOFF2 = "https://fonts.gstatic.com/s/neucha/v18/q5uGsou0JOdh94bfvQlt.woff2"
 ARCHITECTS_TTF = "https://fonts.gstatic.com/s/architectsdaughter/v19/KtkxAKiDZI_td1Lkx62xHZHDtgO_Y-bvfY5q4szgE-Q.ttf"
 
-# The active runtime scales logical SVG units into a ~704px notebook lane.  Its
-# preferred candidates stay at >= .88 display scale, so reserving ~18% extra
-# text width prevents a scale-aware font from outgrowing the box that was laid
-# out before the final SVG scale was known.
 TEXT_SCALE_BUDGET = 1.18
 LABEL_CHAR_WIDTH = 10.4 * TEXT_SCALE_BUDGET
 DETAIL_CHAR_WIDTH = 7.9 * TEXT_SCALE_BUDGET
 NODE_PADDING_X = 24.0
 NODE_PADDING_Y = 24.0
+
+# Conservative width model for the 29px Architects Daughter title and 15px
+# Neucha kind label.  The point is not typographic measurement precision: the
+# safety gap deliberately errs on the side of moving the meta word away.
+TITLE_CHAR_WIDTH = 15.2
+KIND_CHAR_WIDTH = 8.2
+TITLE_LEFT = 22.0
+TITLE_KIND_RIGHT = 22.0
+TITLE_KIND_GAP = 28.0
+TITLE_INLINE_Y = 52.0
+TITLE_META_LANE_Y = 22.0
 
 INNER_WIDTH_FACTOR = {
     "decision": 0.68,
@@ -63,6 +64,14 @@ MIN_WIDTH = {
 MAX_WIDTH = {
     "decision": 380.0,
     "circle": 340.0,
+}
+
+KIND_LABELS = {
+    "flow": "flujo",
+    "tree": "árbol",
+    "concept-map": "mapa conceptual",
+    "relations": "relaciones",
+    "technical-schematic": "esquema técnico",
 }
 
 
@@ -100,13 +109,7 @@ def _desired_lines(text: str, *, detail: bool = False) -> int:
 
 
 def node_dimensions(node: dict[str, Any]):
-    """Return shape-aware dimensions that fit text before shrinking anything.
-
-    The base renderer used a rectangular text budget for every geometry.  That
-    is unsafe for diamonds/parallelograms and becomes visible once final SVG
-    fonts are preserved at notebook scale.  Here the content box is narrower
-    for shapes whose sides intrude into the nominal bounding box.
-    """
+    """Return shape-aware dimensions that fit text before shrinking anything."""
     label = str(node.get("label") or "")
     detail = str(node.get("detail") or "")
     shape = str(node.get("shape") or "rounded")
@@ -149,9 +152,6 @@ def node_dimensions(node: dict[str, Any]):
     height = max(104.0, height)
 
     if shape == "decision":
-        # Text sits around the diamond centre where the available width is
-        # largest, but extra vertical breathing room keeps upper/lower lines
-        # away from the sloping edges.
         height = max(152.0, height + 20.0)
     elif shape == "terminal":
         height = max(112.0, height)
@@ -162,21 +162,38 @@ def node_dimensions(node: dict[str, Any]):
     return width, height, label_lines, detail_lines
 
 
-def _outline_points(node: dict[str, Any], box: Any, seed: str) -> list[tuple[float, float]] | None:
-    """Return logical shape points with deterministic human variation.
+def text_fit_issues(node: dict[str, Any], box: Any) -> list[str]:
+    """Validate the same conservative content box used by node_dimensions."""
+    shape = str(node.get("shape") or "rounded")
+    inner_factor = INNER_WIDTH_FACTOR.get(shape, 0.88)
+    safe_width = float(box.width) * inner_factor - NODE_PADDING_X * 2.0
+    issues: list[str] = []
+    for line in box.label_lines:
+        estimated = len(line) * LABEL_CHAR_WIDTH
+        if estimated > safe_width + LABEL_CHAR_WIDTH:
+            issues.append(
+                f"node-label-overflow:{node['id']}:{int(math.ceil(estimated))}>{int(math.floor(safe_width))}"
+            )
+    for line in box.detail_lines:
+        estimated = len(line) * DETAIL_CHAR_WIDTH
+        if estimated > safe_width + DETAIL_CHAR_WIDTH:
+            issues.append(
+                f"node-detail-overflow:{node['id']}:{int(math.ceil(estimated))}>{int(math.floor(safe_width))}"
+            )
+    return issues
 
-    The logical bounding box is unchanged for routing.  Mid-edge connector
-    locations remain on the nominal border while corners/shoulders vary enough
-    that the visible outline no longer reads as a perfect UI rectangle.
+
+def _outline_points(node: dict[str, Any], box: Any, seed: str) -> list[tuple[float, float]] | None:
+    """Logical shape points with deterministic human variation.
+
+    Routing still uses the unmodified bbox. Mid-edge ports therefore remain
+    exact while the visible corners and shoulders vary by stable A/B/C style.
     """
     x, y = float(box.x), float(box.y)
     width, height = float(box.width), float(box.height)
     cx, cy = float(box.cx), float(box.cy)
     shape = str(node.get("shape") or "rounded")
     variant = _variant_index(seed, str(node.get("id") or "node"))
-
-    # Small structural asymmetry in logical units.  The scale-aware pencil
-    # renderer adds its own second-order wobble on top of these points.
     drift = (2.2, 3.2, 4.0)[variant]
 
     def j(part: str, amount: float = drift) -> float:
@@ -244,7 +261,7 @@ def _outline_points(node: dict[str, Any], box: Any, seed: str) -> list[tuple[flo
 
 
 def node_path(node: dict[str, Any], box: Any, seed: str, trace: str, *, scale: float = 1.0) -> str:
-    """Render all schema-1 node shapes through the notebook pencil language."""
+    """Render every schema-1 geometry through the notebook pencil language."""
     points = _outline_points(node, box, seed)
     shape = str(node.get("shape") or "rounded")
     key = f'{node.get("id", "node")}:{trace}'
@@ -253,11 +270,9 @@ def node_path(node: dict[str, Any], box: Any, seed: str, trace: str, *, scale: f
     if points is not None:
         return sketch._rough_polygon(points, seed, key, scale=scale)
     if shape == "datastore":
-        radius = (18.0, 24.0, 30.0)[variant]
-        return sketch._rounded_path(box, radius, seed, key, scale=scale)
+        return sketch._rounded_path(box, (18.0, 24.0, 30.0)[variant], seed, key, scale=scale)
     if shape == "rounded":
-        radius = (10.0, 15.0, 20.0)[variant]
-        return sketch._rounded_path(box, radius, seed, key, scale=scale)
+        return sketch._rounded_path(box, (10.0, 15.0, 20.0)[variant], seed, key, scale=scale)
     if shape == "terminal":
         return sketch._rounded_path(box, float(box.height) / 2.0, seed, key, scale=scale)
     if shape == "circle":
@@ -299,6 +314,25 @@ def _replace_font_family(text: str, class_name: str, family: str) -> str:
     return re.sub(pattern, rf'\1{family}\2', text, count=1)
 
 
+def title_meta_placement(spec: dict[str, Any], canvas_width: float) -> tuple[str, float]:
+    """Keep the kind tag inline only when the title leaves a safe gap."""
+    title_lines = sketch._wrap(str(spec.get("title") or ""), 54)
+    first_line = title_lines[0] if title_lines else ""
+    kind = KIND_LABELS.get(str(spec.get("kind") or ""), "")
+    title_right = TITLE_LEFT + len(first_line) * TITLE_CHAR_WIDTH
+    kind_left = canvas_width - TITLE_KIND_RIGHT - len(kind) * KIND_CHAR_WIDTH
+    if len(title_lines) == 1 and title_right + TITLE_KIND_GAP <= kind_left:
+        return "inline", TITLE_INLINE_Y
+    return "top-right", TITLE_META_LANE_Y
+
+
+def _canvas_width(svg_text: str) -> float:
+    match = re.search(r'<svg\b[^>]*\bwidth="([0-9.]+)"', svg_text, flags=re.IGNORECASE)
+    if not match:
+        raise SketchPolishError("SVG width missing before title-meta placement")
+    return float(match.group(1))
+
+
 def postprocess_svg(svg: bytes, spec_value: Any) -> bytes:
     spec = sketch.validate_spec(spec_value)
     seed = sketch.digest_bytes(sketch.canonical_json(spec).encode("utf-8"))
@@ -329,14 +363,15 @@ def postprocess_svg(svg: bytes, spec_value: Any) -> bytes:
             '"Neucha","Segoe Print","Comic Sans MS",cursive',
         )
 
-    # The base renderer placed the meta word four logical pixels above the
-    # title baseline.  On a handwriting face that looks visibly detached.
-    text = re.sub(
-        r'<text class="sketch-kind" x="([^"]+)" y="48" text-anchor="end">',
-        r'<text class="sketch-kind" x="\1" y="52.00" text-anchor="end" dominant-baseline="alphabetic" data-role="figure-kind">',
-        text,
-        count=1,
+    placement, kind_y = title_meta_placement(spec, _canvas_width(text))
+    kind_pattern = r'<text class="sketch-kind" x="([^"]+)" y="48" text-anchor="end">'
+    kind_replacement = (
+        rf'<text class="sketch-kind" x="\1" y="{kind_y:.2f}" text-anchor="end" '
+        rf'dominant-baseline="alphabetic" data-role="figure-kind" data-placement="{placement}">'
     )
+    text, substitutions = re.subn(kind_pattern, kind_replacement, text, count=1)
+    if substitutions != 1:
+        raise SketchPolishError("figure kind label could not be positioned")
 
     root_marker = 'data-pencil-style="graphite-overlay-v1"'
     if f'data-sketch-polish="{POLICY_VERSION}"' not in text:
@@ -356,9 +391,12 @@ def postprocess_svg(svg: bytes, spec_value: Any) -> bytes:
     for node in spec["nodes"]:
         node_id = str(node["id"])
         variant = variant_name(seed, node_id)
-        pattern = rf'(<g id="node-{re.escape(node_id)}"\s+)'
-        replacement = rf'\1data-pencil-variant="{variant}" '
-        text = re.sub(pattern, replacement, text, count=1)
+        text = re.sub(
+            rf'(<g id="node-{re.escape(node_id)}"\s+)',
+            rf'\1data-pencil-variant="{variant}" ',
+            text,
+            count=1,
+        )
 
     payload = text.encode("utf-8")
     try:
@@ -378,8 +416,6 @@ def audit_svg(svg_value: bytes | str, original_audit) -> dict[str, Any]:
     except ET.ParseError as exc:
         return {**report, "ok": False, "issues": [*report.get("issues", []), f"invalid-svg:{exc}"]}
 
-    # Raw schema-1 render output is audited once before post-processing.  Only
-    # enforce the extra contract after the polish marker has been attached.
     if root.get("data-sketch-polish") != POLICY_VERSION:
         return report
 
@@ -394,14 +430,18 @@ def audit_svg(svg_value: bytes | str, original_audit) -> dict[str, Any]:
     if root.get("data-svg-typography") != TYPOGRAPHY_POLICY:
         issues.append("svg-typography-policy-missing")
 
-    kind_nodes = [
-        node for node in root.iter(f"{namespace}text")
-        if node.get("class") == "sketch-kind"
-    ]
+    kind_nodes = [node for node in root.iter(f"{namespace}text") if node.get("class") == "sketch-kind"]
     if len(kind_nodes) != 1 or kind_nodes[0].get("data-role") != "figure-kind":
-        issues.append("figure-kind-baseline-contract-missing")
-    elif kind_nodes[0].get("y") not in {"52", "52.0", "52.00"}:
-        issues.append("figure-kind-baseline-misaligned")
+        issues.append("figure-kind-placement-contract-missing")
+    else:
+        placement = kind_nodes[0].get("data-placement")
+        y = kind_nodes[0].get("y")
+        if placement == "inline" and y not in {"52", "52.0", "52.00"}:
+            issues.append("figure-kind-inline-baseline-misaligned")
+        elif placement == "top-right" and y not in {"22", "22.0", "22.00"}:
+            issues.append("figure-kind-meta-lane-misaligned")
+        elif placement not in {"inline", "top-right"}:
+            issues.append("figure-kind-placement-invalid")
 
     for group in root.iter(f"{namespace}g"):
         group_id = group.get("id", "")
@@ -415,7 +455,7 @@ def audit_svg(svg_value: bytes | str, original_audit) -> dict[str, Any]:
 
 
 def install() -> None:
-    """Patch schema-1 renderer before the active hybrid runtime captures it."""
+    """Patch schema-1 renderer before runtime/geometry wrappers capture it."""
     if getattr(sketch, "_CARPETA_NOTEBOOK_POLISH", None) == POLICY_VERSION:
         return
 
@@ -459,9 +499,11 @@ __all__ = [
     "TITLE_META_POLICY",
     "TYPOGRAPHY_POLICY",
     "node_dimensions",
+    "text_fit_issues",
     "node_path",
     "postprocess_svg",
     "audit_svg",
+    "title_meta_placement",
     "variant_name",
     "install",
 ]
