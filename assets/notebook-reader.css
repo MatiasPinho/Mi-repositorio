@@ -598,6 +598,252 @@ article ul > li:nth-child(even)::before {
   text-align: right;
 }
 
+/* Reading width: A opens a dialog with the same notebook grammar as the view
+   menu. Each measure is drawn as the same ruled mini-sheet carrying a text
+   column of its own width, so the choice reads at a glance. */
+.notebook-width-panel[hidden] { display: none !important; }
+
+.notebook-width-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(31rem, calc(100vw - 2rem));
+  max-height: min(78vh, 35rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-width-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-width-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-width-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-width-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.notebook-width-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-width-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-width-list {
+  display: grid;
+  gap: .1rem;
+  margin: .35rem 0 0;
+}
+
+.notebook-width-option {
+  appearance: none;
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 4);
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: .8rem;
+  align-items: center;
+  padding: .45rem .55rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-width-option:hover,
+.notebook-width-option:focus-visible,
+.notebook-width-option[aria-checked="true"] {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-width-option:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: -2px;
+}
+
+.notebook-width-option[aria-checked="true"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+.notebook-width-option-copy {
+  display: grid;
+  align-content: center;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.notebook-width-option-label {
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.13rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+}
+
+.notebook-width-option[aria-checked="true"] .notebook-width-option-label {
+  color: var(--study-accent);
+}
+
+.notebook-width-option-description {
+  color: var(--study-ink-soft);
+  font-size: .84rem;
+  line-height: 1.35;
+}
+
+.notebook-width-sketch {
+  position: relative;
+  display: block;
+  width: 6rem;
+  height: calc(var(--notebook-line-pitch) * 3.2);
+  justify-self: center;
+  color: color-mix(in srgb, var(--study-accent) 72%, var(--study-ink-soft));
+}
+
+.notebook-width-sketch-sheet {
+  position: absolute;
+  inset: .18rem auto .18rem .7rem;
+  width: 4.3rem;
+  display: block;
+  border: 1.15px solid color-mix(in srgb, currentColor 72%, transparent);
+  border-radius: 2px 5px 4px 2px / 3px 4px 6px 2px;
+  background-color: color-mix(in srgb, var(--study-paper) 88%, transparent);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 .62rem,
+    color-mix(in srgb, var(--study-rule-strong) 58%, transparent) .62rem .68rem
+  );
+  box-shadow: .07rem .08rem 0 color-mix(in srgb, var(--study-ink) 9%, transparent);
+}
+
+.notebook-width-sketch-sheet::before {
+  content: "";
+  position: absolute;
+  inset: .08rem -.1rem -.08rem .07rem;
+  border: .7px solid color-mix(in srgb, currentColor 36%, transparent);
+  border-radius: 3px 4px 5px 1px / 2px 6px 4px 3px;
+  transform: rotate(.35deg) skewX(-.15deg);
+  pointer-events: none;
+}
+
+.notebook-width-sketch-sheet::after {
+  content: "";
+  position: absolute;
+  top: .14rem;
+  bottom: .14rem;
+  left: .52rem;
+  border-left: 1px solid color-mix(in srgb, #c99089 62%, transparent);
+  transform: rotate(.4deg);
+}
+
+.notebook-width-sketch-line {
+  position: absolute;
+  left: 55%;
+  transform: translateX(-50%) rotate(-.4deg);
+  height: .32rem;
+  border-radius: 1px;
+  background: color-mix(in srgb, currentColor 58%, transparent);
+}
+
+.notebook-width-sketch-line.is-1 { top: .68rem; }
+.notebook-width-sketch-line.is-2 { top: 1.22rem; }
+.notebook-width-sketch-line.is-3 { top: 1.76rem; }
+.notebook-width-sketch-line.is-4 { top: 2.3rem; }
+
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-3 { width: 3.85rem; }
+
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-4 { width: 2.9rem; }
+
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-3 { width: 2.95rem; }
+
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-4 { width: 2.2rem; }
+
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-3 { width: 2.05rem; }
+
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-4 { width: 1.5rem; }
+
+.notebook-width-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+/* The stored choice narrows the whole notebook: sheet and prose measure move
+   together (sheet keeps its measure + ~10rem padding relationship). Figures
+   still cap at --notebook-wide and simply scale down when the column does. */
+:root[data-notebook-width="comodo"] {
+  --notebook-measure: 54rem;
+  --notebook-paper-width: 64rem;
+}
+
+:root[data-notebook-width="libro"] {
+  --notebook-measure: 44rem;
+  --notebook-paper-width: 54rem;
+}
+
 .notebook-mode-toast {
   position: fixed;
   z-index: 130;

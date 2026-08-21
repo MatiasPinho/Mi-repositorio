@@ -2,6 +2,7 @@
   const PAGED_KINDS = new Set(['summary', 'rapid-review', 'learn', 'explain']);
   const STORAGE_KEY = 'university-study:reader-mode';
   const PAPER_STORAGE_KEY = 'university-study:paper-color';
+  const WIDTH_STORAGE_KEY = 'university-study:reading-width';
   const desktop = window.matchMedia('(min-width: 48.01rem)');
   const print = window.matchMedia('print');
 
@@ -88,6 +89,7 @@
     if (open) {
       setTopicPanel(false, {focus: false});
       setViewPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
       if (paperColorPanel.hidden) {
         const active = document.activeElement;
         paperColorReturnFocus = active instanceof HTMLElement
@@ -224,6 +226,209 @@
     else {
       selectPaperColor(Number(buttons[current]?.dataset.paperIndex ?? 0));
       setPaperPanel(false, {focus: false});
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
+  /* Reading width switcher: three pencil-sketched measures for the prose
+     column. 'hoja' keeps the theme default; the others narrow the measure so
+     long reading sessions stay comfortable. Figures keep their own width. */
+  const WIDTH_MODES = [
+    { id: 'hoja',   label: 'Hoja',   description: 'El texto ocupa toda la hoja.' },
+    { id: 'comodo', label: 'Cómodo', description: 'Un paso adentro del margen, cómodo para leer largo rato.' },
+    { id: 'libro',  label: 'Libro',  description: 'Columna angosta, como las páginas de un libro.' },
+  ];
+  let widthMode = 'hoja';
+  let widthPanel = null;
+  let widthPanelReturnFocus = null;
+
+  const readStoredWidth = () => {
+    try {
+      const v = window.localStorage?.getItem(WIDTH_STORAGE_KEY);
+      return WIDTH_MODES.some((mode) => mode.id === v) ? v : 'hoja';
+    } catch (_) { return 'hoja'; }
+  };
+
+  const writeStoredWidth = (id) => {
+    try { window.localStorage?.setItem(WIDTH_STORAGE_KEY, id); } catch (_) {}
+  };
+
+  const applyWidthMode = (id) => {
+    const root = document.documentElement;
+    widthMode = WIDTH_MODES.some((mode) => mode.id === id) ? id : 'hoja';
+    if (widthMode === 'hoja') delete root.dataset.notebookWidth;
+    else root.dataset.notebookWidth = widthMode;
+  };
+
+  const syncWidthPanelSelection = () => {
+    if (!widthPanel) return;
+    widthPanel.querySelectorAll('[data-width-mode]').forEach((button) => {
+      const active = button.dataset.widthMode === widthMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+    });
+  };
+
+  const setWidthPanel = (open, {focus = true} = {}) => {
+    if (!widthPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setPaperPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
+      if (widthPanel.hidden) {
+        const active = document.activeElement;
+        widthPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    widthPanel.hidden = !open;
+    if (open) {
+      document.documentElement.dataset.notebookWidthMenu = 'open';
+      syncWidthPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          widthPanel.querySelector('[data-width-mode].is-active')?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookWidthMenu;
+      if (focus && widthPanelReturnFocus?.isConnected) {
+        widthPanelReturnFocus.focus({preventScroll: true});
+      }
+      widthPanelReturnFocus = null;
+    }
+  };
+
+  const makeWidthSketch = (id) => {
+    const sketch = document.createElement('span');
+    sketch.className = `notebook-width-sketch is-${id}`;
+    sketch.setAttribute('aria-hidden', 'true');
+    sketch.innerHTML = `
+      <span class="notebook-width-sketch-sheet">
+        <span class="notebook-width-sketch-line is-1"></span>
+        <span class="notebook-width-sketch-line is-2"></span>
+        <span class="notebook-width-sketch-line is-3"></span>
+        <span class="notebook-width-sketch-line is-4"></span>
+      </span>
+    `;
+    return sketch;
+  };
+
+  const chooseWidthMode = async (id) => {
+    if (!WIDTH_MODES.some((mode) => mode.id === id)) return;
+    setWidthPanel(false, {focus: false});
+    applyWidthMode(id);
+    writeStoredWidth(id);
+    syncWidthPanelSelection();
+    // Pages are laid out against the old measure; repaginate in place and put
+    // the reader back where the reader was.
+    if (mounted && !mounting) {
+      const scrollPosition = {left: window.scrollX, top: window.scrollY};
+      restoreContinuous('continuous');
+      await mount();
+      restoreScrollPosition(scrollPosition);
+    }
+    showToast(`Ancho: ${WIDTH_MODES.find((mode) => mode.id === id)?.label ?? id}`);
+  };
+
+  const createWidthPanel = () => {
+    if (widthPanel) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-width-panel';
+    panel.className = 'notebook-width-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-width-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'A');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-width-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-width-panel-title';
+    title.textContent = 'Ancho de lectura';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-width-panel-shortcut';
+    shortcut.innerHTML = '<kbd>A</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-width-panel-close';
+    close.textContent = 'Cerrar';
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-width-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Ancho de lectura');
+
+    WIDTH_MODES.forEach((mode) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'notebook-width-option';
+      option.dataset.widthMode = mode.id;
+      option.setAttribute('role', 'radio');
+      option.setAttribute('aria-checked', 'false');
+      const copy = document.createElement('span');
+      copy.className = 'notebook-width-option-copy';
+      const label = document.createElement('span');
+      label.className = 'notebook-width-option-label';
+      label.textContent = mode.label;
+      const description = document.createElement('span');
+      description.className = 'notebook-width-option-description';
+      description.textContent = mode.description;
+      copy.append(label, description);
+      option.append(makeWidthSketch(mode.id), copy);
+      list.appendChild(option);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-width-panel-hint';
+    hint.innerHTML = '<kbd>↑</kbd><kbd>↓</kbd> recorrer · <kbd>Enter</kbd> elegir · <kbd>Esc</kbd> cerrar';
+
+    panel.append(head, list, hint);
+    document.body.appendChild(panel);
+    widthPanel = panel;
+
+    panel.addEventListener('click', (event) => {
+      const option = event.target instanceof Element ? event.target.closest('[data-width-mode]') : null;
+      if (option) void chooseWidthMode(option.dataset.widthMode);
+      else if (event.target === close) setWidthPanel(false);
+    });
+  };
+
+  const onWidthShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || print.matches) return;
+    if (event.key?.toLowerCase() !== 'a') return;
+    event.preventDefault();
+    createWidthPanel();
+    setWidthPanel(widthPanel?.hidden !== false);
+  };
+
+  const onWidthPanelKeydown = (event) => {
+    if (widthPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setWidthPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(widthPanel.querySelectorAll('[data-width-mode]:not(:disabled)'));
+    if (!buttons.length) return;
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      void chooseWidthMode(buttons[current]?.dataset.widthMode);
       return;
     }
     buttons[next]?.focus();
@@ -405,6 +610,7 @@
     if (open) {
       setPaperPanel(false, {focus: false});
       setViewPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
       if (topicPanel.hidden) {
         const active = document.activeElement;
         topicPanelReturnFocus = active instanceof HTMLElement
@@ -678,6 +884,7 @@
     if (open) {
       setTopicPanel(false, {focus: false});
       setPaperPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
       if (viewPanel.hidden) {
         const active = document.activeElement;
         viewPanelReturnFocus = active instanceof HTMLElement
@@ -875,7 +1082,7 @@
     return control;
   };
 
-  const showModeToast = (mode) => {
+  const showToast = (text) => {
     let toast = document.querySelector('.notebook-mode-toast');
     if (!toast) {
       toast = document.createElement('div');
@@ -884,10 +1091,14 @@
       toast.setAttribute('aria-live', 'polite');
       document.body.appendChild(toast);
     }
-    toast.textContent = mode === 'pages' ? 'Vista Hojas' : 'Vista Continua';
+    toast.textContent = text;
     toast.classList.add('is-visible');
     if (toastTimer) window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1200);
+  };
+
+  const showModeToast = (mode) => {
+    showToast(mode === 'pages' ? 'Vista Hojas' : 'Vista Continua');
   };
 
   const createReaderShell = () => {
@@ -1327,6 +1538,10 @@
     applyPaperColor(paperColorIndex);
     document.addEventListener('keydown', onPaperColorShortcut);
     document.addEventListener('keydown', onPaperPanelKeydown);
+
+    applyWidthMode(readStoredWidth());
+    document.addEventListener('keydown', onWidthShortcut);
+    document.addEventListener('keydown', onWidthPanelKeydown);
 
     const source = document.querySelector('.study-grid > article');
     if (!source) return;

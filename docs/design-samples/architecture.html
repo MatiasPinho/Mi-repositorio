@@ -2059,6 +2059,252 @@ article ul > li:nth-child(even)::before {
   text-align: right;
 }
 
+/* Reading width: A opens a dialog with the same notebook grammar as the view
+   menu. Each measure is drawn as the same ruled mini-sheet carrying a text
+   column of its own width, so the choice reads at a glance. */
+.notebook-width-panel[hidden] { display: none !important; }
+
+.notebook-width-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(31rem, calc(100vw - 2rem));
+  max-height: min(78vh, 35rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-width-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-width-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-width-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-width-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.notebook-width-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-width-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-width-list {
+  display: grid;
+  gap: .1rem;
+  margin: .35rem 0 0;
+}
+
+.notebook-width-option {
+  appearance: none;
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 4);
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: .8rem;
+  align-items: center;
+  padding: .45rem .55rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-width-option:hover,
+.notebook-width-option:focus-visible,
+.notebook-width-option[aria-checked="true"] {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-width-option:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: -2px;
+}
+
+.notebook-width-option[aria-checked="true"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+.notebook-width-option-copy {
+  display: grid;
+  align-content: center;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.notebook-width-option-label {
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.13rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+}
+
+.notebook-width-option[aria-checked="true"] .notebook-width-option-label {
+  color: var(--study-accent);
+}
+
+.notebook-width-option-description {
+  color: var(--study-ink-soft);
+  font-size: .84rem;
+  line-height: 1.35;
+}
+
+.notebook-width-sketch {
+  position: relative;
+  display: block;
+  width: 6rem;
+  height: calc(var(--notebook-line-pitch) * 3.2);
+  justify-self: center;
+  color: color-mix(in srgb, var(--study-accent) 72%, var(--study-ink-soft));
+}
+
+.notebook-width-sketch-sheet {
+  position: absolute;
+  inset: .18rem auto .18rem .7rem;
+  width: 4.3rem;
+  display: block;
+  border: 1.15px solid color-mix(in srgb, currentColor 72%, transparent);
+  border-radius: 2px 5px 4px 2px / 3px 4px 6px 2px;
+  background-color: color-mix(in srgb, var(--study-paper) 88%, transparent);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 .62rem,
+    color-mix(in srgb, var(--study-rule-strong) 58%, transparent) .62rem .68rem
+  );
+  box-shadow: .07rem .08rem 0 color-mix(in srgb, var(--study-ink) 9%, transparent);
+}
+
+.notebook-width-sketch-sheet::before {
+  content: "";
+  position: absolute;
+  inset: .08rem -.1rem -.08rem .07rem;
+  border: .7px solid color-mix(in srgb, currentColor 36%, transparent);
+  border-radius: 3px 4px 5px 1px / 2px 6px 4px 3px;
+  transform: rotate(.35deg) skewX(-.15deg);
+  pointer-events: none;
+}
+
+.notebook-width-sketch-sheet::after {
+  content: "";
+  position: absolute;
+  top: .14rem;
+  bottom: .14rem;
+  left: .52rem;
+  border-left: 1px solid color-mix(in srgb, #c99089 62%, transparent);
+  transform: rotate(.4deg);
+}
+
+.notebook-width-sketch-line {
+  position: absolute;
+  left: 55%;
+  transform: translateX(-50%) rotate(-.4deg);
+  height: .32rem;
+  border-radius: 1px;
+  background: color-mix(in srgb, currentColor 58%, transparent);
+}
+
+.notebook-width-sketch-line.is-1 { top: .68rem; }
+.notebook-width-sketch-line.is-2 { top: 1.22rem; }
+.notebook-width-sketch-line.is-3 { top: 1.76rem; }
+.notebook-width-sketch-line.is-4 { top: 2.3rem; }
+
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-3 { width: 3.85rem; }
+
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-4 { width: 2.9rem; }
+
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-3 { width: 2.95rem; }
+
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-4 { width: 2.2rem; }
+
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-3 { width: 2.05rem; }
+
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-4 { width: 1.5rem; }
+
+.notebook-width-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+/* The stored choice narrows the whole notebook: sheet and prose measure move
+   together (sheet keeps its measure + ~10rem padding relationship). Figures
+   still cap at --notebook-wide and simply scale down when the column does. */
+:root[data-notebook-width="comodo"] {
+  --notebook-measure: 54rem;
+  --notebook-paper-width: 64rem;
+}
+
+:root[data-notebook-width="libro"] {
+  --notebook-measure: 44rem;
+  --notebook-paper-width: 54rem;
+}
+
 .notebook-mode-toast {
   position: fixed;
   z-index: 130;
@@ -2783,6 +3029,7 @@ article.notebook-page.notebook-back::after {
   const PAGED_KINDS = new Set(['summary', 'rapid-review', 'learn', 'explain']);
   const STORAGE_KEY = 'university-study:reader-mode';
   const PAPER_STORAGE_KEY = 'university-study:paper-color';
+  const WIDTH_STORAGE_KEY = 'university-study:reading-width';
   const desktop = window.matchMedia('(min-width: 48.01rem)');
   const print = window.matchMedia('print');
 
@@ -2869,6 +3116,7 @@ article.notebook-page.notebook-back::after {
     if (open) {
       setTopicPanel(false, {focus: false});
       setViewPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
       if (paperColorPanel.hidden) {
         const active = document.activeElement;
         paperColorReturnFocus = active instanceof HTMLElement
@@ -3005,6 +3253,209 @@ article.notebook-page.notebook-back::after {
     else {
       selectPaperColor(Number(buttons[current]?.dataset.paperIndex ?? 0));
       setPaperPanel(false, {focus: false});
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
+  /* Reading width switcher: three pencil-sketched measures for the prose
+     column. 'hoja' keeps the theme default; the others narrow the measure so
+     long reading sessions stay comfortable. Figures keep their own width. */
+  const WIDTH_MODES = [
+    { id: 'hoja',   label: 'Hoja',   description: 'El texto ocupa toda la hoja.' },
+    { id: 'comodo', label: 'Cómodo', description: 'Un paso adentro del margen, cómodo para leer largo rato.' },
+    { id: 'libro',  label: 'Libro',  description: 'Columna angosta, como las páginas de un libro.' },
+  ];
+  let widthMode = 'hoja';
+  let widthPanel = null;
+  let widthPanelReturnFocus = null;
+
+  const readStoredWidth = () => {
+    try {
+      const v = window.localStorage?.getItem(WIDTH_STORAGE_KEY);
+      return WIDTH_MODES.some((mode) => mode.id === v) ? v : 'hoja';
+    } catch (_) { return 'hoja'; }
+  };
+
+  const writeStoredWidth = (id) => {
+    try { window.localStorage?.setItem(WIDTH_STORAGE_KEY, id); } catch (_) {}
+  };
+
+  const applyWidthMode = (id) => {
+    const root = document.documentElement;
+    widthMode = WIDTH_MODES.some((mode) => mode.id === id) ? id : 'hoja';
+    if (widthMode === 'hoja') delete root.dataset.notebookWidth;
+    else root.dataset.notebookWidth = widthMode;
+  };
+
+  const syncWidthPanelSelection = () => {
+    if (!widthPanel) return;
+    widthPanel.querySelectorAll('[data-width-mode]').forEach((button) => {
+      const active = button.dataset.widthMode === widthMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+    });
+  };
+
+  const setWidthPanel = (open, {focus = true} = {}) => {
+    if (!widthPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setPaperPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
+      if (widthPanel.hidden) {
+        const active = document.activeElement;
+        widthPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    widthPanel.hidden = !open;
+    if (open) {
+      document.documentElement.dataset.notebookWidthMenu = 'open';
+      syncWidthPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          widthPanel.querySelector('[data-width-mode].is-active')?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookWidthMenu;
+      if (focus && widthPanelReturnFocus?.isConnected) {
+        widthPanelReturnFocus.focus({preventScroll: true});
+      }
+      widthPanelReturnFocus = null;
+    }
+  };
+
+  const makeWidthSketch = (id) => {
+    const sketch = document.createElement('span');
+    sketch.className = `notebook-width-sketch is-${id}`;
+    sketch.setAttribute('aria-hidden', 'true');
+    sketch.innerHTML = `
+      <span class="notebook-width-sketch-sheet">
+        <span class="notebook-width-sketch-line is-1"></span>
+        <span class="notebook-width-sketch-line is-2"></span>
+        <span class="notebook-width-sketch-line is-3"></span>
+        <span class="notebook-width-sketch-line is-4"></span>
+      </span>
+    `;
+    return sketch;
+  };
+
+  const chooseWidthMode = async (id) => {
+    if (!WIDTH_MODES.some((mode) => mode.id === id)) return;
+    setWidthPanel(false, {focus: false});
+    applyWidthMode(id);
+    writeStoredWidth(id);
+    syncWidthPanelSelection();
+    // Pages are laid out against the old measure; repaginate in place and put
+    // the reader back where the reader was.
+    if (mounted && !mounting) {
+      const scrollPosition = {left: window.scrollX, top: window.scrollY};
+      restoreContinuous('continuous');
+      await mount();
+      restoreScrollPosition(scrollPosition);
+    }
+    showToast(`Ancho: ${WIDTH_MODES.find((mode) => mode.id === id)?.label ?? id}`);
+  };
+
+  const createWidthPanel = () => {
+    if (widthPanel) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-width-panel';
+    panel.className = 'notebook-width-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-width-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'A');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-width-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-width-panel-title';
+    title.textContent = 'Ancho de lectura';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-width-panel-shortcut';
+    shortcut.innerHTML = '<kbd>A</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-width-panel-close';
+    close.textContent = 'Cerrar';
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-width-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Ancho de lectura');
+
+    WIDTH_MODES.forEach((mode) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'notebook-width-option';
+      option.dataset.widthMode = mode.id;
+      option.setAttribute('role', 'radio');
+      option.setAttribute('aria-checked', 'false');
+      const copy = document.createElement('span');
+      copy.className = 'notebook-width-option-copy';
+      const label = document.createElement('span');
+      label.className = 'notebook-width-option-label';
+      label.textContent = mode.label;
+      const description = document.createElement('span');
+      description.className = 'notebook-width-option-description';
+      description.textContent = mode.description;
+      copy.append(label, description);
+      option.append(makeWidthSketch(mode.id), copy);
+      list.appendChild(option);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-width-panel-hint';
+    hint.innerHTML = '<kbd>↑</kbd><kbd>↓</kbd> recorrer · <kbd>Enter</kbd> elegir · <kbd>Esc</kbd> cerrar';
+
+    panel.append(head, list, hint);
+    document.body.appendChild(panel);
+    widthPanel = panel;
+
+    panel.addEventListener('click', (event) => {
+      const option = event.target instanceof Element ? event.target.closest('[data-width-mode]') : null;
+      if (option) void chooseWidthMode(option.dataset.widthMode);
+      else if (event.target === close) setWidthPanel(false);
+    });
+  };
+
+  const onWidthShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || print.matches) return;
+    if (event.key?.toLowerCase() !== 'a') return;
+    event.preventDefault();
+    createWidthPanel();
+    setWidthPanel(widthPanel?.hidden !== false);
+  };
+
+  const onWidthPanelKeydown = (event) => {
+    if (widthPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setWidthPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(widthPanel.querySelectorAll('[data-width-mode]:not(:disabled)'));
+    if (!buttons.length) return;
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      void chooseWidthMode(buttons[current]?.dataset.widthMode);
       return;
     }
     buttons[next]?.focus();
@@ -3186,6 +3637,7 @@ article.notebook-page.notebook-back::after {
     if (open) {
       setPaperPanel(false, {focus: false});
       setViewPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
       if (topicPanel.hidden) {
         const active = document.activeElement;
         topicPanelReturnFocus = active instanceof HTMLElement
@@ -3459,6 +3911,7 @@ article.notebook-page.notebook-back::after {
     if (open) {
       setTopicPanel(false, {focus: false});
       setPaperPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
       if (viewPanel.hidden) {
         const active = document.activeElement;
         viewPanelReturnFocus = active instanceof HTMLElement
@@ -3656,7 +4109,7 @@ article.notebook-page.notebook-back::after {
     return control;
   };
 
-  const showModeToast = (mode) => {
+  const showToast = (text) => {
     let toast = document.querySelector('.notebook-mode-toast');
     if (!toast) {
       toast = document.createElement('div');
@@ -3665,10 +4118,14 @@ article.notebook-page.notebook-back::after {
       toast.setAttribute('aria-live', 'polite');
       document.body.appendChild(toast);
     }
-    toast.textContent = mode === 'pages' ? 'Vista Hojas' : 'Vista Continua';
+    toast.textContent = text;
     toast.classList.add('is-visible');
     if (toastTimer) window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1200);
+  };
+
+  const showModeToast = (mode) => {
+    showToast(mode === 'pages' ? 'Vista Hojas' : 'Vista Continua');
   };
 
   const createReaderShell = () => {
@@ -4108,6 +4565,10 @@ article.notebook-page.notebook-back::after {
     applyPaperColor(paperColorIndex);
     document.addEventListener('keydown', onPaperColorShortcut);
     document.addEventListener('keydown', onPaperPanelKeydown);
+
+    applyWidthMode(readStoredWidth());
+    document.addEventListener('keydown', onWidthShortcut);
+    document.addEventListener('keydown', onWidthPanelKeydown);
 
     const source = document.querySelector('.study-grid > article');
     if (!source) return;

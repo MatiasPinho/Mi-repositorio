@@ -194,6 +194,166 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn("--notebook-wide: 48rem", theme)
         self.assertIn("--notebook-paper-width: 76rem", theme)
 
+    def test_reading_width_panel_offers_three_measures_with_pencil_sketches(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+
+        self.assertIn("WIDTH_STORAGE_KEY = 'university-study:reading-width'", js)
+        self.assertIn("aria-keyshortcuts', 'A'", js)
+        for mode_id in ("hoja", "comodo", "libro"):
+            self.assertIn(f"'{mode_id}'", js)
+            self.assertIn(f"is-{mode_id}", css)
+        self.assertEqual(js.count("data-width-mode") >= 3, True)
+        self.assertIn("makeWidthSketch", js)
+        self.assertIn("notebook-width-sketch-line", css)
+
+        # Every other panel closes the width menu, and the width menu closes
+        # every other panel: exactly one dialog at a time.
+        self.assertGreaterEqual(js.count("setWidthPanel(false, {focus: false});"), 4)
+
+        init = js.split("const init = () => {", 1)[1].split("init();", 1)[0]
+        self.assertIn("applyWidthMode(readStoredWidth());", init)
+        self.assertIn("document.addEventListener('keydown', onWidthShortcut);", init)
+        self.assertIn("document.addEventListener('keydown', onWidthPanelKeydown);", init)
+
+        # The whole notebook narrows: sheet and prose measure move together,
+        # keeping the sheet's measure + padding relationship.
+        self.assertIn(":root[data-notebook-width=\"comodo\"] {\n  --notebook-measure: 54rem;\n  --notebook-paper-width: 64rem;\n}", css)
+        self.assertIn(":root[data-notebook-width=\"libro\"] {\n  --notebook-measure: 44rem;\n  --notebook-paper-width: 54rem;\n}", css)
+        self.assertIn(".notebook-width-panel[hidden]", css)
+
+    def test_browser_width_panel_changes_measure_and_survives_reload(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            html = td / "summary.html"
+            blocks = []
+            for topic in range(1, 4):
+                blocks.append(f"## Tema extenso {topic}")
+                blocks.append(f"### Concepto central {topic}")
+                blocks.extend(
+                    f"Párrafo {topic}.{i} con **concepto {topic}** y contenido suficiente para distribuir cada tema entre hojas físicas."
+                    for i in range(1, 22)
+                )
+            md.write_text(
+                "# Unidad con índice\n\nIntroducción.\n\n" + "\n\n".join(blocks),
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                page = browser.new_page(viewport={"width": 1440, "height": 1000})
+                # A real file:// origin keeps localStorage readable, which
+                # set_content's opaque origin denies.
+                page.goto(html.as_uri(), wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+
+                paragraph_selector = ".notebook-page p, .study-grid > article p"
+                sheet_selector = ".notebook-stack, .study-grid > article"
+                baseline_width = page.locator(paragraph_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                baseline_sheet = page.locator(sheet_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+
+                self.assertEqual(page.locator("#notebook-width-panel").count(), 0)
+                page.keyboard.press("a")
+                panel = page.locator("#notebook-width-panel")
+                self.assertTrue(panel.is_visible())
+                options = panel.locator("[data-width-mode]")
+                self.assertEqual(options.count(), 3)
+                self.assertEqual(
+                    options.locator(".notebook-width-option-label").all_inner_texts(),
+                    ["Hoja", "Cómodo", "Libro"],
+                )
+                self.assertTrue(
+                    page.wait_for_function(
+                        "() => document.activeElement?.dataset.widthMode === 'hoja'",
+                        timeout=1000,
+                    )
+                )
+                sketches = panel.locator(".notebook-width-sketch")
+                self.assertEqual(sketches.count(), 3)
+                self.assertTrue(
+                    sketches.evaluate_all(
+                        "nodes => nodes.every(node => node.querySelectorAll('.notebook-width-sketch-line').length === 4)"
+                    )
+                )
+
+                # Exactly one dialog at a time: V steals the dialog from A.
+                page.keyboard.press("v")
+                self.assertTrue(page.locator("#notebook-view-panel").is_visible())
+                self.assertFalse(panel.is_visible())
+                page.keyboard.press("Escape")
+                self.assertFalse(page.locator("#notebook-view-panel").is_visible())
+
+                page.keyboard.press("a")
+                self.assertTrue(panel.is_visible())
+                page.keyboard.press("ArrowDown")
+                page.keyboard.press("Enter")
+
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookWidth === 'comodo'",
+                    timeout=4000,
+                )
+                page.wait_for_function(
+                    f"() => {{ const p = document.querySelector('{paragraph_selector}'); "
+                    f"return p && p.getBoundingClientRect().width < {baseline_width} - 50; }}",
+                    timeout=4000,
+                )
+                narrowed_width = page.locator(paragraph_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                self.assertLess(narrowed_width, baseline_width - 50)
+                narrowed_sheet = page.locator(sheet_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                # The sheet itself narrows too, not only the text column.
+                self.assertLess(narrowed_sheet, baseline_sheet - 50)
+                self.assertEqual(
+                    page.evaluate("window.localStorage.getItem('university-study:reading-width')"),
+                    "comodo",
+                )
+
+                page.reload(wait_until="domcontentloaded")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.documentElement.dataset.notebookWidth"),
+                    "comodo",
+                )
+                restored_width = page.locator(paragraph_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                self.assertLess(restored_width, baseline_width - 50)
+                restored_sheet = page.locator(sheet_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                self.assertLess(restored_sheet, baseline_sheet - 50)
+                browser.close()
+
     def test_browser_topic_index_jumps_to_exact_topic_and_survives_view_switch(self):
         try:
             from playwright.sync_api import sync_playwright
