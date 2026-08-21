@@ -34,6 +34,17 @@ def main() -> int:
         print("Usage: python scripts/venv_exec.py <python-args...>", file=sys.stderr)
         return 2
 
+    # Every documented study-pipeline command passes through this shim. Guard
+    # the run before launching the target so a temporary edit to any protected
+    # engine file becomes a sticky run failure even if the edit is reverted
+    # before `pipeline_run.py finish`.
+    try:
+        from run_engine_guard import EngineGuardError, guard_argv
+        guard_argv(sys.argv[1:])
+    except EngineGuardError as exc:
+        print(f"Carpeta run blocked: {exc}", file=sys.stderr)
+        return 3
+
     os.environ["VIRTUAL_ENV"] = str(target.parent.parent)
     path = os.environ.get("PATH", "")
     os.environ["PATH"] = str(target.parent) + (os.pathsep + path if path else "")

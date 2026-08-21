@@ -10,8 +10,8 @@
 
   /* Surfaces — study notebook on a quiet desk */
   --study-canvas: #6f7268;
-  --study-paper: #fbf9f4;
-  --study-paper-muted: #f4f3eb;
+  --study-paper: #f2ece0;
+  --study-paper-muted: #e9e2d4;
   --study-ink: #1b2430;
   --study-ink-strong: #10131a;
   --study-ink-soft: #3c4657;
@@ -32,7 +32,7 @@
   --study-concept: #1f4b7a;
   --study-example: #50664f;
   --study-warning: #8a642b;
-  --study-danger: #a8564a;
+  --study-danger: #a04e43;
   --study-connection: #5d586f;
   --study-recall: #1f4b7a;
   --study-danger-soft: #fbefec;
@@ -79,12 +79,14 @@
   --notebook-line-pitch: 1.6875rem;
   --notebook-frame-inset: calc(var(--notebook-line-pitch) / 2);
   --notebook-frame-padding-inline: calc(var(--notebook-line-pitch) * .75);
-  --notebook-measure: 40rem;
-  --notebook-wide: 44rem;
-  --notebook-paper-width: 58rem;
+  --notebook-measure: 66rem;
+  --notebook-wide: 48rem;
+  /* Prose fills the sheet's writing area; the token only mirrors the usable
+     width so consumers with min() caps degrade gracefully on small screens. */
+  --notebook-paper-width: 76rem;
   --notebook-section-mark: 1.8rem;
   --notebook-shadow: 0 14px 30px rgba(0, 0, 0, .28), 0 2px 0 rgba(255, 255, 255, .42) inset;
-  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 .5H1000' stroke='%23c9d6e4' stroke-width='1'/%3E%3C/svg%3E");
+  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27' preserveAspectRatio='none'%3E%3Cpath d='M0 .5H1000' stroke='%23c9d6e4' stroke-width='1'/%3E%3C/svg%3E");
   /* Variante 02: dos recorridos independientes del mismo contorno. They are
      masks so every semantic role can keep its own ink colour. */
   --notebook-frame-trace-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C80 1 170 7 262 3 C328 1 390 5 396 8 C399 35 397 70 395 95 C300 99 185 94 98 98 C56 100 10 97 4 94 C1 62 2 30 4 5' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
@@ -137,7 +139,7 @@ html[data-study-theme="dark"] {
   --notebook-code-operator: #d1aaa5;
   --notebook-code-punctuation: #a8a297;
   --notebook-shadow: 0 16px 36px rgba(0, 0, 0, .46);
-  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 .5H1000' stroke='%2333363d' stroke-width='1'/%3E%3C/svg%3E");
+  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27' preserveAspectRatio='none'%3E%3Cpath d='M0 .5H1000' stroke='%2333363d' stroke-width='1'/%3E%3C/svg%3E");
 }
 
 /* --- typography.css --- */
@@ -462,6 +464,9 @@ article {
   isolation: isolate;
   --notebook-paper-padding-start: clamp(5.4rem, 10vw, 7.2rem);
   --notebook-paper-padding-end: clamp(1.25rem, 4vw, 2.5rem);
+  --notebook-margin-offset: clamp(4.05rem, 7.2vw, 5.35rem);
+  --notebook-rule-inline-start: var(--notebook-margin-offset);
+  --notebook-rule-inline-end: 0rem;
   flex: 1 1 34rem;
   width: min(100%, var(--notebook-paper-width));
   max-width: var(--notebook-paper-width);
@@ -469,16 +474,51 @@ article {
   padding: calc(var(--notebook-line-pitch) * 2) var(--notebook-paper-padding-end) 4rem var(--notebook-paper-padding-start);
   overflow: hidden;
   color: var(--study-ink);
+
+  /* The notebook stays the same document; only the material underneath gains
+     physical depth. Rules remain the top paint layer so grain never muddies
+     the baseline grid. */
   background-color: var(--study-paper);
-  background-image: var(--notebook-rule-image);
-  background-origin: content-box;
-  background-size: calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch);
-  background-position: calc(-1 * var(--notebook-paper-padding-start)) 0;
-  background-repeat: repeat-y;
+  background-image:
+    var(--notebook-rule-image),
+    radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 4%, transparent) 0 1px, transparent 1.15px),
+    radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 2.5%, transparent) 0 1px, transparent 1.15px),
+    linear-gradient(
+      100deg,
+      rgba(0, 0, 0, .045) 0%,
+      rgba(0, 0, 0, 0) 14%,
+      rgba(0, 0, 0, 0) 86%,
+      rgba(0, 0, 0, .055) 100%
+    ),
+    radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, .06) 0%, rgba(0, 0, 0, 0) 58%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--study-paper) 94%, white 6%), var(--study-paper));
+  background-origin: border-box, border-box, border-box, border-box, border-box, border-box;
+  background-size:
+    calc(100% - var(--notebook-rule-inline-start) - var(--notebook-rule-inline-end)) var(--notebook-line-pitch),
+    7px 7px,
+    11px 11px,
+    100% 100%,
+    13rem 13rem,
+    100% 100%;
+  background-position:
+    var(--notebook-rule-inline-start) 0,
+    0 0,
+    4px 6px,
+    0 0,
+    100% 100%,
+    0 0;
+  background-repeat: repeat-y, repeat, repeat, no-repeat, no-repeat, no-repeat;
   border: 1px solid var(--study-rule);
   border-radius: 1px 7px 7px 1px;
   box-shadow: var(--notebook-shadow);
   counter-reset: study-figure study-table study-code study-section;
+}
+
+/* The ruled writing area touches the red margin and reaches the opposite paper
+   edge. Reverse faces mirror that geometry with the binding on the right. */
+article.notebook-back {
+  --notebook-rule-inline-start: 0rem;
+  --notebook-rule-inline-end: var(--notebook-margin-offset);
 }
 
 /* Every top-level content block finishes on the same 27px rhythm. Without
@@ -508,7 +548,7 @@ article::before {
   z-index: 1;
   top: 0;
   bottom: 0;
-  left: clamp(4.05rem, 7.2vw, 5.35rem);
+  left: var(--notebook-margin-offset);
   width: 4px;
   border-inline: 1px solid var(--study-margin-rule);
   opacity: .9;
@@ -536,7 +576,7 @@ article::after {
 /* Prose no longer pays for a permanent semantic gutter. */
 .row {
   display: block;
-  max-width: var(--notebook-wide);
+  max-width: var(--notebook-measure);
 }
 .row > .mark:empty { display: none; }
 /* Block snapping and metric-based type trimming share one origin: the article
@@ -654,8 +694,8 @@ article::after {
   flex: 0 1 var(--study-toc-width);
   margin-right: auto;
   position: sticky;
-  top: 2.5rem;
-  max-height: calc(100vh - 5rem);
+  top: .9rem;
+  max-height: calc(100vh - 1.8rem);
   overflow: auto;
   padding: .35rem 0;
   display: flex;
@@ -706,6 +746,7 @@ article::after {
   article {
     --notebook-paper-padding-start: 3.45rem;
     --notebook-paper-padding-end: 1.2rem;
+    --notebook-margin-offset: 2.75rem;
     width: 100%;
     max-width: none;
     border: 0;
@@ -713,7 +754,7 @@ article::after {
     box-shadow: none;
     padding: var(--notebook-line-pitch) 1.2rem 4rem 3.45rem;
   }
-  article::before { left: 2.75rem; }
+  article::before { left: var(--notebook-margin-offset); }
   article::after { display: none; }
   .row > .body,
   .study-header > .body,
@@ -730,9 +771,19 @@ article::after {
 @media (max-width: 34rem) {
   article {
     --notebook-paper-padding-start: 1.2rem;
+    --notebook-margin-offset: 0rem;
     padding-left: var(--notebook-paper-padding-start);
   }
   article::before { display: none; }
+  .book-running-line {
+    height: auto;
+    min-height: calc(var(--notebook-line-pitch) * 2);
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+  .book-kind { text-align: left; }
   .section-head { gap: .3rem; }
   .section-head > .num { min-width: 1.65rem; }
 }
@@ -1005,6 +1056,8 @@ pre:has(+ .code-caption),
   text-wrap: pretty;
 }
 
+/* The right rail stays intentionally empty for future drawings and notes. */
+
 /* --- figures.css --- */
 /* Figures are study objects inside the notebook. The image itself is never
    stylized or filtered; only its placement and caption take on notebook cues. */
@@ -1122,16 +1175,23 @@ figure.wide { max-width: none; }
   article {
     --notebook-paper-padding-start: 11mm;
     --notebook-paper-padding-end: 0mm;
+    --notebook-margin-offset: 7mm;
     max-width: none;
     padding: 0 var(--notebook-paper-padding-end) 0 var(--notebook-paper-padding-start);
     border: 0;
     border-radius: 0;
     box-shadow: none;
     overflow: visible;
+    background-color: #fff;
+    background-image: var(--notebook-rule-image);
+    background-origin: border-box;
+    background-size: calc(100% - var(--notebook-margin-offset)) var(--notebook-line-pitch);
+    background-position: var(--notebook-margin-offset) 0;
+    background-repeat: repeat-y;
   }
   article::before {
     display: block;
-    left: 7mm;
+    left: var(--notebook-margin-offset);
   }
   article::after { display: none; }
 
@@ -1173,6 +1233,1788 @@ figure.wide { max-width: none; }
     print-color-adjust: exact;
   }
 }
+
+/* CARPETA_HANDDRAWN_STRUCTURES_V1
+   Semantic HTML keeps the document accessible; only visible structure is
+   redrawn so tables belong to the same pencil language as scenes/callouts. */
+
+/* Handwritten study typography. These faces are loaded directly so generated
+   artifacts keep the existing offline fallbacks while gaining the intended
+   notebook voice whenever webfonts are available. IBM Plex Mono remains the
+   untouched utility/code face for folios, units, counters and code. */
+@font-face {
+  font-family: "Neucha";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Neucha"),
+    url("https://fonts.gstatic.com/s/neucha/v18/q5uGsou0JOdh94bfvQlt.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Architects Daughter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Architects Daughter"),
+    url("https://fonts.gstatic.com/s/architectsdaughter/v19/KtkxAKiDZI_td1Lkx62xHZHDtgO_Y-bvfY5q4szgE-Q.ttf") format("truetype");
+}
+
+:root {
+  --study-font-body: "Neucha", "Segoe Print", "Comic Sans MS", cursive;
+  --study-font-display: "Architects Daughter", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --study-font-hand: var(--study-font-display);
+
+  --notebook-table-frame-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M5 5 C76 2 145 6 219 4 C292 2 360 4 396 7 C399 28 397 67 395 95 C315 98 237 94 158 97 C90 99 28 97 5 93 C2 67 3 30 5 5' fill='none' stroke='black' stroke-width='1.35' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --notebook-table-frame-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M7 2 C84 0 153 4 225 2 C300 1 365 2 398 5 C400 31 398 65 397 92 C319 96 241 92 161 95 C91 97 29 94 6 90 C3 62 4 27 7 2' fill='none' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --notebook-table-grid-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 8' preserveAspectRatio='none'%3E%3Cpath d='M0 4 C48 2.8 93 5.2 139 3.8 C188 2.7 233 5 279 3.6 C323 2.8 363 4.9 400 3.9' fill='none' stroke='black' stroke-width='1.15' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --notebook-table-grid-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 400' preserveAspectRatio='none'%3E%3Cpath d='M4 0 C2.9 47 5.1 91 3.7 137 C2.8 184 5 228 3.8 274 C3 318 4.9 360 3.9 400' fill='none' stroke='black' stroke-width='1.15' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+}
+
+/* Architects Daughter is deliberately confined to short, high-salience text.
+   Neucha remains the prose face through --study-font-body. */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--study-font-display);
+  font-weight: 400;
+}
+
+figcaption,
+.callout.exam {
+  font-family: var(--study-font-hand);
+}
+
+/* Notebook sketches must read as graphite drawn directly on the sheet, never
+   as a white card pasted over it. The SVG renderer already emits transparent
+   node fills; multiply is an intentional compatibility fallback for older
+   registered SVGs that may still contain opaque white pixels. */
+figure.study-sketch,
+figure.study-sketch .plate,
+figure.study-sketch img,
+figure.study-sketch svg {
+  background: transparent !important;
+}
+
+figure.study-sketch img {
+  mix-blend-mode: multiply;
+  isolation: auto;
+}
+
+/* Final study documents inline deterministic SVGs so their text participates
+   in the same typography context as the notebook instead of falling back to a
+   browser-default font inside an external <img>. The semantic diagram kind is
+   still present in SVG metadata, but is intentionally not student-facing. */
+figure.study-sketch svg.notebook-sketch-svg {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  margin-inline: 0;
+  overflow: visible;
+  mix-blend-mode: multiply;
+}
+
+figure.study-sketch svg.notebook-sketch-svg .sketch-kind {
+  display: none !important;
+}
+
+figure.study-sketch svg.notebook-sketch-svg .sketch-title {
+  font-family: var(--study-font-display) !important;
+  font-weight: 400 !important;
+}
+
+figure.study-sketch svg.notebook-sketch-svg :is(
+  .sketch-label,
+  .sketch-detail,
+  .sketch-edge-label,
+  .sketch-group-label
+) {
+  font-family: var(--study-font-body) !important;
+}
+
+/* Tables are ruled directly onto the notebook paper. Their cells and header
+   must never become an opaque white card: the page rules/grain stay visible
+   through the full table and the pencil frame/grid provides the structure. */
+.table-scroll {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: transparent;
+  padding: 2px;
+}
+
+.table-scroll table,
+.table-scroll thead,
+.table-scroll tbody,
+.table-scroll tr,
+.table-scroll th,
+.table-scroll td {
+  background: transparent;
+}
+
+.table-scroll::before,
+.table-scroll::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: var(--study-rule-strong);
+  -webkit-mask-position: center;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+
+.table-scroll::before {
+  -webkit-mask-image: var(--notebook-table-frame-a);
+  mask-image: var(--notebook-table-frame-a);
+}
+
+.table-scroll::after {
+  opacity: .34;
+  transform: translate(.35px, -.25px);
+  -webkit-mask-image: var(--notebook-table-frame-b);
+  mask-image: var(--notebook-table-frame-b);
+}
+
+.table-scroll table {
+  position: relative;
+  z-index: 1;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-scroll th,
+.table-scroll td {
+  position: relative;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.table-scroll th:not(:last-child)::after,
+.table-scroll td:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: -3px;
+  bottom: 0;
+  width: 6px;
+  pointer-events: none;
+  background: var(--study-rule);
+  -webkit-mask: var(--notebook-table-grid-v) center / 100% 100% no-repeat;
+  mask: var(--notebook-table-grid-v) center / 100% 100% no-repeat;
+}
+
+.table-scroll thead th::before,
+.table-scroll tbody tr:not(:last-child) > td::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 6px;
+  pointer-events: none;
+  background: var(--study-rule);
+  -webkit-mask: var(--notebook-table-grid-h) center / 100% 100% no-repeat;
+  mask: var(--notebook-table-grid-h) center / 100% 100% no-repeat;
+}
+
+/* Summary section labels: the old § glyph stays gone, but the small technical
+   counter remains IBM Plex Mono while the actual section title uses Architects
+   Daughter. */
+article[data-kind="summary"] .section-head {
+  display: block;
+  width: min(100%, var(--notebook-measure));
+}
+
+article[data-kind="summary"] .section-head > .num {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--study-font-utility);
+  font-size: .72rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+  letter-spacing: .055em;
+  color: var(--study-accent);
+  font-variant-numeric: tabular-nums;
+  transform: none;
+}
+
+article[data-kind="summary"] .section-head > .num::before {
+  content: "Tema " counter(study-section);
+}
+
+article[data-kind="summary"] .section-head > h2 {
+  width: 100%;
+  max-width: var(--notebook-measure);
+}
+
+/* Physical-page reader layered on top of the existing notebook design. */
+:root {
+  --notebook-page-lines: 48;
+  --notebook-page-height: calc(var(--notebook-line-pitch) * var(--notebook-page-lines));
+  --notebook-page-safe-bottom: .875rem;
+  --notebook-leaf-peek: 2.85rem;
+  --notebook-leaf-hover-extra: .75rem;
+  --notebook-leaf-scale: .972;
+  --notebook-section-tab-overhang: 2.15rem;
+  --notebook-section-tab-max: 24rem;
+}
+
+/* Three binder holes are enough to communicate paper without creating a visual rail. */
+article::after {
+  top: 0;
+  bottom: 0;
+  width: 1.45rem;
+  background:
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 14% / 1.45rem 1.45rem no-repeat,
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 50% / 1.45rem 1.45rem no-repeat,
+    radial-gradient(circle at center,
+      var(--study-canvas) 0 .47rem,
+      color-mix(in srgb, var(--study-hole) 82%, transparent) .49rem .56rem,
+      transparent .58rem)
+      center 86% / 1.45rem 1.45rem no-repeat;
+}
+
+/* The running labels stay, but the dark divider under them is intentionally
+   removed so the ruled paper remains the only horizontal structure there. */
+.book-running-line { border-bottom: 0; }
+
+/* Unordered lists use a small irregular ink mark instead of the browser's
+   perfectly geometric bullet. The mark is optically centred on the glyphs of
+   the first text line rather than the full 27px notebook line box. Ordered
+   lists keep native numbers. */
+article ul {
+  list-style: none;
+  padding-left: 1.45rem;
+}
+
+article ul > li {
+  position: relative;
+}
+
+article ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.08rem;
+  top: .5em;
+  width: .38rem;
+  height: .35rem;
+  transform: translateY(-50%) rotate(-9deg);
+  border-radius: 58% 43% 61% 46% / 47% 60% 44% 56%;
+  background:
+    radial-gradient(circle at 36% 38%,
+      color-mix(in srgb, var(--study-accent) 90%, var(--study-ink) 10%) 0 54%,
+      transparent 58%),
+    radial-gradient(circle at 66% 64%,
+      color-mix(in srgb, var(--study-accent) 82%, var(--study-ink) 18%) 0 50%,
+      transparent 55%);
+  box-shadow:
+    .025rem .02rem 0 color-mix(in srgb, var(--study-ink) 18%, transparent),
+    -.015rem .015rem 0 color-mix(in srgb, var(--study-accent) 22%, transparent);
+  opacity: .94;
+}
+
+article ul > li:nth-child(even)::before {
+  transform: translateY(-50%) rotate(7deg) scale(.94, 1.05);
+  border-radius: 45% 61% 48% 57% / 59% 43% 56% 46%;
+}
+
+/* Make the warm white stock read more clearly as real paper on screen. This is
+   intentionally a small step up from the base theme: slightly stronger fibres,
+   edge falloff and cast shadow, without tinting the page grey or muddying the
+   ruled baseline. Continuous and physical-page modes share the same material. */
+@media screen and (min-width: 48.01rem) {
+  html:not([data-study-theme="dark"]) article {
+    background-image:
+      var(--notebook-rule-image),
+      radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 6%, transparent) 0 1px, transparent 1.15px),
+      radial-gradient(circle, color-mix(in srgb, var(--study-ink-muted) 3.75%, transparent) 0 1px, transparent 1.15px),
+      linear-gradient(
+        100deg,
+        rgba(0, 0, 0, .065) 0%,
+        rgba(0, 0, 0, 0) 15%,
+        rgba(0, 0, 0, 0) 85%,
+        rgba(0, 0, 0, .078) 100%
+      ),
+      radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, .095) 0%, rgba(0, 0, 0, 0) 60%),
+      linear-gradient(to bottom, color-mix(in srgb, var(--study-paper) 92%, white 8%), var(--study-paper));
+    box-shadow:
+      0 18px 38px rgba(0, 0, 0, .34),
+      0 3px 0 rgba(255, 255, 255, .52) inset,
+      0 -1px 0 rgba(0, 0, 0, .08) inset;
+  }
+}
+
+/* Kept only as hidden semantic state for compatibility. Reading-mode changes
+   are user-facing through the V shortcut, not through persistent UI chrome. */
+.notebook-view-switch { display: none; }
+
+/* Paper color panel — mirrors the topic panel structure and pencil grammar. */
+.notebook-paper-panel[hidden] { display: none !important; }
+
+.notebook-paper-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(70vh, 34rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-paper-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-paper-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-paper-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-paper-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-paper-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-paper-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+/* Color list: vertical stack of swatch + label rows. */
+.notebook-paper-list {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  margin: .5rem 0 0;
+  padding: 0;
+}
+
+.notebook-paper-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  padding: .36rem .45rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.notebook-paper-item:hover,
+.notebook-paper-item:focus-visible {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-paper-item:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: -2px;
+}
+
+.notebook-paper-item[aria-checked="true"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+/* Pencil-drawn swatch: imperfect border, slight rotation, double trace. */
+.notebook-paper-swatch {
+  --paper-swatch-color: var(--study-paper);
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 2.1rem;
+  height: 1.5rem;
+  border-radius: 2px 6px 5px 2px / 3px 4px 6px 2px;
+  transform: rotate(-.6deg) skewX(-.4deg);
+  box-shadow:
+    .04rem .03rem 0 color-mix(in srgb, var(--study-ink) 12%, transparent),
+    -.02rem .02rem 0 color-mix(in srgb, var(--study-ink) 6%, transparent);
+  transition: transform .12s ease;
+}
+
+/* Outer pencil trace */
+.notebook-paper-swatch::before {
+  content: "";
+  position: absolute;
+  inset: -.18rem;
+  border: 1.2px solid color-mix(in srgb, var(--study-ink) 28%, transparent);
+  border-radius: 3px 7px 6px 2px / 3px 5px 7px 3px;
+  transform: rotate(.3deg);
+  pointer-events: none;
+}
+
+/* Inner pencil trace — slight offset for double-line feel */
+.notebook-paper-swatch::after {
+  content: "";
+  position: absolute;
+  inset: -.06rem;
+  border: .7px solid color-mix(in srgb, var(--study-ink) 14%, transparent);
+  border-radius: 2px 5px 4px 3px / 2px 6px 5px 2px;
+  transform: rotate(-.15deg);
+  pointer-events: none;
+}
+
+/* Actual color fill */
+.notebook-paper-swatch::before {
+  background-color: var(--paper-swatch-color);
+}
+
+/* Default swatch: shows the theme token with a pencil-hatched fill */
+.notebook-paper-swatch.is-default {
+  background:
+    repeating-linear-gradient(
+      176deg,
+      transparent 0 .9px,
+      color-mix(in srgb, var(--study-ink) 8%, transparent) .9px 1.48px,
+      transparent 1.62px 3.2px
+    ),
+    repeating-linear-gradient(
+      171deg,
+      transparent 0 2.65px,
+      color-mix(in srgb, var(--study-ink) 4%, transparent) 2.65px 3.02px,
+      transparent 3.2px 5.5px
+    ),
+    var(--study-paper);
+}
+
+/* Active swatch: denser pencil fill like the active section tab */
+.notebook-paper-item.is-active .notebook-paper-swatch::after {
+  background:
+    repeating-linear-gradient(
+      176deg,
+      transparent 0 .9px,
+      color-mix(in srgb, var(--study-accent) 18%, transparent) .9px 1.48px,
+      transparent 1.62px 3.2px
+    ),
+    repeating-linear-gradient(
+      171deg,
+      transparent 0 2.65px,
+      color-mix(in srgb, var(--study-accent) 8%, transparent) 2.65px 3.02px,
+      transparent 3.2px 5.5px
+    );
+}
+
+.notebook-paper-item-label {
+  color: var(--study-ink-strong);
+  font-size: .93rem;
+  line-height: 1.35;
+}
+
+.notebook-paper-item.is-active .notebook-paper-item-label {
+  color: var(--study-accent);
+  font-weight: 500;
+}
+
+.notebook-paper-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+/* V opens a compact reading-view chooser that uses the same ruled-paper
+   dialog grammar as the topic index. Each choice explains itself with a small
+   deterministic pencil sketch instead of an app-style icon. */
+.notebook-view-panel[hidden] { display: none !important; }
+
+.notebook-view-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(31rem, calc(100vw - 2rem));
+  max-height: min(78vh, 35rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-view-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-view-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-view-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-view-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.notebook-view-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-view-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-view-list {
+  display: grid;
+  gap: .1rem;
+  margin: .35rem 0 0;
+}
+
+.notebook-view-option {
+  appearance: none;
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 4);
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: .8rem;
+  align-items: center;
+  padding: .45rem .55rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-view-option:hover,
+.notebook-view-option:focus-visible,
+.notebook-view-option[aria-checked="true"] {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-view-option:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: -2px;
+}
+
+.notebook-view-option[aria-checked="true"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+.notebook-view-option:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+.notebook-view-option-copy {
+  display: grid;
+  align-content: center;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.notebook-view-option-label {
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.13rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+}
+
+.notebook-view-option[aria-checked="true"] .notebook-view-option-label {
+  color: var(--study-accent);
+}
+
+.notebook-view-option-description {
+  color: var(--study-ink-soft);
+  font-size: .84rem;
+  line-height: 1.35;
+}
+
+.notebook-view-sketch {
+  position: relative;
+  display: block;
+  width: 6rem;
+  height: calc(var(--notebook-line-pitch) * 3.2);
+  justify-self: center;
+  color: color-mix(in srgb, var(--study-accent) 72%, var(--study-ink-soft));
+}
+
+.notebook-view-sketch-sheet,
+.notebook-view-sketch-strip {
+  position: absolute;
+  display: block;
+  border: 1.15px solid color-mix(in srgb, currentColor 72%, transparent);
+  border-radius: 2px 5px 4px 2px / 3px 4px 6px 2px;
+  background-color: color-mix(in srgb, var(--study-paper) 88%, transparent);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 .62rem,
+    color-mix(in srgb, var(--study-rule-strong) 58%, transparent) .62rem .68rem
+  );
+  box-shadow: .07rem .08rem 0 color-mix(in srgb, var(--study-ink) 9%, transparent);
+}
+
+.notebook-view-sketch-sheet::before,
+.notebook-view-sketch-strip::before {
+  content: "";
+  position: absolute;
+  inset: .08rem -.1rem -.08rem .07rem;
+  border: .7px solid color-mix(in srgb, currentColor 36%, transparent);
+  border-radius: 3px 4px 5px 1px / 2px 6px 4px 3px;
+  transform: rotate(.35deg) skewX(-.15deg);
+  pointer-events: none;
+}
+
+.notebook-view-sketch-sheet {
+  width: 3.25rem;
+  height: 3.65rem;
+}
+
+.notebook-view-sketch-sheet.is-back {
+  top: .62rem;
+  left: .8rem;
+  transform: rotate(-4deg);
+  opacity: .58;
+}
+
+.notebook-view-sketch-sheet.is-middle {
+  top: .42rem;
+  left: 1.38rem;
+  transform: rotate(2.4deg);
+  opacity: .76;
+}
+
+.notebook-view-sketch-sheet.is-front {
+  top: .22rem;
+  left: 1.95rem;
+  transform: rotate(-.7deg);
+}
+
+.notebook-view-sketch-turn {
+  position: absolute;
+  right: .42rem;
+  top: .76rem;
+  width: 1.15rem;
+  height: 1.45rem;
+  border-top: 1.2px solid currentColor;
+  border-right: 1.2px solid currentColor;
+  border-radius: 0 1.15rem 0 0;
+  transform: rotate(16deg);
+}
+
+.notebook-view-sketch-turn::after {
+  content: "";
+  position: absolute;
+  right: -.18rem;
+  bottom: -.04rem;
+  width: .32rem;
+  height: .32rem;
+  border-right: 1.2px solid currentColor;
+  border-bottom: 1.2px solid currentColor;
+  transform: rotate(34deg);
+}
+
+.notebook-view-sketch-strip {
+  inset: .12rem auto .12rem 1.48rem;
+  width: 3.05rem;
+  transform: rotate(-.35deg) skewY(.12deg);
+}
+
+.notebook-view-sketch-flow {
+  position: absolute;
+  top: .72rem;
+  right: .62rem;
+  height: 2.55rem;
+  border-left: 1.25px solid currentColor;
+  transform: rotate(1.8deg);
+}
+
+.notebook-view-sketch-flow::after {
+  content: "";
+  position: absolute;
+  left: -.22rem;
+  bottom: -.02rem;
+  width: .35rem;
+  height: .35rem;
+  border-right: 1.25px solid currentColor;
+  border-bottom: 1.25px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.notebook-view-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+/* Reading width: A opens a dialog with the same notebook grammar as the view
+   menu. Each measure is drawn as the same ruled mini-sheet carrying a text
+   column of its own width, so the choice reads at a glance. */
+.notebook-width-panel[hidden] { display: none !important; }
+
+.notebook-width-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(31rem, calc(100vw - 2rem));
+  max-height: min(78vh, 35rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-width-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-width-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-width-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-width-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.notebook-width-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-width-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-width-list {
+  display: grid;
+  gap: .1rem;
+  margin: .35rem 0 0;
+}
+
+.notebook-width-option {
+  appearance: none;
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 4);
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: .8rem;
+  align-items: center;
+  padding: .45rem .55rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-width-option:hover,
+.notebook-width-option:focus-visible,
+.notebook-width-option[aria-checked="true"] {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-width-option:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: -2px;
+}
+
+.notebook-width-option[aria-checked="true"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+.notebook-width-option-copy {
+  display: grid;
+  align-content: center;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.notebook-width-option-label {
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.13rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+}
+
+.notebook-width-option[aria-checked="true"] .notebook-width-option-label {
+  color: var(--study-accent);
+}
+
+.notebook-width-option-description {
+  color: var(--study-ink-soft);
+  font-size: .84rem;
+  line-height: 1.35;
+}
+
+.notebook-width-sketch {
+  position: relative;
+  display: block;
+  width: 6rem;
+  height: calc(var(--notebook-line-pitch) * 3.2);
+  justify-self: center;
+  color: color-mix(in srgb, var(--study-accent) 72%, var(--study-ink-soft));
+}
+
+.notebook-width-sketch-sheet {
+  position: absolute;
+  inset: .18rem auto .18rem .7rem;
+  width: 4.3rem;
+  display: block;
+  border: 1.15px solid color-mix(in srgb, currentColor 72%, transparent);
+  border-radius: 2px 5px 4px 2px / 3px 4px 6px 2px;
+  background-color: color-mix(in srgb, var(--study-paper) 88%, transparent);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 .62rem,
+    color-mix(in srgb, var(--study-rule-strong) 58%, transparent) .62rem .68rem
+  );
+  box-shadow: .07rem .08rem 0 color-mix(in srgb, var(--study-ink) 9%, transparent);
+}
+
+.notebook-width-sketch-sheet::before {
+  content: "";
+  position: absolute;
+  inset: .08rem -.1rem -.08rem .07rem;
+  border: .7px solid color-mix(in srgb, currentColor 36%, transparent);
+  border-radius: 3px 4px 5px 1px / 2px 6px 4px 3px;
+  transform: rotate(.35deg) skewX(-.15deg);
+  pointer-events: none;
+}
+
+.notebook-width-sketch-sheet::after {
+  content: "";
+  position: absolute;
+  top: .14rem;
+  bottom: .14rem;
+  left: .52rem;
+  border-left: 1px solid color-mix(in srgb, #c99089 62%, transparent);
+  transform: rotate(.4deg);
+}
+
+.notebook-width-sketch-line {
+  position: absolute;
+  left: 55%;
+  transform: translateX(-50%) rotate(-.4deg);
+  height: .32rem;
+  border-radius: 1px;
+  background: color-mix(in srgb, currentColor 58%, transparent);
+}
+
+.notebook-width-sketch-line.is-1 { top: .68rem; }
+.notebook-width-sketch-line.is-2 { top: 1.22rem; }
+.notebook-width-sketch-line.is-3 { top: 1.76rem; }
+.notebook-width-sketch-line.is-4 { top: 2.3rem; }
+
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-3 { width: 3.85rem; }
+
+.notebook-width-sketch.is-hoja .notebook-width-sketch-line.is-4 { width: 2.9rem; }
+
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-3 { width: 2.95rem; }
+
+.notebook-width-sketch.is-comodo .notebook-width-sketch-line.is-4 { width: 2.2rem; }
+
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-1,
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-2,
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-3 { width: 2.05rem; }
+
+.notebook-width-sketch.is-libro .notebook-width-sketch-line.is-4 { width: 1.5rem; }
+
+.notebook-width-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+/* The stored choice narrows the whole notebook: sheet and prose measure move
+   together (sheet keeps its measure + ~10rem padding relationship). Figures
+   still cap at --notebook-wide and simply scale down when the column does. */
+:root[data-notebook-width="comodo"] {
+  --notebook-measure: 54rem;
+  --notebook-paper-width: 64rem;
+}
+
+:root[data-notebook-width="libro"] {
+  --notebook-measure: 44rem;
+  --notebook-paper-width: 54rem;
+}
+
+.notebook-mode-toast {
+  position: fixed;
+  z-index: 130;
+  top: .9rem;
+  left: 50%;
+  transform: translate(-50%, -.45rem);
+  padding: .48rem .72rem;
+  border: 1px solid color-mix(in srgb, var(--study-paper) 20%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--study-canvas) 90%, #111 10%);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .2);
+  color: var(--study-paper);
+  font-family: var(--study-font-utility);
+  font-size: .68rem;
+  line-height: 1;
+  letter-spacing: .04em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.notebook-mode-toast.is-visible {
+  opacity: .94;
+  transform: translate(-50%, 0);
+}
+
+/* Each semantic H2 becomes the physical index tab at the exact point where its
+   topic starts. T opens the full navigable index without adding persistent
+   shortcut chrome to the reading surface. */
+.notebook-topic-tabs[hidden],
+.notebook-topic-panel[hidden] { display: none !important; }
+
+/* Every physical leaf owns a fresh CSS counter scope. Preserve the semantic
+   topic ordinal stamped before pagination so the visible label never restarts
+   at Tema 1 (or §1) after a page break. */
+article.notebook-page .section-head > .num[data-notebook-topic-number]::before {
+  content: "§" attr(data-notebook-topic-number);
+}
+
+article.notebook-page[data-kind="summary"] .section-head > .num[data-notebook-topic-number]::before {
+  content: "Tema " attr(data-notebook-topic-number);
+}
+
+article.notebook-topic-host:not(.notebook-page) { overflow: visible; }
+
+/* Pagination measures with clipped pages, then exposes only the intentional
+   section-tab overhang once the final leaf stack is stable. */
+.notebook-reader:not(.is-measuring) article.notebook-page { overflow: visible; }
+
+.section-head.notebook-section-tab {
+  --notebook-section-tab-pencil-ink: color-mix(in srgb, var(--study-warning) 46%, var(--study-ink-soft) 54%);
+  --notebook-section-tab-outline: var(--study-accent);
+  --notebook-section-tab-pencil-fill: color-mix(in srgb, var(--study-marker) 34%, transparent);
+  position: relative;
+  z-index: 4;
+  display: flex !important;
+  align-items: center;
+  width: fit-content !important;
+  max-width: min(
+    calc(var(--notebook-section-tab-max) + var(--notebook-section-tab-overhang)),
+    calc(100% + var(--notebook-section-tab-overhang))
+  ) !important;
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  margin-block: var(--notebook-line-pitch) !important;
+  margin-inline-start: calc(-1 * var(--notebook-section-tab-overhang)) !important;
+  margin-inline-end: 0 !important;
+  padding: .3rem .9rem .34rem var(--notebook-section-tab-overhang);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  isolation: isolate;
+}
+
+/* A translucent warm-pencil wash lets the notebook rules and red margin remain
+   visible through the tab. Its squarer attachment and imperfect double trace
+   make it feel drawn into the sheet instead of pasted on top of it. */
+.section-head.notebook-section-tab::before,
+.section-head.notebook-section-tab::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: .18rem .06rem .2rem .08rem;
+  border: 1.2px solid color-mix(in srgb, var(--notebook-section-tab-outline) 82%, transparent);
+  border-radius: 2px 8px 6px 2px / 3px 7px 9px 4px;
+  background: transparent;
+  transform: rotate(-.1deg) skewX(-.12deg);
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.section-head.notebook-section-tab::before {
+  background-color: var(--notebook-section-tab-pencil-fill);
+  background-image:
+    repeating-linear-gradient(
+      176deg,
+      transparent 0 .9px,
+      color-mix(in srgb, var(--notebook-section-tab-pencil-ink) 18%, transparent) .9px 1.48px,
+      transparent 1.62px 4.2px
+    ),
+    repeating-linear-gradient(
+      171deg,
+      transparent 0 2.65px,
+      color-mix(in srgb, var(--notebook-section-tab-pencil-ink) 8%, transparent) 2.65px 3.02px,
+      transparent 3.2px 6.35px
+    );
+}
+
+.section-head.notebook-section-tab::after {
+  inset: .24rem .14rem .14rem .16rem;
+  border-width: .7px;
+  border-color: color-mix(in srgb, var(--notebook-section-tab-outline) 54%, transparent);
+  border-radius: 3px 7px 5px 1px / 2px 9px 6px 4px;
+  opacity: .85;
+  transform: rotate(.16deg) skewX(.08deg);
+}
+
+.section-head.notebook-section-tab > .num { display: none; }
+
+.section-head.notebook-section-tab > h2 {
+  position: relative;
+  z-index: 2;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Topic navigation focuses the destination heading after a jump. The tab
+   itself already supplies the visible blue destination treatment, so the
+   global focus rectangle would only draw a misleading second box. */
+.section-head.notebook-section-tab > h2:focus,
+.section-head.notebook-section-tab > h2:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.section-head.notebook-section-tab.is-current-topic {
+  --notebook-section-tab-pencil-ink: color-mix(in srgb, var(--study-warning) 58%, var(--study-ink-soft) 42%);
+  --notebook-section-tab-pencil-fill: color-mix(in srgb, var(--study-marker) 48%, transparent);
+}
+
+/* Match every physical tab to the index rows with a stable blue double contour
+   and inset rail. The lines no longer depend on scroll-derived active state;
+   the current topic is distinguished by the slightly denser pencil fill. */
+@media screen {
+  .section-head.notebook-section-tab {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0 .34rem,
+      color-mix(in srgb, var(--study-accent) 94%, transparent) .34rem .48rem,
+      transparent .48rem 100%
+    );
+    background-repeat: no-repeat;
+    background-position: 0 50%;
+    background-size: 100% calc(100% - .7rem);
+  }
+}
+
+.notebook-topic-tabs {
+  display: none !important;
+}
+
+.notebook-topic-list-button,
+.notebook-topic-panel-close {
+  appearance: none;
+  color: inherit;
+  font: inherit;
+}
+
+.notebook-topic-list-button:focus-visible,
+.notebook-topic-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-topic-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.notebook-topic-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(29rem, calc(100vw - 2rem));
+  max-height: min(78vh, 40rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-topic-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-topic-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-topic-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-topic-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-topic-list {
+  margin: .35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notebook-topic-list > li { margin: 0; }
+
+.notebook-topic-list-button {
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: 4.2rem minmax(0, 1fr);
+  gap: .7rem;
+  align-items: center;
+  padding: .36rem .45rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-topic-list-button:hover,
+.notebook-topic-list-button:focus-visible,
+.notebook-topic-list-button[aria-current="location"] {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-topic-list-button[aria-current="location"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+.notebook-topic-item-number {
+  color: var(--study-accent);
+  font-family: var(--study-font-utility);
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.notebook-topic-item-label {
+  color: var(--study-ink-strong);
+  font-size: .93rem;
+  line-height: 1.35;
+}
+
+.notebook-topic-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.notebook-reader {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: .8rem;
+}
+
+.notebook-reader.is-measuring {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Reserve inline room for the immediately adjacent sheets. Hidden sheets are
+   never translated, so only these two peeks can contribute to visual overflow. */
+.notebook-stack {
+  position: relative;
+  width: min(
+    calc(
+      100%
+      - var(--notebook-leaf-peek)
+      - var(--notebook-leaf-peek)
+      - var(--notebook-leaf-hover-extra)
+      - var(--notebook-leaf-hover-extra)
+    ),
+    var(--notebook-paper-width)
+  );
+  max-width: 100%;
+  height: var(--notebook-page-height);
+  perspective: 2200px;
+  perspective-origin: 50% 46%;
+  overflow: visible;
+}
+
+/* The sheet spins on its own vertical axis. A spine origin made the page swing
+   out of the stack and cover the sheets on its left, which is not how a loose
+   notebook page behaves when you turn it. */
+.notebook-leaf {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  transition:
+    transform .52s cubic-bezier(.22, 1.06, .36, 1),
+    filter .28s ease,
+    opacity .28s ease;
+  will-change: transform;
+}
+
+.notebook-leaf.is-hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.notebook-leaf.is-active {
+  z-index: 20;
+  filter: none;
+}
+
+.notebook-leaf.is-neighbor {
+  z-index: 10;
+  cursor: pointer;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .18));
+}
+
+/* The visible strip of a peeking sheet is narrower than its own turn handle, so
+   leaving those handles interactive swallowed every click meant to change the
+   page. Only the sheet you are reading can be turned. */
+.notebook-leaf:not(.is-active) .notebook-turn-corner { pointer-events: none; }
+
+.notebook-leaf.is-neighbor:hover {
+  filter: drop-shadow(0 16px 25px rgba(0, 0, 0, .28));
+}
+
+.notebook-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.notebook-face.notebook-back-face { transform: rotateY(180deg); }
+
+article.notebook-page {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  flex: none;
+  overflow: hidden;
+}
+
+/* A deterministic sketch that is taller than one physical leaf gets the
+   available block height and scales through its viewBox. The caption keeps its
+   natural size; only the drawing occupies the flexible row. This class is
+   temporary presentation state applied by the paginator. */
+article.notebook-page > figure.notebook-fit-page {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  block-size: var(--notebook-fit-block-height) !important;
+  height: var(--notebook-fit-block-height);
+  min-height: 0;
+  margin-block: var(--notebook-line-pitch);
+}
+
+article.notebook-page > figure.notebook-fit-page .plate {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  block-size: auto;
+  overflow: hidden;
+}
+
+article.notebook-page > figure.notebook-fit-page .plate > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Every physical page is its own article and would otherwise restart the CSS
+   figure counter. The paginator stamps the continuous-document ordinal so the
+   apparatus label remains stable across leaves. */
+article.notebook-page figcaption[data-notebook-figure-number]::before {
+  content: "fig. " attr(data-notebook-figure-number) " —";
+}
+
+/* The reverse keeps its own physical face while preserving the current content system. */
+article.notebook-page.notebook-back {
+  --notebook-paper-padding-start: clamp(1.25rem, 4vw, 2.5rem);
+  --notebook-paper-padding-end: clamp(5.4rem, 10vw, 7.2rem);
+  border-radius: 7px 1px 1px 7px;
+}
+
+article.notebook-page.notebook-back::before {
+  left: auto;
+  right: clamp(4.05rem, 7.2vw, 5.35rem);
+}
+
+article.notebook-page.notebook-back::after {
+  left: auto;
+  right: clamp(.8rem, 1.7vw, 1.35rem);
+}
+
+/* Reader chrome belongs to the 3D face, not to the article itself. Keeping it
+   outside the content scroller means page numbers/turn controls cannot change
+   the page's measured scrollHeight after pagination. */
+.notebook-page-number {
+  position: absolute;
+  z-index: 40;
+  right: clamp(1.25rem, 4vw, 2.5rem);
+  bottom: calc(var(--notebook-line-pitch) * .45);
+  font-family: var(--study-font-utility);
+  font-size: .66rem;
+  line-height: 1;
+  letter-spacing: .08em;
+  color: var(--study-ink-muted);
+  pointer-events: none;
+}
+
+.notebook-back-face .notebook-page-number {
+  right: auto;
+  left: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+/* Both outer paper edges are page-turn handles. This keeps the centre of the
+   sheet free for text selection and future annotations, while making the
+   gesture reachable from either side and without scrolling to the bottom of a
+   tall page. The small folded corner remains only as a visual affordance. */
+.notebook-turn-corner {
+  position: absolute;
+  z-index: 45;
+  top: 0;
+  bottom: 0;
+  width: 2.5rem;
+  height: auto;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  cursor: grab;
+  touch-action: none;
+  background: transparent;
+}
+
+.notebook-turn-corner[data-edge="end"] {
+  right: 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.notebook-turn-corner[data-edge="start"] {
+  left: 0;
+  border-radius: 6px 0 0 6px;
+}
+
+.notebook-turn-corner::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 3.25rem;
+  height: 3.25rem;
+  background:
+    linear-gradient(315deg,
+      color-mix(in srgb, var(--study-paper) 84%, var(--study-rule) 16%) 0 44%,
+      transparent 44%);
+  opacity: .72;
+  pointer-events: none;
+  transition: opacity .18s ease, background .18s ease;
+}
+
+.notebook-turn-corner[data-edge="end"]::after {
+  right: 0;
+  border-radius: 0 0 6px 0;
+}
+
+.notebook-turn-corner[data-edge="start"]::after {
+  left: 0;
+  border-radius: 0 0 0 6px;
+  transform: scaleX(-1);
+}
+
+.notebook-turn-corner:hover::after,
+.notebook-turn-corner:focus-visible::after {
+  opacity: 1;
+  background:
+    linear-gradient(315deg,
+      color-mix(in srgb, var(--study-paper) 72%, var(--study-rule) 28%) 0 53%,
+      transparent 53%);
+}
+
+/* The reverse face is mirrored by its own rotateY(180deg), so its handles line
+   up with the opposite screen edges without any positional override. */
+.notebook-back-face .notebook-turn-corner { transform: none; }
+
+.notebook-turn-corner.is-dragging { cursor: grabbing; }
+
+.notebook-reader-status {
+  min-height: 1rem;
+  font-family: var(--study-font-utility);
+  font-size: .68rem;
+  letter-spacing: .055em;
+  color: color-mix(in srgb, var(--study-paper) 76%, var(--study-canvas));
+  text-align: center;
+}
+
+/* Measurement now happens inside the exact final stack. This guarantees the
+   width used for line wrapping is the width the physical page will actually
+   have after the reader is mounted. */
+.notebook-measure-host {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  pointer-events: none;
+  contain: layout style;
+}
+
+.notebook-measure-host article.notebook-page {
+  position: absolute;
+  inset: 0;
+}
+
+/* On tablet the notebook remains physical, but the peek becomes quieter and
+   the sheet itself gets the room it needs. Mobile still uses the proven
+   continuous renderer below 48rem. */
+@media (min-width: 48.01rem) and (max-width: 64rem) {
+  :root {
+    --notebook-leaf-peek: clamp(1.35rem, 3vw, 2rem);
+    --notebook-leaf-scale: .98;
+    --notebook-section-tab-overhang: 1.55rem;
+    --notebook-section-tab-max: 21rem;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notebook-leaf { transition: none; }
+  .notebook-turn-corner::after,
+  .notebook-mode-toast { transition: none; }
+}
+
+@media (max-width: 48rem) {
+  :root { --notebook-section-tab-overhang: 1rem; }
+
+  .notebook-mode-toast { display: none; }
+  .notebook-reader { display: block; }
+  .notebook-stack { width: 100%; height: auto; perspective: none; }
+
+  article.notebook-topic-host:not(.notebook-page) > .section-head.notebook-section-tab {
+    width: fit-content !important;
+    max-width: calc(100% + var(--notebook-section-tab-overhang)) !important;
+    min-height: calc(var(--notebook-line-pitch) * 2);
+    margin-inline-start: calc(-1 * var(--notebook-section-tab-overhang)) !important;
+    margin-inline-end: 0 !important;
+    padding-inline: var(--notebook-section-tab-overhang) .7rem;
+  }
+
+  .notebook-topic-panel {
+    top: auto;
+    right: .65rem;
+    bottom: .65rem;
+    left: .65rem;
+    width: auto;
+    max-height: calc(100vh - 1.3rem);
+    transform: none;
+    padding: .85rem .85rem .7rem;
+  }
+
+  .notebook-paper-panel {
+    top: auto;
+    right: .65rem;
+    bottom: .65rem;
+    left: .65rem;
+    width: auto;
+    max-height: calc(100vh - 1.3rem);
+    transform: none;
+    padding: .85rem .85rem .7rem;
+  }
+
+  .notebook-view-panel {
+    top: auto;
+    right: .65rem;
+    bottom: .65rem;
+    left: .65rem;
+    width: auto;
+    max-height: calc(100vh - 1.3rem);
+    transform: none;
+    padding: .85rem .85rem .7rem;
+  }
+
+  .notebook-topic-panel-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .notebook-paper-panel-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .notebook-view-panel-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .notebook-topic-panel-shortcut { display: none; }
+  .notebook-paper-panel-shortcut { display: none; }
+  .notebook-view-panel-shortcut { display: none; }
+
+  .notebook-topic-list-button {
+    grid-template-columns: 3.65rem minmax(0, 1fr);
+    min-height: calc(var(--notebook-line-pitch) * 2);
+  }
+
+  .notebook-view-option {
+    grid-template-columns: 6.2rem minmax(0, 1fr);
+    min-height: calc(var(--notebook-line-pitch) * 4);
+    padding-inline: .35rem;
+  }
+
+  .notebook-view-sketch { transform: scale(.9); }
+
+  .notebook-topic-panel-hint,
+  .notebook-view-panel-hint { text-align: left; }
+}
+
+@media print {
+  .notebook-view-switch,
+  .notebook-mode-toast,
+  .notebook-topic-tabs,
+  .notebook-topic-panel,
+  .notebook-paper-panel,
+  .notebook-view-panel,
+  .notebook-reader-status,
+  .notebook-turn-corner { display: none !important; }
+
+  .section-head.notebook-section-tab {
+    width: min(100%, var(--notebook-measure)) !important;
+    max-width: var(--notebook-measure) !important;
+    min-height: 0;
+    margin: var(--notebook-line-pitch) 0 !important;
+    padding: 0 0 .12rem .62rem;
+    border: 0;
+    border-inline-start: 2px solid var(--notebook-section-tab-outline);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .section-head.notebook-section-tab::before,
+  .section-head.notebook-section-tab::after { display: none; }
+}
 </style></head>
 <body><main class="study-shell"><div class="study-grid without-toc"><article data-kind="summary"><div class="book-frontmatter"><div class="book-running-line"><span class="book-course">Arquitectura de Computadoras</span><span class="book-kind">Resumen · Unidad 4</span></div></div><header class="study-header"><div class="mark">Capítulo 4</div><div class="body"><h1 id="jerarquía-de-memoria">Jerarquía de memoria</h1><p class="study-lede">El caso que estresa diagramas técnicos, captions y relaciones espaciales.</p></div></header>
 <div class="section-head"><div class="num"></div><h2 id="por-qué-existe-una-jerarquía">Por qué existe una jerarquía</h2></div>
@@ -1183,4 +3025,1591 @@ figure.wide { max-width: none; }
 <aside class="callout warning"><div class="callout-title">Cuidado</div><div class="callout-body"><p class="term">Error frecuente</p><p>La figura representa una relación conceptual entre niveles. No implica que todos los equipos tengan exactamente la misma cantidad de niveles o tecnologías.</p></div></aside>
 <div class="section-head"><div class="num"></div><h2 id="qué-aporta-el-diagrama">Qué aporta el diagrama</h2></div>
 <div class="row"><div class="mark"></div><div class="body"><p>En puro texto habría que reconstruir mentalmente qué está arriba, qué está abajo y qué variable cambia en cada dirección. El diagrama descarga esa reconstrucción y deja la explicación escrita para interpretar la relación.</p></div></div>
-<aside class="callout recall"><div class="callout-title">Recuperación</div><div class="callout-body"><p class="term">Dibujalo</p><p class="prompt">Cerrá el apunte e intentá reconstruir la jerarquía y las dos tendencias principales sin mirar la figura.</p><p class="hint">Respondé sin mirar antes de seguir leyendo.</p></div></aside></article></div></main></body></html>
+<aside class="callout recall"><div class="callout-title">Recuperación</div><div class="callout-body"><p class="term">Dibujalo</p><p class="prompt">Cerrá el apunte e intentá reconstruir la jerarquía y las dos tendencias principales sin mirar la figura.</p><p class="hint">Respondé sin mirar antes de seguir leyendo.</p></div></aside></article></div></main><script>(() => {
+  const PAGED_KINDS = new Set(['summary', 'rapid-review', 'learn', 'explain']);
+  const STORAGE_KEY = 'university-study:reader-mode';
+  const PAPER_STORAGE_KEY = 'university-study:paper-color';
+  const WIDTH_STORAGE_KEY = 'university-study:reading-width';
+  const desktop = window.matchMedia('(min-width: 48.01rem)');
+  const print = window.matchMedia('print');
+
+  let mounted = false;
+  let mounting = false;
+  let originalTemplate = null;
+  let reader = null;
+  let readerCleanup = null;
+  let viewSwitch = null;
+  let viewPanel = null;
+  let viewPanelReturnFocus = null;
+  let toastTimer = null;
+  let pageModeUnavailable = null;
+  let topicNavigator = null;
+  let topicPanel = null;
+  let topicPanelReturnFocus = null;
+  let topicScrollCleanup = null;
+  let readerNavigatePage = null;
+  let topics = [];
+  let activeTopicIndex = 0;
+
+  const readStoredMode = () => {
+    try {
+      const value = window.localStorage?.getItem(STORAGE_KEY);
+      return value === 'continuous' || value === 'pages' ? value : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const writeStoredMode = (value) => {
+    try { window.localStorage?.setItem(STORAGE_KEY, value); } catch (_) {}
+  };
+
+  /* Paper color switcher */
+  const PAPER_COLORS = [
+    { name: 'Default',    paper: null,      muted: null },
+    { name: 'Blanco',     paper: '#ffffff', muted: '#f5f5f5' },
+    { name: 'Crema',      paper: '#f5f0e6', muted: '#ede7da' },
+    { name: 'Trigo',      paper: '#f2ece0', muted: '#e9e2d4' },
+    { name: 'Kraft',      paper: '#efe8d4', muted: '#e6dfc9' },
+    { name: 'Pergamino',  paper: '#e8dcc4', muted: '#dfd2b8' },
+  ];
+  let paperColorIndex = 0;
+  let paperColorPanel = null;
+  let paperColorReturnFocus = null;
+
+  const readStoredPaperColor = () => {
+    try {
+      const v = window.localStorage?.getItem(PAPER_STORAGE_KEY);
+      if (v === null) return 0;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 && n < PAPER_COLORS.length ? n : 0;
+    } catch (_) { return 0; }
+  };
+
+  const writeStoredPaperColor = (index) => {
+    try { window.localStorage?.setItem(PAPER_STORAGE_KEY, String(index)); } catch (_) {}
+  };
+
+  const applyPaperColor = (index) => {
+    const root = document.documentElement;
+    const c = PAPER_COLORS[index];
+    if (!c || !c.paper) {
+      root.style.removeProperty('--study-paper');
+      root.style.removeProperty('--study-paper-muted');
+    } else {
+      root.style.setProperty('--study-paper', c.paper);
+      root.style.setProperty('--study-paper-muted', c.muted);
+    }
+  };
+
+  const syncPaperPanelSelection = () => {
+    if (!paperColorPanel) return;
+    paperColorPanel.querySelectorAll('[data-paper-index]').forEach((btn) => {
+      const active = Number(btn.dataset.paperIndex) === paperColorIndex;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-checked', String(active));
+    });
+  };
+
+  const setPaperPanel = (open, {focus = true} = {}) => {
+    if (!paperColorPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
+      if (paperColorPanel.hidden) {
+        const active = document.activeElement;
+        paperColorReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    paperColorPanel.hidden = !open;
+    if (open) {
+      syncPaperPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          paperColorPanel.querySelector('[data-paper-index].is-active')?.focus();
+        });
+      }
+    } else {
+      if (focus && paperColorReturnFocus?.isConnected) {
+        paperColorReturnFocus.focus({preventScroll: true});
+      }
+      paperColorReturnFocus = null;
+    }
+  };
+
+  const selectPaperColor = (index) => {
+    paperColorIndex = index;
+    applyPaperColor(index);
+    writeStoredPaperColor(index);
+    syncPaperPanelSelection();
+  };
+
+  const createPaperColorPanel = () => {
+    if (paperColorPanel) return;
+
+    const panel = document.createElement('section');
+    panel.className = 'notebook-paper-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-paper-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'C');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-paper-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-paper-panel-title';
+    title.textContent = 'Color de hoja';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-paper-panel-shortcut';
+    shortcut.innerHTML = '<kbd>C</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-paper-panel-close';
+    close.setAttribute('aria-label', 'Cerrar selector de color');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setPaperPanel(false));
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-paper-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Colores de hoja');
+    PAPER_COLORS.forEach((color, index) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'notebook-paper-item';
+      item.dataset.paperIndex = String(index);
+      item.setAttribute('role', 'radio');
+      item.setAttribute('aria-checked', 'false');
+      item.setAttribute('aria-label', color.name);
+      item.title = color.name;
+
+      const swatch = document.createElement('span');
+      swatch.className = 'notebook-paper-swatch';
+      if (color.paper) {
+        swatch.style.setProperty('--paper-swatch-color', color.paper);
+      } else {
+        swatch.classList.add('is-default');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'notebook-paper-item-label';
+      label.textContent = color.name;
+
+      item.append(swatch, label);
+      item.addEventListener('click', () => {
+        selectPaperColor(index);
+        setPaperPanel(false, {focus: false});
+      });
+      list.appendChild(item);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-paper-panel-hint';
+    hint.textContent = '\u2190 \u2192 para recorrer \u00b7 Enter para elegir \u00b7 Esc para cerrar';
+    panel.append(head, list, hint);
+
+    document.body.appendChild(panel);
+    paperColorPanel = panel;
+
+    document.addEventListener('pointerdown', (event) => {
+      if (paperColorPanel?.hidden !== false) return;
+      if (paperColorPanel.contains(event.target)) return;
+      setPaperPanel(false, {focus: false});
+    });
+  };
+
+  const onPaperColorShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target)) return;
+    if (event.key?.toLowerCase() !== 'c') return;
+    event.preventDefault();
+    createPaperColorPanel();
+    setPaperPanel(paperColorPanel?.hidden !== false);
+  };
+
+  const onPaperPanelKeydown = (event) => {
+    if (paperColorPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setPaperPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(paperColorPanel.querySelectorAll('[data-paper-index]'));
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      selectPaperColor(Number(buttons[current]?.dataset.paperIndex ?? 0));
+      setPaperPanel(false, {focus: false});
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
+  /* Reading width switcher: three pencil-sketched measures for the prose
+     column. 'hoja' keeps the theme default; the others narrow the measure so
+     long reading sessions stay comfortable. Figures keep their own width. */
+  const WIDTH_MODES = [
+    { id: 'hoja',   label: 'Hoja',   description: 'El texto ocupa toda la hoja.' },
+    { id: 'comodo', label: 'Cómodo', description: 'Un paso adentro del margen, cómodo para leer largo rato.' },
+    { id: 'libro',  label: 'Libro',  description: 'Columna angosta, como las páginas de un libro.' },
+  ];
+  let widthMode = 'hoja';
+  let widthPanel = null;
+  let widthPanelReturnFocus = null;
+
+  const readStoredWidth = () => {
+    try {
+      const v = window.localStorage?.getItem(WIDTH_STORAGE_KEY);
+      return WIDTH_MODES.some((mode) => mode.id === v) ? v : 'hoja';
+    } catch (_) { return 'hoja'; }
+  };
+
+  const writeStoredWidth = (id) => {
+    try { window.localStorage?.setItem(WIDTH_STORAGE_KEY, id); } catch (_) {}
+  };
+
+  const applyWidthMode = (id) => {
+    const root = document.documentElement;
+    widthMode = WIDTH_MODES.some((mode) => mode.id === id) ? id : 'hoja';
+    if (widthMode === 'hoja') delete root.dataset.notebookWidth;
+    else root.dataset.notebookWidth = widthMode;
+  };
+
+  const syncWidthPanelSelection = () => {
+    if (!widthPanel) return;
+    widthPanel.querySelectorAll('[data-width-mode]').forEach((button) => {
+      const active = button.dataset.widthMode === widthMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+    });
+  };
+
+  const setWidthPanel = (open, {focus = true} = {}) => {
+    if (!widthPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setPaperPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
+      if (widthPanel.hidden) {
+        const active = document.activeElement;
+        widthPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    widthPanel.hidden = !open;
+    if (open) {
+      document.documentElement.dataset.notebookWidthMenu = 'open';
+      syncWidthPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          widthPanel.querySelector('[data-width-mode].is-active')?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookWidthMenu;
+      if (focus && widthPanelReturnFocus?.isConnected) {
+        widthPanelReturnFocus.focus({preventScroll: true});
+      }
+      widthPanelReturnFocus = null;
+    }
+  };
+
+  const makeWidthSketch = (id) => {
+    const sketch = document.createElement('span');
+    sketch.className = `notebook-width-sketch is-${id}`;
+    sketch.setAttribute('aria-hidden', 'true');
+    sketch.innerHTML = `
+      <span class="notebook-width-sketch-sheet">
+        <span class="notebook-width-sketch-line is-1"></span>
+        <span class="notebook-width-sketch-line is-2"></span>
+        <span class="notebook-width-sketch-line is-3"></span>
+        <span class="notebook-width-sketch-line is-4"></span>
+      </span>
+    `;
+    return sketch;
+  };
+
+  const chooseWidthMode = async (id) => {
+    if (!WIDTH_MODES.some((mode) => mode.id === id)) return;
+    setWidthPanel(false, {focus: false});
+    applyWidthMode(id);
+    writeStoredWidth(id);
+    syncWidthPanelSelection();
+    // Pages are laid out against the old measure; repaginate in place and put
+    // the reader back where the reader was.
+    if (mounted && !mounting) {
+      const scrollPosition = {left: window.scrollX, top: window.scrollY};
+      restoreContinuous('continuous');
+      await mount();
+      restoreScrollPosition(scrollPosition);
+    }
+    showToast(`Ancho: ${WIDTH_MODES.find((mode) => mode.id === id)?.label ?? id}`);
+  };
+
+  const createWidthPanel = () => {
+    if (widthPanel) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-width-panel';
+    panel.className = 'notebook-width-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-width-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'A');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-width-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-width-panel-title';
+    title.textContent = 'Ancho de lectura';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-width-panel-shortcut';
+    shortcut.innerHTML = '<kbd>A</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-width-panel-close';
+    close.textContent = 'Cerrar';
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-width-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Ancho de lectura');
+
+    WIDTH_MODES.forEach((mode) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'notebook-width-option';
+      option.dataset.widthMode = mode.id;
+      option.setAttribute('role', 'radio');
+      option.setAttribute('aria-checked', 'false');
+      const copy = document.createElement('span');
+      copy.className = 'notebook-width-option-copy';
+      const label = document.createElement('span');
+      label.className = 'notebook-width-option-label';
+      label.textContent = mode.label;
+      const description = document.createElement('span');
+      description.className = 'notebook-width-option-description';
+      description.textContent = mode.description;
+      copy.append(label, description);
+      option.append(makeWidthSketch(mode.id), copy);
+      list.appendChild(option);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-width-panel-hint';
+    hint.innerHTML = '<kbd>↑</kbd><kbd>↓</kbd> recorrer · <kbd>Enter</kbd> elegir · <kbd>Esc</kbd> cerrar';
+
+    panel.append(head, list, hint);
+    document.body.appendChild(panel);
+    widthPanel = panel;
+
+    panel.addEventListener('click', (event) => {
+      const option = event.target instanceof Element ? event.target.closest('[data-width-mode]') : null;
+      if (option) void chooseWidthMode(option.dataset.widthMode);
+      else if (event.target === close) setWidthPanel(false);
+    });
+  };
+
+  const onWidthShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || print.matches) return;
+    if (event.key?.toLowerCase() !== 'a') return;
+    event.preventDefault();
+    createWidthPanel();
+    setWidthPanel(widthPanel?.hidden !== false);
+  };
+
+  const onWidthPanelKeydown = (event) => {
+    if (widthPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setWidthPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(widthPanel.querySelectorAll('[data-width-mode]:not(:disabled)'));
+    if (!buttons.length) return;
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      void chooseWidthMode(buttons[current]?.dataset.widthMode);
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
+  // Pages remain the desktop/tablet default so existing artifacts keep the
+  // experience they already had. Mobile keeps the continuous renderer until a
+  // dedicated small-screen physical reader exists.
+  let preferredMode = readStoredMode() || 'pages';
+
+  const effectiveMode = () => (
+    preferredMode === 'pages' && desktop.matches && !print.matches ? 'pages' : 'continuous'
+  );
+
+  const waitForAssets = async (root) => {
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    if (document.fonts?.ready) {
+      try { await Promise.race([document.fonts.ready, delay(900)]); } catch (_) {}
+    }
+    const images = Array.from(root.querySelectorAll('img'));
+    for (const img of images) img.loading = 'eager';
+    await Promise.all(images.map(async (img) => {
+      if (!img.complete) {
+        await Promise.race([
+          new Promise((resolve) => {
+            img.addEventListener('load', resolve, {once: true});
+            img.addEventListener('error', resolve, {once: true});
+          }),
+          delay(1800),
+        ]);
+      }
+      if (typeof img.decode === 'function' && img.complete) {
+        try { await Promise.race([img.decode(), delay(900)]); } catch (_) {}
+      }
+    }));
+  };
+
+  const cssLengthPx = (style, name, fallback) => {
+    const rootPx = parseFloat(style.fontSize) || 16;
+    const token = style.getPropertyValue(name).trim();
+    if (token.endsWith('rem')) return parseFloat(token) * rootPx;
+    if (token.endsWith('px')) return parseFloat(token);
+    return parseFloat(token) || fallback;
+  };
+
+  const isEditableTarget = (target) => {
+    const tag = target?.tagName?.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
+  };
+
+  const isHeadingLike = (node) => node?.matches?.('.section-head, .subsection-head, .minor-head');
+
+  const cleanConceptLabel = (value) => String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s\-–—:;,.]+|[\s\-–—:;,.]+$/g, '')
+    .trim();
+
+  const extractConcepts = (roots, fallback = []) => {
+    const concepts = [];
+    const seen = new Set();
+    const add = (value) => {
+      const label = cleanConceptLabel(value);
+      const key = label.toLocaleLowerCase('es');
+      if (!label || label.length < 2 || label.length > 52 || label.split(/\s+/).length > 8) return;
+      if (/^\d+(?:[.,]\d+)?$/.test(label) || seen.has(key)) return;
+      seen.add(key);
+      concepts.push(label);
+    };
+    const collect = (selector) => {
+      roots.forEach((root) => {
+        if (root.matches?.(selector)) add(root.textContent);
+        root.querySelectorAll?.(selector).forEach((node) => add(node.textContent));
+      });
+    };
+
+    // Structural labels and explicit semantic terms outrank inline emphasis;
+    // bold text fills any remaining slots without becoming an invented index.
+    collect('.subsection-head h3, .minor-head h4, .callout .term');
+    collect('strong');
+    fallback.forEach(add);
+    return concepts.slice(0, 4);
+  };
+
+  const makePage = (source, pageIndex) => {
+    const page = source.cloneNode(false);
+    const back = pageIndex % 2 === 1;
+    page.className = `notebook-page ${back ? 'notebook-back' : 'notebook-front'}`;
+    page.dataset.page = String(pageIndex + 1);
+    page.dataset.side = back ? 'back' : 'front';
+    page.removeAttribute('id');
+    return page;
+  };
+
+  const restorePageContent = (source, pages) => {
+    for (const page of pages || []) {
+      for (const node of Array.from(page.children)) source.appendChild(node);
+    }
+  };
+
+  const clearPageFit = (node) => {
+    node?.classList?.remove('notebook-fit-page');
+    node?.style?.removeProperty('--notebook-fit-block-height');
+  };
+
+  const clearPaginationMarks = (root) => {
+    root?.querySelectorAll?.('.notebook-fit-page').forEach(clearPageFit);
+    root?.querySelectorAll?.('[data-notebook-figure-number]').forEach((figure) => {
+      delete figure.dataset.notebookFigureNumber;
+    });
+    root?.querySelectorAll?.('[data-notebook-topic-number]').forEach((mark) => {
+      delete mark.dataset.notebookTopicNumber;
+    });
+  };
+
+  const restoreScrollPosition = ({left, top}) => {
+    window.scrollTo({left, top, behavior: 'instant'});
+    window.requestAnimationFrame(() => window.scrollTo({left, top, behavior: 'instant'}));
+  };
+
+  const collectTopics = (source) => {
+    const headings = Array.from(source.querySelectorAll(':scope > .section-head > h2[id]'));
+    if (!headings.length) {
+      const label = cleanConceptLabel(source.querySelector('h1')?.textContent) || 'Documento';
+      return [{
+        id: '',
+        index: 0,
+        label,
+        number: 1,
+        page: 1,
+        concepts: extractConcepts([source], [label]),
+      }];
+    }
+    return headings.map((heading, index) => {
+      const section = heading.parentElement;
+      section?.classList.add('notebook-section-tab');
+      if (section) {
+        section.dataset.topicIndex = String(index);
+        section.dataset.topicNumber = String(index + 1);
+      }
+      const roots = [];
+      let sibling = section?.nextElementSibling || null;
+      while (sibling && !sibling.matches('.section-head')) {
+        roots.push(sibling);
+        sibling = sibling.nextElementSibling;
+      }
+      const label = heading.textContent.trim();
+      return {
+        id: heading.id,
+        index,
+        label,
+        number: index + 1,
+        page: null,
+        concepts: extractConcepts(roots, [label]),
+      };
+    });
+  };
+
+  const setActiveTopic = (index) => {
+    if (!topics.length) return;
+    activeTopicIndex = Math.max(0, Math.min(topics.length - 1, index));
+    const current = String(activeTopicIndex);
+    document.querySelectorAll('.section-head.notebook-section-tab[data-topic-index]').forEach((section) => {
+      section.classList.toggle('is-current-topic', section.dataset.topicIndex === current);
+    });
+    for (const root of [topicNavigator, topicPanel]) {
+      if (!root) continue;
+      root.querySelectorAll('[data-topic-index]').forEach((button) => {
+        const active = button.dataset.topicIndex === current;
+        if (active) button.setAttribute('aria-current', 'location');
+        else button.removeAttribute('aria-current');
+      });
+      root.dataset.activeTopic = String(activeTopicIndex + 1);
+    }
+    document.documentElement.dataset.notebookTopic = String(activeTopicIndex + 1);
+  };
+
+  const setTopicPanel = (open, {focus = true} = {}) => {
+    if (!topicNavigator || !topicPanel) return;
+    if (open) {
+      setPaperPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
+      if (topicPanel.hidden) {
+        const active = document.activeElement;
+        topicPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    topicPanel.hidden = !open;
+    topicNavigator.dataset.open = open ? 'true' : 'false';
+    if (open) {
+      document.documentElement.dataset.notebookTopicIndex = 'open';
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          topicPanel.querySelector(`[data-topic-index="${activeTopicIndex}"]`)?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookTopicIndex;
+      if (focus && topicPanelReturnFocus?.isConnected) {
+        topicPanelReturnFocus.focus({preventScroll: true});
+      }
+      topicPanelReturnFocus = null;
+    }
+  };
+
+  const focusTopicHeading = (topic, root = document) => {
+    const heading = Array.from(root.querySelectorAll?.('h2[id]') || [])
+      .find((node) => node.id === topic.id);
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({preventScroll: true});
+  };
+
+  const navigateToTopic = (index) => {
+    const topic = topics[index];
+    if (!topic) return;
+    setActiveTopic(index);
+    setTopicPanel(false, {focus: false});
+
+    if (mounted && topic.page && readerNavigatePage) {
+      readerNavigatePage(topic.page);
+      window.requestAnimationFrame(() => focusTopicHeading(topic, reader || document));
+      return;
+    }
+
+    const heading = document.getElementById(topic.id);
+    if (!heading) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    heading.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+    window.setTimeout(() => focusTopicHeading(topic), reduced ? 0 : 320);
+  };
+
+  const makeTopicButton = (topic, className) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.dataset.topicIndex = String(topic.index);
+    button.setAttribute('aria-controls', topic.id);
+    button.setAttribute('aria-label', `Ir al Tema ${topic.number}: ${topic.label}`);
+    button.title = `Tema ${topic.number} · ${topic.label}`;
+    const ordinal = document.createElement('span');
+    ordinal.className = 'notebook-topic-item-number';
+    ordinal.textContent = `Tema ${topic.number}`;
+    const label = document.createElement('span');
+    label.className = 'notebook-topic-item-label';
+    label.textContent = topic.label;
+    button.append(ordinal, label);
+    button.addEventListener('click', () => navigateToTopic(topic.index));
+    return button;
+  };
+
+  const createTopicNavigation = () => {
+    if (topicNavigator || topics.length < 2) return;
+
+    // Keep a zero-chrome host for reader-mode state. The index is deliberately
+    // summoned only with T: a permanently visible shortcut label competes with
+    // the physical topic tabs and will be replaced by the shared shortcuts UI.
+    const nav = document.createElement('div');
+    nav.className = 'notebook-topic-tabs is-detached';
+    nav.setAttribute('aria-hidden', 'true');
+    nav.hidden = true;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-topic-index-panel';
+    panel.className = 'notebook-topic-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-topic-index-title');
+    panel.setAttribute('aria-keyshortcuts', 'T');
+    panel.hidden = true;
+
+    const panelHead = document.createElement('div');
+    panelHead.className = 'notebook-topic-panel-head';
+    const panelTitle = document.createElement('h2');
+    panelTitle.id = 'notebook-topic-index-title';
+    panelTitle.textContent = 'Índice de temas';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-topic-panel-shortcut';
+    shortcut.innerHTML = '<kbd>T</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-topic-panel-close';
+    close.setAttribute('aria-label', 'Cerrar índice de temas');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setTopicPanel(false));
+    panelHead.append(panelTitle, shortcut, close);
+
+    const list = document.createElement('ol');
+    list.className = 'notebook-topic-list';
+    topics.forEach((topic) => {
+      const item = document.createElement('li');
+      item.appendChild(makeTopicButton(topic, 'notebook-topic-list-button'));
+      list.appendChild(item);
+    });
+    const hint = document.createElement('p');
+    hint.className = 'notebook-topic-panel-hint';
+    hint.textContent = '↑ ↓ para recorrer · Enter para ir · Esc para cerrar';
+    panel.append(panelHead, list, hint);
+
+    document.body.append(nav, panel);
+    topicNavigator = nav;
+    topicPanel = panel;
+    setActiveTopic(0);
+
+    document.addEventListener('pointerdown', (event) => {
+      if (topicPanel?.hidden !== false) return;
+      if (topicPanel.contains(event.target) || topicNavigator.contains(event.target)) return;
+      setTopicPanel(false, {focus: false});
+    });
+  };
+
+  const detachTopicNavigation = () => {
+    topicScrollCleanup?.();
+    topicScrollCleanup = null;
+    if (topicNavigator) {
+      topicNavigator.hidden = true;
+      topicNavigator.classList.add('is-detached');
+    }
+    topicNavigator?.remove();
+    document.querySelectorAll('.notebook-topic-host').forEach((host) => {
+      host.classList.remove('notebook-topic-host');
+    });
+  };
+
+  const bindContinuousTopicTracking = () => {
+    topicScrollCleanup?.();
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const threshold = Math.min(window.innerHeight * .28, 240);
+      let current = 0;
+      topics.forEach((topic, index) => {
+        const heading = document.getElementById(topic.id);
+        if (heading && heading.getBoundingClientRect().top <= threshold) current = index;
+      });
+      // The last heading of a short document cannot always reach the threshold.
+      // Treat the physical end of the article as the final topic so a direct
+      // jump and manual scrolling agree on the selected tab.
+      const atDocumentEnd = window.scrollY + window.innerHeight
+        >= document.documentElement.scrollHeight - 2;
+      if (atDocumentEnd) current = topics.length - 1;
+      setActiveTopic(current);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', schedule, {passive: true});
+    window.addEventListener('resize', schedule);
+    topicScrollCleanup = () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+    update();
+  };
+
+  const attachTopicNavigation = (mode, host) => {
+    if (!host) return;
+    detachTopicNavigation();
+    // A single-topic document does not need an index panel.
+    if (!topicNavigator) {
+      if (mode === 'continuous') bindContinuousTopicTracking();
+      return;
+    }
+    topicNavigator.hidden = false;
+    topicNavigator.classList.remove('is-detached');
+    topicNavigator.classList.toggle('is-paged', mode === 'pages');
+    topicNavigator.classList.toggle('is-continuous', mode === 'continuous');
+    host.appendChild(topicNavigator);
+    if (mode === 'continuous') {
+      host.classList.add('notebook-topic-host');
+      topicNavigator.dataset.readerSide = 'front';
+      bindContinuousTopicTracking();
+    }
+  };
+
+  const mapTopicPages = (pages) => {
+    topics.forEach((topic) => {
+      const page = pages.find((candidate) => Array.from(candidate.querySelectorAll('h2[id]'))
+        .some((heading) => heading.id === topic.id));
+      topic.page = page ? Number(page.dataset.page) : null;
+    });
+  };
+
+  const syncTopicFromPage = (physicalPage, back) => {
+    if (!topics.length) return;
+    let current = 0;
+    topics.forEach((topic, index) => {
+      if (topic.page && topic.page <= physicalPage) current = index;
+    });
+    if (topicNavigator) topicNavigator.dataset.readerSide = back ? 'back' : 'front';
+    setActiveTopic(current);
+  };
+
+  const onTopicShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || !topicNavigator || print.matches) return;
+    const key = event.key?.toLowerCase();
+    if (key === 't') {
+      event.preventDefault();
+      setTopicPanel(topicPanel?.hidden !== false);
+      return;
+    }
+    if (topicPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setTopicPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(topicPanel.querySelectorAll('[data-topic-index]'));
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else next = (current - 1 + buttons.length) % buttons.length;
+    buttons[next]?.focus();
+  };
+
+  const currentViewMode = () => (mounted ? 'pages' : 'continuous');
+
+  const syncViewPanelSelection = () => {
+    if (!viewPanel) return;
+    const actualMode = currentViewMode();
+    viewPanel.querySelectorAll('[data-view-mode]').forEach((button) => {
+      const mode = button.dataset.viewMode;
+      const active = mode === actualMode;
+      const unavailable = mode === 'pages' && (!desktop.matches || Boolean(pageModeUnavailable));
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+      button.disabled = unavailable;
+      button.setAttribute('aria-disabled', String(unavailable));
+      const description = button.querySelector('.notebook-view-option-description');
+      if (description && mode === 'pages') {
+        description.textContent = !desktop.matches
+          ? 'Disponible en tablet y escritorio.'
+          : pageModeUnavailable
+            ? 'Este resumen necesita la vista continua.'
+            : 'Pasá hojas físicas, frente y dorso.';
+      }
+    });
+    viewPanel.dataset.mode = actualMode;
+  };
+
+  const setViewPanel = (open, {focus = true} = {}) => {
+    if (!viewPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setPaperPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
+      if (viewPanel.hidden) {
+        const active = document.activeElement;
+        viewPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    viewPanel.hidden = !open;
+    if (open) {
+      document.documentElement.dataset.notebookViewMenu = 'open';
+      syncViewPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          viewPanel.querySelector('[data-view-mode].is-active:not(:disabled)')?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookViewMenu;
+      if (focus && viewPanelReturnFocus?.isConnected) {
+        viewPanelReturnFocus.focus({preventScroll: true});
+      }
+      viewPanelReturnFocus = null;
+    }
+  };
+
+  const makeViewSketch = (mode) => {
+    const sketch = document.createElement('span');
+    sketch.className = `notebook-view-sketch is-${mode}`;
+    sketch.setAttribute('aria-hidden', 'true');
+    if (mode === 'pages') {
+      sketch.innerHTML = `
+        <span class="notebook-view-sketch-sheet is-back"></span>
+        <span class="notebook-view-sketch-sheet is-middle"></span>
+        <span class="notebook-view-sketch-sheet is-front"></span>
+        <span class="notebook-view-sketch-turn"></span>
+      `;
+    } else {
+      sketch.innerHTML = `
+        <span class="notebook-view-sketch-strip"></span>
+        <span class="notebook-view-sketch-flow"></span>
+      `;
+    }
+    return sketch;
+  };
+
+  const chooseViewMode = async (mode) => {
+    setViewPanel(false, {focus: false});
+    const actual = await setViewMode(mode);
+    syncViewPanelSelection();
+    showModeToast(actual);
+  };
+
+  const createViewPanel = () => {
+    if (viewPanel) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-view-panel';
+    panel.className = 'notebook-view-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-view-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'V');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-view-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-view-panel-title';
+    title.textContent = 'Vista de lectura';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-view-panel-shortcut';
+    shortcut.innerHTML = '<kbd>V</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-view-panel-close';
+    close.setAttribute('aria-label', 'Cerrar selector de vista');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setViewPanel(false));
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-view-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Vistas de lectura');
+    const choices = [
+      {
+        mode: 'pages',
+        label: 'Hojas',
+        description: 'Pasá hojas físicas, frente y dorso.',
+      },
+      {
+        mode: 'continuous',
+        label: 'Continua',
+        description: 'Leé todo seguido desplazándote hacia abajo.',
+      },
+    ];
+    choices.forEach(({mode, label, description}) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'notebook-view-option';
+      button.dataset.viewMode = mode;
+      button.setAttribute('role', 'radio');
+      button.setAttribute('aria-checked', 'false');
+      button.setAttribute('aria-label', `${label}: ${description}`);
+
+      const copy = document.createElement('span');
+      copy.className = 'notebook-view-option-copy';
+      const optionLabel = document.createElement('strong');
+      optionLabel.className = 'notebook-view-option-label';
+      optionLabel.textContent = label;
+      const optionDescription = document.createElement('span');
+      optionDescription.className = 'notebook-view-option-description';
+      optionDescription.textContent = description;
+      copy.append(optionLabel, optionDescription);
+
+      button.append(makeViewSketch(mode), copy);
+      button.addEventListener('click', () => void chooseViewMode(mode));
+      list.appendChild(button);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-view-panel-hint';
+    hint.textContent = '↑ ↓ para recorrer · Enter para elegir · Esc para cerrar';
+    panel.append(head, list, hint);
+    document.body.appendChild(panel);
+    viewPanel = panel;
+    syncViewPanelSelection();
+
+    document.addEventListener('pointerdown', (event) => {
+      if (viewPanel?.hidden !== false) return;
+      if (viewPanel.contains(event.target)) return;
+      setViewPanel(false, {focus: false});
+    });
+  };
+
+  const onViewPanelKeydown = (event) => {
+    if (viewPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setViewPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(viewPanel.querySelectorAll('[data-view-mode]:not(:disabled)'));
+    if (!buttons.length) return;
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      void chooseViewMode(buttons[current]?.dataset.viewMode);
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
+  const syncViewSwitch = () => {
+    if (!viewSwitch) return;
+    const actualMode = mounted ? 'pages' : 'continuous';
+    viewSwitch.dataset.mode = actualMode;
+    viewSwitch.querySelectorAll('[data-reader-mode]').forEach((button) => {
+      const mode = button.dataset.readerMode;
+      button.setAttribute('aria-pressed', mode === actualMode ? 'true' : 'false');
+      if (mode === 'pages') {
+        button.disabled = !desktop.matches;
+        button.title = desktop.matches
+          ? 'Leer como hojas físicas'
+          : 'La vista por hojas está disponible en tablet y escritorio';
+      }
+    });
+    syncViewPanelSelection();
+  };
+
+  // The old visual switch is kept as hidden semantic state for compatibility;
+  // the user-facing interaction is now the V keyboard shortcut.
+  const createViewSwitch = () => {
+    if (viewSwitch) return viewSwitch;
+    const control = document.createElement('div');
+    control.className = 'notebook-view-switch';
+    control.setAttribute('role', 'group');
+    control.setAttribute('aria-label', 'Modo de lectura');
+    control.innerHTML = `
+      <span class="notebook-view-switch-label">Vista</span>
+      <button type="button" data-reader-mode="continuous" aria-pressed="false">Continua</button>
+      <button type="button" data-reader-mode="pages" aria-pressed="false">Hojas</button>
+    `;
+    document.body.appendChild(control);
+    viewSwitch = control;
+    syncViewSwitch();
+    return control;
+  };
+
+  const showToast = (text) => {
+    let toast = document.querySelector('.notebook-mode-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'notebook-mode-toast';
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      document.body.appendChild(toast);
+    }
+    toast.textContent = text;
+    toast.classList.add('is-visible');
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1200);
+  };
+
+  const showModeToast = (mode) => {
+    showToast(mode === 'pages' ? 'Vista Hojas' : 'Vista Continua');
+  };
+
+  const createReaderShell = () => {
+    const shell = document.createElement('section');
+    shell.className = 'notebook-reader is-measuring';
+    shell.setAttribute('aria-label', 'Cuaderno paginado');
+
+    const stack = document.createElement('div');
+    stack.className = 'notebook-stack';
+    shell.appendChild(stack);
+
+    const status = document.createElement('div');
+    status.className = 'notebook-reader-status';
+    status.setAttribute('aria-live', 'polite');
+    shell.appendChild(status);
+
+    return {shell, stack, status};
+  };
+
+  const paginate = (source, stack) => {
+    const nodes = Array.from(source.children);
+    source.querySelectorAll(':scope > .section-head').forEach((heading, index) => {
+      const mark = heading.querySelector(':scope > .num');
+      if (mark) mark.dataset.notebookTopicNumber = String(index + 1);
+    });
+    source.querySelectorAll('figure').forEach((figure, index) => {
+      const number = String(index + 1);
+      figure.dataset.notebookFigureNumber = number;
+      const caption = figure.querySelector(':scope > figcaption');
+      if (caption) caption.dataset.notebookFigureNumber = number;
+    });
+    const measure = document.createElement('div');
+    measure.className = 'notebook-measure-host';
+    stack.appendChild(measure);
+
+    // notebook-page already has a fixed border-box height. Its scrollHeight is
+    // therefore equal to clientHeight even when it is empty. The real scroll
+    // overflow is the deterministic packing signal.
+    const overflows = (page) => page.scrollHeight > page.clientHeight + 1;
+
+    const pages = [];
+    let current = makePage(source, 0);
+    measure.appendChild(current);
+    pages.push(current);
+
+    const fitStudySketch = (page, node) => {
+      if (!node.matches?.('figure.study-sketch')) return false;
+
+      const originalHeight = node.getBoundingClientRect().height;
+      const firstTarget = Math.floor(originalHeight - (page.scrollHeight - page.clientHeight) - 2);
+      const minimumReadableHeight = Math.floor(page.clientHeight * .55);
+      if (firstTarget < minimumReadableHeight) return false;
+
+      node.style.setProperty('--notebook-fit-block-height', `${firstTarget}px`);
+      node.classList.add('notebook-fit-page');
+
+      // Grid/caption rounding can leave a residual pixel or two. Tighten the
+      // fitted block once more using the rendered overflow instead of clipping.
+      if (overflows(page)) {
+        const renderedHeight = node.getBoundingClientRect().height;
+        const correctedTarget = Math.floor(renderedHeight - (page.scrollHeight - page.clientHeight) - 2);
+        if (correctedTarget < minimumReadableHeight) {
+          clearPageFit(node);
+          return false;
+        }
+        node.style.setProperty('--notebook-fit-block-height', `${correctedTarget}px`);
+      }
+
+      if (!overflows(page)) return true;
+      clearPageFit(node);
+      return false;
+    };
+
+    const fail = (reason) => {
+      restorePageContent(source, pages);
+      clearPaginationMarks(source);
+      measure.remove();
+      source.dataset.notebookReaderFallback = reason;
+      document.documentElement.dataset.notebookReader = 'continuous-fallback';
+      return null;
+    };
+
+    for (const node of nodes) {
+      current.appendChild(node);
+      if (!overflows(current)) continue;
+
+      current.removeChild(node);
+
+      // Never strand a heading at the bottom of a physical page.
+      let carry = null;
+      const last = current.lastElementChild;
+      if (isHeadingLike(last) && current.children.length > 1) {
+        carry = last;
+        current.removeChild(last);
+      }
+
+      current = makePage(source, pages.length);
+      measure.appendChild(current);
+      pages.push(current);
+      if (carry) current.appendChild(carry);
+      current.appendChild(node);
+
+      // Tall deterministic sketches may shrink to a dedicated leaf while their
+      // SVG keeps its aspect ratio. Any other indivisible oversize component
+      // falls back to the proven continuous renderer.
+      if (overflows(current) && !fitStudySketch(current, node)) {
+        return fail(`oversize-block:${node.className || node.tagName.toLowerCase()}`);
+      }
+    }
+
+    if (pages.some(overflows)) return fail('post-pagination-overflow');
+    measure.remove();
+    return pages;
+  };
+
+  // `edge` is the handle's position inside its own face. The reverse face is
+  // mirrored by rotateY(180deg), so its start edge is drawn on the screen right.
+  const makeTurnCorner = (face, side, edge, getRotation, setRotation) => {
+    const screenSign = (side === 'back' ? -1 : 1) * (edge === 'end' ? 1 : -1);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'notebook-turn-corner';
+    button.dataset.edge = edge;
+    button.setAttribute(
+      'aria-label',
+      side === 'back' ? 'Volver al frente de la hoja' : 'Dar vuelta la hoja'
+    );
+    face.appendChild(button);
+
+    let dragged = false;
+    let x0 = 0;
+    let base = 0;
+    let angle = 0;
+
+    const move = (event) => {
+      const dx = event.clientX - x0;
+      if (!dragged && Math.abs(dx) < 7) return;
+      dragged = true;
+      button.classList.add('is-dragging');
+      angle = Math.max(base - 180, Math.min(base + 180, base - dx * .42));
+      setRotation(angle, true);
+    };
+
+    const finish = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', finish);
+      button.classList.remove('is-dragging');
+      if (!dragged) return;
+      setRotation(Math.round(angle / 180) * 180);
+      setTimeout(() => { dragged = false; }, 0);
+    };
+
+    button.addEventListener('pointerdown', (event) => {
+      if (event.button > 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      x0 = event.clientX;
+      base = getRotation();
+      angle = base;
+      dragged = false;
+      button.setPointerCapture?.(event.pointerId);
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', finish, {once: true});
+      window.addEventListener('pointercancel', finish, {once: true});
+    });
+
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (dragged) return;
+      setRotation(getRotation() + screenSign * 180);
+    });
+  };
+
+  const buildReader = (source, pages, shell, stack, status) => {
+    const pagePairs = [];
+    for (let i = 0; i < pages.length; i += 2) {
+      pagePairs.push([pages[i], pages[i + 1] || makePage(source, i + 1)]);
+    }
+
+    let active = 0;
+    const rotations = Array(pagePairs.length).fill(0);
+    const leaves = [];
+    const sideIsBack = (deg) => Math.abs(Math.round(deg / 180)) % 2 === 1;
+
+    const update = () => {
+      const rootStyle = getComputedStyle(document.documentElement);
+      const peek = cssLengthPx(rootStyle, '--notebook-leaf-peek', 45.6);
+      const hoverExtra = cssLengthPx(rootStyle, '--notebook-leaf-hover-extra', 12);
+
+      leaves.forEach((leaf, index) => {
+        const d = index - active;
+        const distance = Math.abs(d);
+        leaf.classList.toggle('is-active', d === 0);
+        leaf.classList.toggle('is-neighbor', distance === 1);
+        leaf.classList.toggle('is-hidden', distance > 1);
+        // Keep distant sheets out of sight via opacity while leaving their text
+        // in the rendered DOM. aria-hidden still excludes them from assistive
+        // navigation until the sheet becomes active or adjacent.
+        leaf.style.visibility = distance > 1 ? 'visible' : '';
+        leaf.style.zIndex = String(20 - Math.min(distance, 19));
+        leaf.tabIndex = distance === 1 ? 0 : -1;
+        leaf.setAttribute('aria-hidden', distance > 1 ? 'true' : 'false');
+
+        if (d === 0) {
+          leaf.style.transform = `translateX(0) scale(1) rotateY(${rotations[index].toFixed(2)}deg)`;
+          return;
+        }
+
+        // visibility:hidden still has geometry. Hidden sheets therefore stay at
+        // x=0 so only the two intentional neighbour peeks affect the stack.
+        if (distance > 1) {
+          leaf.style.transform = 'translateX(0) scale(var(--notebook-leaf-scale)) rotateY(0deg)';
+          return;
+        }
+
+        const hoverBoost = leaf.matches(':hover') ? hoverExtra : 0;
+        leaf.style.transform = `translateX(${d * (peek + hoverBoost)}px) scale(var(--notebook-leaf-scale)) rotateY(0deg)`;
+      });
+
+      const back = sideIsBack(rotations[active]);
+      const physicalPage = active * 2 + (back ? 2 : 1);
+      status.textContent = `Hoja ${active + 1} de ${leaves.length} · ${back ? 'dorso' : 'frente'} · p. ${Math.min(physicalPage, pages.length)}`;
+      shell.dataset.activeLeaf = String(active + 1);
+      shell.dataset.activeSide = back ? 'back' : 'front';
+      syncTopicFromPage(Math.min(physicalPage, pages.length), back);
+    };
+
+    const go = (index, {back = false} = {}) => {
+      const next = Math.max(0, Math.min(leaves.length - 1, index));
+      const targetRotation = back ? 180 : 0;
+      if (next !== active) {
+        rotations[active] = 0;
+        active = next;
+      }
+      rotations[active] = targetRotation;
+      update();
+    };
+
+    readerNavigatePage = (pageNumber) => {
+      const targetPage = Math.max(1, Math.min(pages.length, Number(pageNumber) || 1));
+      go(Math.floor((targetPage - 1) / 2), {back: targetPage % 2 === 0});
+    };
+
+    pagePairs.forEach(([front, back], index) => {
+      const leaf = document.createElement('div');
+      leaf.className = 'notebook-leaf';
+      leaf.dataset.leaf = String(index + 1);
+
+      const frontFace = document.createElement('div');
+      frontFace.className = 'notebook-face notebook-front-face notebook-front';
+      front.classList.add('notebook-front');
+      front.dataset.page = String(index * 2 + 1);
+      frontFace.appendChild(front);
+
+      const backFace = document.createElement('div');
+      backFace.className = 'notebook-face notebook-back-face notebook-back';
+      back.classList.add('notebook-back');
+      back.dataset.page = String(index * 2 + 2);
+      backFace.appendChild(back);
+
+      const numberFront = document.createElement('div');
+      numberFront.className = 'notebook-page-number';
+      numberFront.textContent = `— ${index * 2 + 1} —`;
+      frontFace.appendChild(numberFront);
+
+      const numberBack = document.createElement('div');
+      numberBack.className = 'notebook-page-number';
+      numberBack.textContent = `— ${index * 2 + 2} —`;
+      backFace.appendChild(numberBack);
+
+      const setRotation = (value, dragging = false) => {
+        rotations[index] = value;
+        leaf.style.transition = dragging ? 'none' : '';
+        update();
+        if (!dragging) requestAnimationFrame(() => { leaf.style.transition = ''; });
+      };
+      const getRotation = () => rotations[index];
+      for (const edge of ['start', 'end']) {
+        makeTurnCorner(frontFace, 'front', edge, getRotation, setRotation);
+        makeTurnCorner(backFace, 'back', edge, getRotation, setRotation);
+      }
+
+      leaf.append(frontFace, backFace);
+      leaf.addEventListener('pointerdown', (event) => {
+        if (index === active || event.target.closest('.notebook-turn-corner')) return;
+        event.preventDefault();
+        go(index);
+      });
+      leaf.addEventListener('keydown', (event) => {
+        if (index !== active && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault();
+          go(index);
+        }
+      });
+      leaf.addEventListener('mouseenter', update);
+      leaf.addEventListener('mouseleave', update);
+      leaves.push(leaf);
+      stack.appendChild(leaf);
+    });
+
+    const onKeydown = (event) => {
+      if (!shell.isConnected || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (topicPanel?.hidden === false || viewPanel?.hidden === false) return;
+      const activeElement = document.activeElement;
+      const tag = activeElement?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || activeElement?.isContentEditable) return;
+      if (event.key === 'ArrowRight') { event.preventDefault(); go(active + 1); }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); go(active - 1); }
+    };
+    document.addEventListener('keydown', onKeydown);
+    readerCleanup = () => document.removeEventListener('keydown', onKeydown);
+
+    update();
+    shell.classList.remove('is-measuring');
+    return shell;
+  };
+
+  const restoreContinuous = (state = 'continuous') => {
+    setTopicPanel(false, {focus: false});
+    detachTopicNavigation();
+    readerCleanup?.();
+    readerCleanup = null;
+    readerNavigatePage = null;
+    if (mounted && reader?.isConnected && originalTemplate) {
+      reader.replaceWith(originalTemplate.cloneNode(true));
+    }
+    mounted = false;
+    reader = null;
+    document.documentElement.dataset.notebookReader = state;
+    delete document.documentElement.dataset.notebookPages;
+    syncViewSwitch();
+    attachTopicNavigation('continuous', document.querySelector('.study-grid > article'));
+  };
+
+  const mount = async ({persistFallback = false} = {}) => {
+    if (mounted) return true;
+    if (mounting || effectiveMode() !== 'pages' || pageModeUnavailable) return false;
+    const grid = document.querySelector('.study-grid');
+    const source = grid?.querySelector(':scope > article');
+    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return false;
+
+    if (!originalTemplate) originalTemplate = source.cloneNode(true);
+    mounting = true;
+    await waitForAssets(source);
+    if (effectiveMode() !== 'pages' || !source.isConnected) {
+      mounting = false;
+      syncViewSwitch();
+      if (source.isConnected) attachTopicNavigation('continuous', source);
+      return false;
+    }
+
+    setTopicPanel(false, {focus: false});
+    detachTopicNavigation();
+    delete source.dataset.notebookReaderFallback;
+    const scrollPosition = {left: window.scrollX, top: window.scrollY};
+    const {shell, stack, status} = createReaderShell();
+    grid.insertBefore(shell, source);
+    const pages = paginate(source, stack);
+    if (!pages) {
+      pageModeUnavailable = source.dataset.notebookReaderFallback || 'pagination-failed';
+      shell.remove();
+      mounting = false;
+      preferredMode = 'continuous';
+      if (persistFallback) writeStoredMode('continuous');
+      syncViewSwitch();
+      attachTopicNavigation('continuous', source);
+      restoreScrollPosition(scrollPosition);
+      return false;
+    }
+
+    // A one-page artifact gains nothing from the reader.
+    if (pages.length < 2) {
+      restorePageContent(source, pages);
+      clearPaginationMarks(source);
+      shell.remove();
+      mounting = false;
+      pageModeUnavailable = 'single-page';
+      preferredMode = 'continuous';
+      if (persistFallback) writeStoredMode('continuous');
+      document.documentElement.dataset.notebookReader = 'continuous';
+      syncViewSwitch();
+      attachTopicNavigation('continuous', source);
+      restoreScrollPosition(scrollPosition);
+      return false;
+    }
+
+    mapTopicPages(pages);
+    reader = buildReader(source, pages, shell, stack, status);
+    attachTopicNavigation('pages', stack);
+    source.remove();
+    mounted = true;
+    mounting = false;
+    document.documentElement.dataset.notebookReader = 'ready';
+    document.documentElement.dataset.notebookPages = String(pages.length);
+    syncViewSwitch();
+    return true;
+  };
+
+  const setViewMode = async (mode, {persist = true} = {}) => {
+    if (mode !== 'continuous' && mode !== 'pages') return mounted ? 'pages' : 'continuous';
+    if (mode === 'pages' && (!desktop.matches || pageModeUnavailable)) {
+      preferredMode = 'continuous';
+      if (persist) writeStoredMode('continuous');
+      syncViewSwitch();
+      return 'continuous';
+    }
+    preferredMode = mode;
+    if (persist) writeStoredMode(mode);
+
+    if (effectiveMode() === 'pages') {
+      const ready = await mount({persistFallback: persist});
+      return ready ? 'pages' : 'continuous';
+    } else {
+      restoreContinuous('continuous');
+    }
+    syncViewSwitch();
+    return 'continuous';
+  };
+
+  const onViewShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || !viewPanel || print.matches) return;
+    if (event.key?.toLowerCase() !== 'v') return;
+    event.preventDefault();
+    setViewPanel(viewPanel.hidden);
+  };
+
+  const restoreForPrint = () => {
+    setViewPanel(false, {focus: false});
+    if (mounted) restoreContinuous('print-continuous');
+  };
+
+  const init = () => {
+    paperColorIndex = readStoredPaperColor();
+    applyPaperColor(paperColorIndex);
+    document.addEventListener('keydown', onPaperColorShortcut);
+    document.addEventListener('keydown', onPaperPanelKeydown);
+
+    applyWidthMode(readStoredWidth());
+    document.addEventListener('keydown', onWidthShortcut);
+    document.addEventListener('keydown', onWidthPanelKeydown);
+
+    const source = document.querySelector('.study-grid > article');
+    if (!source) return;
+    const pagedEligible = PAGED_KINDS.has(source.dataset.kind || '');
+    topics = collectTopics(source);
+    setActiveTopic(0);
+    createTopicNavigation();
+    document.addEventListener('keydown', onTopicShortcut);
+
+    // Long guides keep their established continuous surface and TOC, while
+    // sharing the same edge-tab/topic-index contract requested for every
+    // semantic top-level topic.
+    if (!pagedEligible) {
+      attachTopicNavigation('continuous', source);
+      return;
+    }
+
+    originalTemplate = source.cloneNode(true);
+    createViewSwitch();
+    createViewPanel();
+    document.addEventListener('keydown', onViewPanelKeydown);
+    document.addEventListener('keydown', onViewShortcut);
+    if (effectiveMode() === 'pages') void mount();
+    else {
+      document.documentElement.dataset.notebookReader = 'continuous';
+      syncViewSwitch();
+      attachTopicNavigation('continuous', source);
+    }
+  };
+
+  window.addEventListener('beforeprint', restoreForPrint);
+  window.addEventListener('afterprint', () => {
+    if (effectiveMode() === 'pages') void mount();
+  });
+  desktop.addEventListener?.('change', () => {
+    pageModeUnavailable = null;
+    if (effectiveMode() === 'pages') void mount();
+    else restoreContinuous('continuous');
+    syncViewSwitch();
+  });
+
+  init();
+})();
+</script></body></html>

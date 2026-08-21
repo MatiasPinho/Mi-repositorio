@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carpeta.local/contracts/visual-review.schema.json",
+  "title": "Independent vision review binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "vision_verified", "visual_policy_sha256", "reviewer", "figures"],
+  "properties": {
+    "version": {"const": 1},
+    "vision_verified": {"const": true},
+    "visual_policy_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "capability", "independent"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "capability": {"const": "vision"},
+        "independent": {"const": true}
+      }
+    },
+    "figures": {
+      "type": "array",
+      "minItems": 0,
+      "description": "May be empty only when the current preview set is empty, for example after bounded visual failures were omitted from the final plan. Runtime binding enforces exact set equality.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scene_id", "attempt", "status", "inspected", "scores", "issues"],
+        "properties": {
+          "scene_id": {"type": "string", "minLength": 1},
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "description": "Attempt 3 is retained for historical evidence compatibility. New summary previews are capped at two attempts by scene_figure.py."
+          },
+          "status": {"enum": ["pass", "fail"]},
+          "inspected": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["variant", "file", "sha256"],
+              "properties": {
+                "variant": {"enum": ["wide", "narrow"]},
+                "file": {"type": "string", "minLength": 1},
+                "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"}
+              }
+            }
+          },
+          "scores": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "legibility", "spacing", "hierarchy", "connections", "density",
+              "composition", "pencil_fidelity", "pedagogical_value", "responsive",
+              "academic_fidelity"
+            ],
+            "properties": {
+              "legibility": {"type": "number", "minimum": 0, "maximum": 5},
+              "spacing": {"type": "number", "minimum": 0, "maximum": 5},
+              "hierarchy": {"type": "number", "minimum": 0, "maximum": 5},
+              "connections": {"type": "number", "minimum": 0, "maximum": 5},
+              "density": {"type": "number", "minimum": 0, "maximum": 5},
+              "composition": {"type": "number", "minimum": 0, "maximum": 5},
+              "pencil_fidelity": {"type": "number", "minimum": 0, "maximum": 5},
+              "pedagogical_value": {"type": "number", "minimum": 0, "maximum": 5},
+              "responsive": {"type": "number", "minimum": 0, "maximum": 5},
+              "academic_fidelity": {"type": "number", "minimum": 0, "maximum": 5}
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["severity", "type", "elements", "problem", "repair"],
+              "properties": {
+                "severity": {"enum": ["blocking", "major", "minor"]},
+                "type": {"type": "string", "minLength": 1},
+                "elements": {
+                  "type": "array",
+                  "items": {"type": "string", "minLength": 1}
+                },
+                "problem": {"type": "string", "minLength": 1},
+                "repair": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

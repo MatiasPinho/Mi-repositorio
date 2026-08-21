@@ -5,7 +5,15 @@ The staged run lives deeper than the published artifact. Relative image URLs tha
 are valid inside ``.study/runs/<run-id>/`` therefore cannot be copied verbatim to
 ``resumenes/``. Publication deterministically rebases only local image references
 for the destination while keeping the validated run sources byte-for-byte
-immutable.
+immutable. Responsive Visual System V2 ``<source srcset>`` resources participate in
+the same relocation contract as ordinary ``<img src>`` assets.
+
+A final Markdown draft may still point at a run-local copy under
+``.study/runs/<run-id>/assets/figures``. Those copies are never a valid permanent
+publication dependency. When an identical canonical unit figure exists, the
+publisher promotes the reference to that canonical asset by SHA-256; a missing or
+non-identical canonical counterpart fails publication instead of leaking run-local
+state into the published Markdown.
 """
 from __future__ import annotations
 
@@ -23,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 _MD_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)")
 _HTML_IMAGE_RE = re.compile(r'(<img\b[^>]*\bsrc=")([^"]+)(")', re.I)
+_HTML_SRCSET_RE = re.compile(r'(<source\b[^>]*\bsrcset=")([^"]+)(")', re.I)
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -83,12 +92,48 @@ def _is_remote_or_embedded(src: str) -> bool:
     return bool(re.match(r"^[a-z][a-z0-9+.-]*://", src, re.I)) or src.startswith(("data:", "#"))
 
 
+def _canonicalize_run_figure_target(target: Path) -> Path:
+    """Promote an immutable run-local figure copy to its unit canonical asset.
+
+    Only ``.study/runs/.../assets/figures`` is eligible. The canonical counterpart
+    must already exist under the owning unit's ``assets/figures`` and be byte
+    identical. This keeps publication independent from disposable run history
+    without allowing a basename match to substitute different pixels/content.
+    """
+    target = target.resolve()
+    parts = target.parts
+    try:
+        study_idx = parts.index(".study")
+    except ValueError:
+        return target
+    if study_idx + 1 >= len(parts) or parts[study_idx + 1] != "runs":
+        return target
+
+    assets_idx = -1
+    for idx in range(study_idx + 2, len(parts) - 1):
+        if parts[idx] == "assets" and parts[idx + 1] == "figures":
+            assets_idx = idx
+            break
+    if assets_idx < 0:
+        return target
+
+    unit_root = Path(*parts[:study_idx])
+    figure_suffix = Path(*parts[assets_idx + 2:])
+    canonical = (unit_root / "assets" / "figures" / figure_suffix).resolve()
+    if not canonical.is_file():
+        raise OSError(f"publication-run-figure-not-canonical:{target}:{canonical}")
+    if sha256_file(canonical) != sha256_file(target):
+        raise OSError(f"publication-run-figure-hash-mismatch:{target}:{canonical}")
+    return canonical
+
+
 def _rebase_local_ref(src: str, source_parent: Path, destination_parent: Path) -> tuple[str, Path] | None:
     if _is_remote_or_embedded(src):
         return None
     target = (source_parent / src).resolve()
     if not target.is_file():
         raise OSError(f"publication-resource-missing:{src}:{target}")
+    target = _canonicalize_run_figure_target(target)
     rebased = os.path.relpath(target, destination_parent.resolve()).replace(os.sep, "/")
     return rebased, target
 
@@ -126,20 +171,36 @@ def _rewrite_html_images(
     text = data.decode("utf-8")
     rewrites: list[dict[str, str]] = []
 
-    def replace(match: re.Match[str]) -> str:
-        prefix, src, suffix = match.group(1), match.group(2), match.group(3)
+    def rewrite_one(src: str) -> str:
         resolved = _rebase_local_ref(src, source.parent, destination.parent)
         if resolved is None:
-            return match.group(0)
+            return src
         rebased, target = resolved
         rewrites.append({
             "original": src,
             "published": rebased,
             "target": display_path(target),
         })
-        return f"{prefix}{rebased}{suffix}"
+        return rebased
 
-    return _HTML_IMAGE_RE.sub(replace, text).encode("utf-8"), rewrites
+    def replace_img(match: re.Match[str]) -> str:
+        return f"{match.group(1)}{rewrite_one(match.group(2))}{match.group(3)}"
+
+    def replace_srcset(match: re.Match[str]) -> str:
+        candidates = []
+        for raw in match.group(2).split(","):
+            candidate = raw.strip()
+            if not candidate:
+                continue
+            parts = candidate.split()
+            src = parts[0]
+            descriptor = " " + " ".join(parts[1:]) if len(parts) > 1 else ""
+            candidates.append(rewrite_one(src) + descriptor)
+        return f"{match.group(1)}{', '.join(candidates)}{match.group(3)}"
+
+    text = _HTML_IMAGE_RE.sub(replace_img, text)
+    text = _HTML_SRCSET_RE.sub(replace_srcset, text)
+    return text.encode("utf-8"), rewrites
 
 
 def _verify_published_resources(destination: Path, rewrites: list[dict[str, str]]) -> None:

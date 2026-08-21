@@ -132,20 +132,401 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn(".notebook-measure-host {", css)
         self.assertIn("inset: 0", css)
 
-    def test_view_shortcut_is_persistent_presentation_state(self):
+    def test_view_shortcut_opens_pencil_selector_and_persists_state(self):
         js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
         css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
         self.assertIn("university-study:reader-mode", js)
         self.assertIn("event.key?.toLowerCase() !== 'v'", js)
-        self.assertIn("toggleViewMode", js)
+        self.assertIn("createViewPanel", js)
+        self.assertIn("chooseViewMode", js)
+        self.assertIn("setViewPanel(viewPanel.hidden)", js)
         self.assertIn("showModeToast", js)
         self.assertIn("localStorage", js)
         self.assertIn("restoreContinuous", js)
         self.assertIn("setViewMode", js)
         self.assertIn(".notebook-view-switch { display: none; }", css)
+        self.assertIn(".notebook-view-panel", css)
+        self.assertIn(".notebook-view-sketch-sheet", css)
+        self.assertIn(".notebook-view-sketch-strip", css)
+        self.assertIn(".notebook-view-sketch-flow", css)
         self.assertIn(".notebook-mode-toast", css)
-        self.assertIn("Vista Hojas · V", js)
-        self.assertIn("Vista Continua · V", js)
+        self.assertIn("Vista de lectura", js)
+        self.assertIn("Pasá hojas físicas, frente y dorso.", js)
+        self.assertIn("Leé todo seguido desplazándote hacia abajo.", js)
+        self.assertIn("Vista Hojas", js)
+        self.assertIn("Vista Continua", js)
+        self.assertIn("pageModeUnavailable", js)
+        self.assertIn("restoreScrollPosition", js)
+        self.assertIn("data-notebook-figure-number", css)
+
+    def test_topic_tabs_are_semantic_keyboard_navigation(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+        self.assertIn(":scope > .section-head > h2[id]", js)
+        self.assertIn("Índice de temas", js)
+        self.assertIn("event.key?.toLowerCase()", js)
+        self.assertIn("setTopicPanel", js)
+        self.assertIn("navigateToTopic", js)
+        self.assertIn("readerNavigatePage", js)
+        self.assertIn("aria-current", js)
+        self.assertIn("data-notebook-topic-number", css)
+        self.assertIn(".section-head.notebook-section-tab", css)
+        self.assertIn(".notebook-topic-panel", css)
+        self.assertIn("margin-inline-start: calc(-1 * var(--notebook-section-tab-overhang))", css)
+        self.assertIn("background: transparent", css)
+        self.assertIn("--notebook-section-tab-pencil-fill", css)
+        self.assertIn("--notebook-section-tab-outline", css)
+        self.assertIn("margin-block: var(--notebook-line-pitch)", css)
+        self.assertIn("h2:focus-visible", css)
+        self.assertIn("repeating-linear-gradient", css)
+        self.assertIn("transparent 0 .34rem", css)
+        self.assertNotIn("notebook-topic-index-trigger", js)
+        self.assertNotIn("makeTopicButton(topic, 'notebook-topic-tab'", js)
+        self.assertIn("@media print", css)
+
+    def test_right_rail_stays_reserved_without_persistent_reading_guide(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        theme = (ROOT / "assets" / "study-theme.css").read_text(encoding="utf-8")
+
+        init = js.split("const init = () => {", 1)[1].split("init();", 1)[0]
+        self.assertNotIn("createContextNote();", init)
+        self.assertIn("--notebook-measure: 66rem", theme)
+        self.assertIn("--notebook-wide: 48rem", theme)
+        self.assertIn("--notebook-paper-width: 76rem", theme)
+
+    def test_reading_width_panel_offers_three_measures_with_pencil_sketches(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
+
+        self.assertIn("WIDTH_STORAGE_KEY = 'university-study:reading-width'", js)
+        self.assertIn("aria-keyshortcuts', 'A'", js)
+        for mode_id in ("hoja", "comodo", "libro"):
+            self.assertIn(f"'{mode_id}'", js)
+            self.assertIn(f"is-{mode_id}", css)
+        self.assertEqual(js.count("data-width-mode") >= 3, True)
+        self.assertIn("makeWidthSketch", js)
+        self.assertIn("notebook-width-sketch-line", css)
+
+        # Every other panel closes the width menu, and the width menu closes
+        # every other panel: exactly one dialog at a time.
+        self.assertGreaterEqual(js.count("setWidthPanel(false, {focus: false});"), 4)
+
+        init = js.split("const init = () => {", 1)[1].split("init();", 1)[0]
+        self.assertIn("applyWidthMode(readStoredWidth());", init)
+        self.assertIn("document.addEventListener('keydown', onWidthShortcut);", init)
+        self.assertIn("document.addEventListener('keydown', onWidthPanelKeydown);", init)
+
+        # The whole notebook narrows: sheet and prose measure move together,
+        # keeping the sheet's measure + padding relationship.
+        self.assertIn(":root[data-notebook-width=\"comodo\"] {\n  --notebook-measure: 54rem;\n  --notebook-paper-width: 64rem;\n}", css)
+        self.assertIn(":root[data-notebook-width=\"libro\"] {\n  --notebook-measure: 44rem;\n  --notebook-paper-width: 54rem;\n}", css)
+        self.assertIn(".notebook-width-panel[hidden]", css)
+
+    def test_browser_width_panel_changes_measure_and_survives_reload(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            html = td / "summary.html"
+            blocks = []
+            for topic in range(1, 4):
+                blocks.append(f"## Tema extenso {topic}")
+                blocks.append(f"### Concepto central {topic}")
+                blocks.extend(
+                    f"Párrafo {topic}.{i} con **concepto {topic}** y contenido suficiente para distribuir cada tema entre hojas físicas."
+                    for i in range(1, 22)
+                )
+            md.write_text(
+                "# Unidad con índice\n\nIntroducción.\n\n" + "\n\n".join(blocks),
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                page = browser.new_page(viewport={"width": 1440, "height": 1000})
+                # A real file:// origin keeps localStorage readable, which
+                # set_content's opaque origin denies.
+                page.goto(html.as_uri(), wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+
+                paragraph_selector = ".notebook-page p, .study-grid > article p"
+                sheet_selector = ".notebook-stack, .study-grid > article"
+                baseline_width = page.locator(paragraph_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                baseline_sheet = page.locator(sheet_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+
+                self.assertEqual(page.locator("#notebook-width-panel").count(), 0)
+                page.keyboard.press("a")
+                panel = page.locator("#notebook-width-panel")
+                self.assertTrue(panel.is_visible())
+                options = panel.locator("[data-width-mode]")
+                self.assertEqual(options.count(), 3)
+                self.assertEqual(
+                    options.locator(".notebook-width-option-label").all_inner_texts(),
+                    ["Hoja", "Cómodo", "Libro"],
+                )
+                self.assertTrue(
+                    page.wait_for_function(
+                        "() => document.activeElement?.dataset.widthMode === 'hoja'",
+                        timeout=1000,
+                    )
+                )
+                sketches = panel.locator(".notebook-width-sketch")
+                self.assertEqual(sketches.count(), 3)
+                self.assertTrue(
+                    sketches.evaluate_all(
+                        "nodes => nodes.every(node => node.querySelectorAll('.notebook-width-sketch-line').length === 4)"
+                    )
+                )
+
+                # Exactly one dialog at a time: V steals the dialog from A.
+                page.keyboard.press("v")
+                self.assertTrue(page.locator("#notebook-view-panel").is_visible())
+                self.assertFalse(panel.is_visible())
+                page.keyboard.press("Escape")
+                self.assertFalse(page.locator("#notebook-view-panel").is_visible())
+
+                page.keyboard.press("a")
+                self.assertTrue(panel.is_visible())
+                page.keyboard.press("ArrowDown")
+                page.keyboard.press("Enter")
+
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookWidth === 'comodo'",
+                    timeout=4000,
+                )
+                page.wait_for_function(
+                    f"() => {{ const p = document.querySelector('{paragraph_selector}'); "
+                    f"return p && p.getBoundingClientRect().width < {baseline_width} - 50; }}",
+                    timeout=4000,
+                )
+                narrowed_width = page.locator(paragraph_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                self.assertLess(narrowed_width, baseline_width - 50)
+                narrowed_sheet = page.locator(sheet_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                # The sheet itself narrows too, not only the text column.
+                self.assertLess(narrowed_sheet, baseline_sheet - 50)
+                self.assertEqual(
+                    page.evaluate("window.localStorage.getItem('university-study:reading-width')"),
+                    "comodo",
+                )
+
+                page.reload(wait_until="domcontentloaded")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.documentElement.dataset.notebookWidth"),
+                    "comodo",
+                )
+                restored_width = page.locator(paragraph_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                self.assertLess(restored_width, baseline_width - 50)
+                restored_sheet = page.locator(sheet_selector).first.evaluate(
+                    "node => node.getBoundingClientRect().width"
+                )
+                self.assertLess(restored_sheet, baseline_sheet - 50)
+                browser.close()
+
+    def test_browser_topic_index_jumps_to_exact_topic_and_survives_view_switch(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            html = td / "summary.html"
+            blocks = []
+            for topic in range(1, 4):
+                blocks.append(f"## Tema extenso {topic}")
+                blocks.append(f"### Concepto central {topic}")
+                blocks.extend(
+                    f"Párrafo {topic}.{i} con **concepto {topic}** y contenido suficiente para distribuir cada tema entre hojas físicas."
+                    for i in range(1, 22)
+                )
+            md.write_text(
+                "# Unidad con índice\n\nIntroducción.\n\n" + "\n\n".join(blocks),
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+            html_text = html.read_text(encoding="utf-8")
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                page = browser.new_page(viewport={"width": 1440, "height": 1000})
+                page.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+
+                self.assertEqual(page.locator(".notebook-context-note").count(), 0)
+
+                tabs = page.locator(".section-head.notebook-section-tab")
+                self.assertEqual(tabs.count(), 3)
+                self.assertEqual(
+                    tabs.locator("h2").all_inner_texts(),
+                    ["Tema extenso 1", "Tema extenso 2", "Tema extenso 3"],
+                )
+                self.assertEqual(page.locator(".notebook-topic-tab").count(), 0)
+                self.assertEqual(page.locator(".notebook-topic-index-trigger").count(), 0)
+                self.assertEqual(page.locator(".notebook-section-tab.is-current-topic").count(), 1)
+                self.assertFalse(tabs.first.locator(":scope > .num").is_visible())
+                self.assertTrue(
+                    tabs.first.evaluate(
+                        "node => { const style = getComputedStyle(node); "
+                        "const title = node.querySelector(':scope > h2').getBoundingClientRect(); "
+                        "const tab = node.getBoundingClientRect(); "
+                        "const inset = parseFloat(style.marginInlineStart) + parseFloat(style.paddingInlineStart); "
+                        "return tab.left < title.left - 16 && Math.abs(inset) <= 1.5; }"
+                    ),
+                )
+                self.assertTrue(
+                    tabs.evaluate_all(
+                        "nodes => nodes.every(node => "
+                        "getComputedStyle(node).backgroundImage.includes('linear-gradient'))"
+                    )
+                )
+                self.assertTrue(
+                    tabs.evaluate_all(
+                        "nodes => nodes.every(node => { "
+                        "const style = getComputedStyle(node); "
+                        "const heading = node.querySelector(':scope > h2'); "
+                        "const pitch = parseFloat(getComputedStyle(heading).lineHeight); "
+                        "return Math.abs(parseFloat(style.marginTop) - pitch) <= .75 "
+                        "&& Math.abs(parseFloat(style.marginBottom) - pitch) <= .75; })"
+                    )
+                )
+
+                page.keyboard.press("t")
+                panel = page.locator("#notebook-topic-index-panel")
+                self.assertTrue(panel.is_visible())
+                page.wait_for_function(
+                    "() => document.activeElement?.dataset.topicIndex === '0'",
+                    timeout=1000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.topicIndex"),
+                    "0",
+                )
+                page.keyboard.press("Home")
+                page.keyboard.press("ArrowDown")
+                page.keyboard.press("Enter")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookTopic === '2' "
+                    "&& document.activeElement?.id",
+                    timeout=2000,
+                )
+                second_heading_id = page.locator(".notebook-page .section-head > h2[id]").nth(1).get_attribute("id")
+                self.assertEqual(page.evaluate("document.activeElement?.id"), second_heading_id)
+                self.assertEqual(
+                    page.locator(f"#{second_heading_id}").evaluate(
+                        "node => getComputedStyle(node).outlineStyle"
+                    ),
+                    "none",
+                )
+                self.assertFalse(panel.is_visible())
+                self.assertTrue(tabs.nth(1).evaluate("node => node.classList.contains('is-current-topic')"))
+                self.assertFalse(tabs.nth(1).locator(":scope > .num").is_visible())
+                self.assertEqual(
+                    page.locator('.notebook-topic-list-button[aria-current="location"]').count(),
+                    1,
+                )
+                self.assertLessEqual(
+                    page.evaluate("document.documentElement.scrollWidth"),
+                    page.evaluate("document.documentElement.clientWidth") + 2,
+                )
+
+                page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                page.keyboard.press("End")
+                page.keyboard.press("Enter")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                self.assertEqual(page.locator(".notebook-topic-tabs.is-continuous").count(), 1)
+                self.assertEqual(page.locator(".notebook-context-note").count(), 0)
+                self.assertEqual(page.locator(".section-head.notebook-section-tab").count(), 3)
+                self.assertEqual(page.locator(".notebook-topic-tab").count(), 0)
+                self.assertEqual(page.locator(".notebook-topic-index-trigger").count(), 0)
+                page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookTopic === '3'",
+                    timeout=2000,
+                )
+                page.keyboard.press("t")
+                self.assertTrue(panel.is_visible())
+                page.keyboard.press("Escape")
+                self.assertFalse(panel.is_visible())
+
+                mobile = browser.new_page(viewport={"width": 390, "height": 844})
+                mobile.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
+                mobile.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                self.assertEqual(mobile.locator(".notebook-topic-index-trigger").count(), 0)
+                self.assertEqual(mobile.locator(".notebook-context-note").count(), 0)
+                self.assertTrue(mobile.locator(".section-head.notebook-section-tab").first.is_visible())
+                self.assertEqual(mobile.locator(".notebook-topic-tab").count(), 0)
+                running_parts = mobile.locator(".book-running-line > span").evaluate_all(
+                    "nodes => nodes.map(node => node.getBoundingClientRect())"
+                )
+                self.assertLessEqual(running_parts[0]["bottom"], running_parts[1]["top"] + 1)
+                self.assertLessEqual(
+                    mobile.evaluate("document.documentElement.scrollWidth"),
+                    mobile.evaluate("document.documentElement.clientWidth") + 2,
+                )
+                mobile.keyboard.press("t")
+                self.assertTrue(mobile.locator("#notebook-topic-index-panel").is_visible())
+                mobile.keyboard.press("v")
+                self.assertFalse(mobile.locator("#notebook-topic-index-panel").is_visible())
+                self.assertTrue(mobile.locator("#notebook-view-panel").is_visible())
+                self.assertEqual(mobile.locator(".notebook-view-sketch").count(), 2)
+                self.assertTrue(mobile.locator('[data-view-mode="pages"]').is_disabled())
+                mobile.keyboard.press("Escape")
+                self.assertFalse(mobile.locator("#notebook-view-panel").is_visible())
+                mobile.close()
+                browser.close()
 
     def test_browser_can_switch_continuous_and_pages_with_v_without_regenerating_content(self):
         try:
@@ -187,13 +568,40 @@ class NotebookReaderTests(unittest.TestCase):
                 )
                 self.assertEqual(page.locator(".notebook-view-switch").count(), 1)
                 self.assertFalse(page.locator(".notebook-view-switch").is_visible())
+                view_panel = page.locator("#notebook-view-panel")
+                self.assertEqual(view_panel.count(), 1)
+                self.assertFalse(view_panel.is_visible())
                 original_text = page.locator("body").inner_text()
 
                 page.keyboard.press("v")
+                self.assertTrue(view_panel.is_visible())
+                self.assertEqual(view_panel.locator("[data-view-mode]").count(), 2)
+                self.assertEqual(
+                    view_panel.locator(".notebook-view-option-label").all_inner_texts(),
+                    ["Hojas", "Continua"],
+                )
+                self.assertEqual(view_panel.locator(".notebook-view-sketch").count(), 2)
+                self.assertEqual(view_panel.locator(".notebook-view-sketch-sheet").count(), 3)
+                self.assertEqual(view_panel.locator(".notebook-view-sketch-strip").count(), 1)
+                page.wait_for_function(
+                    "() => document.activeElement?.dataset.viewMode === 'pages'",
+                    timeout=1000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.viewMode"),
+                    "pages",
+                )
+                page.keyboard.press("End")
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.viewMode"),
+                    "continuous",
+                )
+                page.keyboard.press("Enter")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'continuous'",
                     timeout=3000,
                 )
+                self.assertFalse(view_panel.is_visible())
                 self.assertEqual(page.locator(".notebook-reader").count(), 0)
                 self.assertEqual(page.locator(".study-grid > article").count(), 1)
                 self.assertIn("Párrafo 89", page.locator("body").inner_text())
@@ -201,6 +609,17 @@ class NotebookReaderTests(unittest.TestCase):
                 self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
 
                 page.keyboard.press("v")
+                self.assertTrue(view_panel.is_visible())
+                page.wait_for_function(
+                    "() => document.activeElement?.dataset.viewMode === 'continuous'",
+                    timeout=1000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.viewMode"),
+                    "continuous",
+                )
+                page.keyboard.press("Home")
+                page.keyboard.press("Enter")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'ready'",
                     timeout=6000,
@@ -209,6 +628,186 @@ class NotebookReaderTests(unittest.TestCase):
                 self.assertIn("Párrafo 89", page.locator("body").inner_text())
                 self.assertIn("Vista Hojas", page.locator(".notebook-mode-toast").inner_text())
                 self.assertIn("Unidad 3", original_text)
+                page.keyboard.press("v")
+                self.assertTrue(view_panel.is_visible())
+                page.keyboard.press("Escape")
+                self.assertFalse(view_panel.is_visible())
+                browser.close()
+
+    def test_tall_study_sketch_fits_a_leaf_and_v_reports_the_actual_mode(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            svg = td / "tall-sketch.svg"
+            html = td / "summary.html"
+            svg.write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1408" '
+                'viewBox="0 0 680 1408" data-study-sketch="1" data-transparent-canvas="1">'
+                '<title>Figura vertical</title><desc>Prueba de paginación</desc>'
+                '<rect x="20" y="20" width="640" height="1368" fill="none" stroke="black"/>'
+                '<text x="340" y="704" text-anchor="middle">Contenido legible</text></svg>',
+                encoding="utf-8",
+            )
+            md.write_text(
+                "# Unidad 1\n\nIntroducción.\n\n## Tema\n\n"
+                + "\n\n".join(f"Párrafo previo {i} con contenido de prueba." for i in range(1, 12))
+                + '\n\n![Figura vertical](tall-sketch.svg "Debe caber completa en una hoja física.")\n\n'
+                + "\n\n".join(f"Párrafo posterior {i} con contenido de prueba." for i in range(1, 45)),
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+            html_text = html.read_text(encoding="utf-8")
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                page = browser.new_page(viewport={"width": 1200, "height": 1000})
+                page.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => ['ready', 'continuous-fallback'].includes(document.documentElement.dataset.notebookReader)",
+                    timeout=6000,
+                )
+                reader_state = page.evaluate(
+                    "() => ({state: document.documentElement.dataset.notebookReader, "
+                    "reason: document.querySelector('.study-grid > article')?.dataset.notebookReaderFallback || null})"
+                )
+                self.assertEqual(reader_state["state"], "ready", reader_state)
+                self.assertEqual(page.locator(".notebook-fit-page").count(), 1)
+                self.assertEqual(
+                    page.locator("figure.study-sketch").get_attribute("data-notebook-figure-number"),
+                    "1",
+                )
+                caption = page.locator("figure.study-sketch figcaption")
+                self.assertEqual(caption.get_attribute("data-notebook-figure-number"), "1")
+                self.assertIn(
+                    "1",
+                    caption.evaluate("node => getComputedStyle(node, '::before').content"),
+                )
+                self.assertEqual(
+                    page.locator(".notebook-page").evaluate_all(
+                        "nodes => nodes.filter(node => node.scrollHeight > node.clientHeight + 1).length"
+                    ),
+                    0,
+                )
+
+                page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                page.keyboard.press("End")
+                page.keyboard.press("Enter")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
+                self.assertEqual(page.locator("h1").inner_text(), "Unidad 1")
+
+                page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                page.keyboard.press("Home")
+                page.keyboard.press("Enter")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'ready'",
+                    timeout=6000,
+                )
+                self.assertIn("Vista Hojas", page.locator(".notebook-mode-toast").inner_text())
+                self.assertEqual(page.locator(".notebook-fit-page").count(), 1)
+                browser.close()
+
+    def test_impossible_page_fallback_keeps_scroll_and_reports_continuous_mode(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except Exception as exc:  # pragma: no cover - environment contract catches this elsewhere
+            self.skipTest(f"Playwright unavailable: {exc}")
+
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            md = td / "summary.md"
+            html = td / "summary.html"
+            oversized_code = "\n".join(f"línea_{i} = {i}" for i in range(1, 180))
+            md.write_text(
+                "# Unidad 1\n\nIntroducción.\n\n## Bloque indivisible\n\n"
+                + "\n\n".join(f"Párrafo {i} para habilitar desplazamiento." for i in range(1, 24))
+                + f"\n\n```text\n{oversized_code}\n```\n",
+                encoding="utf-8",
+            )
+            rendered = subprocess.run(
+                [sys.executable, str(RENDER), str(md), str(html), "--kind", "summary", "--check"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(rendered.returncode, 0, rendered.stdout + rendered.stderr)
+
+            with sync_playwright() as pw:
+                executable = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+                kwargs = {"headless": True, "args": ["--no-sandbox", "--disable-dev-shm-usage"]}
+                if executable:
+                    kwargs["executable_path"] = executable
+                browser = pw.chromium.launch(**kwargs)
+                context = browser.new_context(viewport={"width": 1200, "height": 900})
+                context.add_init_script(
+                    "localStorage.setItem('university-study:reader-mode', 'continuous')"
+                )
+                page = context.new_page()
+                page.goto(html.resolve().as_uri(), wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous'",
+                    timeout=3000,
+                )
+                page.evaluate("window.scrollTo(0, 700)")
+                before = page.evaluate("window.scrollY")
+
+                page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                page.wait_for_function(
+                    "() => document.activeElement?.dataset.viewMode === 'continuous'",
+                    timeout=1000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.viewMode"),
+                    "continuous",
+                )
+                page.keyboard.press("Home")
+                page.keyboard.press("Enter")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookReader === 'continuous-fallback'",
+                    timeout=6000,
+                )
+                page.wait_for_timeout(100)
+                after = page.evaluate("window.scrollY")
+                self.assertLessEqual(abs(after - before), 2)
+                self.assertEqual(page.locator(".notebook-reader").count(), 0)
+                self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
+
+                page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                self.assertTrue(
+                    page.locator('[data-view-mode="pages"]').is_disabled()
+                )
+                self.assertEqual(
+                    page.locator('[data-view-mode="continuous"]').get_attribute("aria-checked"),
+                    "true",
+                )
+                page.keyboard.press("Escape")
+                self.assertEqual(
+                    page.evaluate("document.documentElement.dataset.notebookReader"),
+                    "continuous-fallback",
+                )
+                self.assertEqual(page.locator(".notebook-reader").count(), 0)
                 browser.close()
 
     def test_tablet_browser_audit_has_no_horizontal_or_page_overflow(self):

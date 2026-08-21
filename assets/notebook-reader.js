@@ -1,6 +1,8 @@
 (() => {
   const PAGED_KINDS = new Set(['summary', 'rapid-review', 'learn', 'explain']);
   const STORAGE_KEY = 'university-study:reader-mode';
+  const PAPER_STORAGE_KEY = 'university-study:paper-color';
+  const WIDTH_STORAGE_KEY = 'university-study:reading-width';
   const desktop = window.matchMedia('(min-width: 48.01rem)');
   const print = window.matchMedia('print');
 
@@ -10,7 +12,17 @@
   let reader = null;
   let readerCleanup = null;
   let viewSwitch = null;
+  let viewPanel = null;
+  let viewPanelReturnFocus = null;
   let toastTimer = null;
+  let pageModeUnavailable = null;
+  let topicNavigator = null;
+  let topicPanel = null;
+  let topicPanelReturnFocus = null;
+  let topicScrollCleanup = null;
+  let readerNavigatePage = null;
+  let topics = [];
+  let activeTopicIndex = 0;
 
   const readStoredMode = () => {
     try {
@@ -23,6 +35,403 @@
 
   const writeStoredMode = (value) => {
     try { window.localStorage?.setItem(STORAGE_KEY, value); } catch (_) {}
+  };
+
+  /* Paper color switcher */
+  const PAPER_COLORS = [
+    { name: 'Default',    paper: null,      muted: null },
+    { name: 'Blanco',     paper: '#ffffff', muted: '#f5f5f5' },
+    { name: 'Crema',      paper: '#f5f0e6', muted: '#ede7da' },
+    { name: 'Trigo',      paper: '#f2ece0', muted: '#e9e2d4' },
+    { name: 'Kraft',      paper: '#efe8d4', muted: '#e6dfc9' },
+    { name: 'Pergamino',  paper: '#e8dcc4', muted: '#dfd2b8' },
+  ];
+  let paperColorIndex = 0;
+  let paperColorPanel = null;
+  let paperColorReturnFocus = null;
+
+  const readStoredPaperColor = () => {
+    try {
+      const v = window.localStorage?.getItem(PAPER_STORAGE_KEY);
+      if (v === null) return 0;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 && n < PAPER_COLORS.length ? n : 0;
+    } catch (_) { return 0; }
+  };
+
+  const writeStoredPaperColor = (index) => {
+    try { window.localStorage?.setItem(PAPER_STORAGE_KEY, String(index)); } catch (_) {}
+  };
+
+  const applyPaperColor = (index) => {
+    const root = document.documentElement;
+    const c = PAPER_COLORS[index];
+    if (!c || !c.paper) {
+      root.style.removeProperty('--study-paper');
+      root.style.removeProperty('--study-paper-muted');
+    } else {
+      root.style.setProperty('--study-paper', c.paper);
+      root.style.setProperty('--study-paper-muted', c.muted);
+    }
+  };
+
+  const syncPaperPanelSelection = () => {
+    if (!paperColorPanel) return;
+    paperColorPanel.querySelectorAll('[data-paper-index]').forEach((btn) => {
+      const active = Number(btn.dataset.paperIndex) === paperColorIndex;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-checked', String(active));
+    });
+  };
+
+  const setPaperPanel = (open, {focus = true} = {}) => {
+    if (!paperColorPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
+      if (paperColorPanel.hidden) {
+        const active = document.activeElement;
+        paperColorReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    paperColorPanel.hidden = !open;
+    if (open) {
+      syncPaperPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          paperColorPanel.querySelector('[data-paper-index].is-active')?.focus();
+        });
+      }
+    } else {
+      if (focus && paperColorReturnFocus?.isConnected) {
+        paperColorReturnFocus.focus({preventScroll: true});
+      }
+      paperColorReturnFocus = null;
+    }
+  };
+
+  const selectPaperColor = (index) => {
+    paperColorIndex = index;
+    applyPaperColor(index);
+    writeStoredPaperColor(index);
+    syncPaperPanelSelection();
+  };
+
+  const createPaperColorPanel = () => {
+    if (paperColorPanel) return;
+
+    const panel = document.createElement('section');
+    panel.className = 'notebook-paper-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-paper-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'C');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-paper-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-paper-panel-title';
+    title.textContent = 'Color de hoja';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-paper-panel-shortcut';
+    shortcut.innerHTML = '<kbd>C</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-paper-panel-close';
+    close.setAttribute('aria-label', 'Cerrar selector de color');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setPaperPanel(false));
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-paper-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Colores de hoja');
+    PAPER_COLORS.forEach((color, index) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'notebook-paper-item';
+      item.dataset.paperIndex = String(index);
+      item.setAttribute('role', 'radio');
+      item.setAttribute('aria-checked', 'false');
+      item.setAttribute('aria-label', color.name);
+      item.title = color.name;
+
+      const swatch = document.createElement('span');
+      swatch.className = 'notebook-paper-swatch';
+      if (color.paper) {
+        swatch.style.setProperty('--paper-swatch-color', color.paper);
+      } else {
+        swatch.classList.add('is-default');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'notebook-paper-item-label';
+      label.textContent = color.name;
+
+      item.append(swatch, label);
+      item.addEventListener('click', () => {
+        selectPaperColor(index);
+        setPaperPanel(false, {focus: false});
+      });
+      list.appendChild(item);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-paper-panel-hint';
+    hint.textContent = '\u2190 \u2192 para recorrer \u00b7 Enter para elegir \u00b7 Esc para cerrar';
+    panel.append(head, list, hint);
+
+    document.body.appendChild(panel);
+    paperColorPanel = panel;
+
+    document.addEventListener('pointerdown', (event) => {
+      if (paperColorPanel?.hidden !== false) return;
+      if (paperColorPanel.contains(event.target)) return;
+      setPaperPanel(false, {focus: false});
+    });
+  };
+
+  const onPaperColorShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target)) return;
+    if (event.key?.toLowerCase() !== 'c') return;
+    event.preventDefault();
+    createPaperColorPanel();
+    setPaperPanel(paperColorPanel?.hidden !== false);
+  };
+
+  const onPaperPanelKeydown = (event) => {
+    if (paperColorPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setPaperPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(paperColorPanel.querySelectorAll('[data-paper-index]'));
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      selectPaperColor(Number(buttons[current]?.dataset.paperIndex ?? 0));
+      setPaperPanel(false, {focus: false});
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
+  /* Reading width switcher: three pencil-sketched measures for the prose
+     column. 'hoja' keeps the theme default; the others narrow the measure so
+     long reading sessions stay comfortable. Figures keep their own width. */
+  const WIDTH_MODES = [
+    { id: 'hoja',   label: 'Hoja',   description: 'El texto ocupa toda la hoja.' },
+    { id: 'comodo', label: 'Cómodo', description: 'Un paso adentro del margen, cómodo para leer largo rato.' },
+    { id: 'libro',  label: 'Libro',  description: 'Columna angosta, como las páginas de un libro.' },
+  ];
+  let widthMode = 'hoja';
+  let widthPanel = null;
+  let widthPanelReturnFocus = null;
+
+  const readStoredWidth = () => {
+    try {
+      const v = window.localStorage?.getItem(WIDTH_STORAGE_KEY);
+      return WIDTH_MODES.some((mode) => mode.id === v) ? v : 'hoja';
+    } catch (_) { return 'hoja'; }
+  };
+
+  const writeStoredWidth = (id) => {
+    try { window.localStorage?.setItem(WIDTH_STORAGE_KEY, id); } catch (_) {}
+  };
+
+  const applyWidthMode = (id) => {
+    const root = document.documentElement;
+    widthMode = WIDTH_MODES.some((mode) => mode.id === id) ? id : 'hoja';
+    if (widthMode === 'hoja') delete root.dataset.notebookWidth;
+    else root.dataset.notebookWidth = widthMode;
+  };
+
+  const syncWidthPanelSelection = () => {
+    if (!widthPanel) return;
+    widthPanel.querySelectorAll('[data-width-mode]').forEach((button) => {
+      const active = button.dataset.widthMode === widthMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+    });
+  };
+
+  const setWidthPanel = (open, {focus = true} = {}) => {
+    if (!widthPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setPaperPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
+      if (widthPanel.hidden) {
+        const active = document.activeElement;
+        widthPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    widthPanel.hidden = !open;
+    if (open) {
+      document.documentElement.dataset.notebookWidthMenu = 'open';
+      syncWidthPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          widthPanel.querySelector('[data-width-mode].is-active')?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookWidthMenu;
+      if (focus && widthPanelReturnFocus?.isConnected) {
+        widthPanelReturnFocus.focus({preventScroll: true});
+      }
+      widthPanelReturnFocus = null;
+    }
+  };
+
+  const makeWidthSketch = (id) => {
+    const sketch = document.createElement('span');
+    sketch.className = `notebook-width-sketch is-${id}`;
+    sketch.setAttribute('aria-hidden', 'true');
+    sketch.innerHTML = `
+      <span class="notebook-width-sketch-sheet">
+        <span class="notebook-width-sketch-line is-1"></span>
+        <span class="notebook-width-sketch-line is-2"></span>
+        <span class="notebook-width-sketch-line is-3"></span>
+        <span class="notebook-width-sketch-line is-4"></span>
+      </span>
+    `;
+    return sketch;
+  };
+
+  const chooseWidthMode = async (id) => {
+    if (!WIDTH_MODES.some((mode) => mode.id === id)) return;
+    setWidthPanel(false, {focus: false});
+    applyWidthMode(id);
+    writeStoredWidth(id);
+    syncWidthPanelSelection();
+    // Pages are laid out against the old measure; repaginate in place and put
+    // the reader back where the reader was.
+    if (mounted && !mounting) {
+      const scrollPosition = {left: window.scrollX, top: window.scrollY};
+      restoreContinuous('continuous');
+      await mount();
+      restoreScrollPosition(scrollPosition);
+    }
+    showToast(`Ancho: ${WIDTH_MODES.find((mode) => mode.id === id)?.label ?? id}`);
+  };
+
+  const createWidthPanel = () => {
+    if (widthPanel) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-width-panel';
+    panel.className = 'notebook-width-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-width-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'A');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-width-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-width-panel-title';
+    title.textContent = 'Ancho de lectura';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-width-panel-shortcut';
+    shortcut.innerHTML = '<kbd>A</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-width-panel-close';
+    close.textContent = 'Cerrar';
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-width-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Ancho de lectura');
+
+    WIDTH_MODES.forEach((mode) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'notebook-width-option';
+      option.dataset.widthMode = mode.id;
+      option.setAttribute('role', 'radio');
+      option.setAttribute('aria-checked', 'false');
+      const copy = document.createElement('span');
+      copy.className = 'notebook-width-option-copy';
+      const label = document.createElement('span');
+      label.className = 'notebook-width-option-label';
+      label.textContent = mode.label;
+      const description = document.createElement('span');
+      description.className = 'notebook-width-option-description';
+      description.textContent = mode.description;
+      copy.append(label, description);
+      option.append(makeWidthSketch(mode.id), copy);
+      list.appendChild(option);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-width-panel-hint';
+    hint.innerHTML = '<kbd>↑</kbd><kbd>↓</kbd> recorrer · <kbd>Enter</kbd> elegir · <kbd>Esc</kbd> cerrar';
+
+    panel.append(head, list, hint);
+    document.body.appendChild(panel);
+    widthPanel = panel;
+
+    panel.addEventListener('click', (event) => {
+      const option = event.target instanceof Element ? event.target.closest('[data-width-mode]') : null;
+      if (option) void chooseWidthMode(option.dataset.widthMode);
+      else if (event.target === close) setWidthPanel(false);
+    });
+  };
+
+  const onWidthShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || print.matches) return;
+    if (event.key?.toLowerCase() !== 'a') return;
+    event.preventDefault();
+    createWidthPanel();
+    setWidthPanel(widthPanel?.hidden !== false);
+  };
+
+  const onWidthPanelKeydown = (event) => {
+    if (widthPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setWidthPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(widthPanel.querySelectorAll('[data-width-mode]:not(:disabled)'));
+    if (!buttons.length) return;
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      void chooseWidthMode(buttons[current]?.dataset.widthMode);
+      return;
+    }
+    buttons[next]?.focus();
   };
 
   // Pages remain the desktop/tablet default so existing artifacts keep the
@@ -65,7 +474,43 @@
     return parseFloat(token) || fallback;
   };
 
+  const isEditableTarget = (target) => {
+    const tag = target?.tagName?.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
+  };
+
   const isHeadingLike = (node) => node?.matches?.('.section-head, .subsection-head, .minor-head');
+
+  const cleanConceptLabel = (value) => String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s\-–—:;,.]+|[\s\-–—:;,.]+$/g, '')
+    .trim();
+
+  const extractConcepts = (roots, fallback = []) => {
+    const concepts = [];
+    const seen = new Set();
+    const add = (value) => {
+      const label = cleanConceptLabel(value);
+      const key = label.toLocaleLowerCase('es');
+      if (!label || label.length < 2 || label.length > 52 || label.split(/\s+/).length > 8) return;
+      if (/^\d+(?:[.,]\d+)?$/.test(label) || seen.has(key)) return;
+      seen.add(key);
+      concepts.push(label);
+    };
+    const collect = (selector) => {
+      roots.forEach((root) => {
+        if (root.matches?.(selector)) add(root.textContent);
+        root.querySelectorAll?.(selector).forEach((node) => add(node.textContent));
+      });
+    };
+
+    // Structural labels and explicit semantic terms outrank inline emphasis;
+    // bold text fills any remaining slots without becoming an invented index.
+    collect('.subsection-head h3, .minor-head h4, .callout .term');
+    collect('strong');
+    fallback.forEach(add);
+    return concepts.slice(0, 4);
+  };
 
   const makePage = (source, pageIndex) => {
     const page = source.cloneNode(false);
@@ -83,6 +528,524 @@
     }
   };
 
+  const clearPageFit = (node) => {
+    node?.classList?.remove('notebook-fit-page');
+    node?.style?.removeProperty('--notebook-fit-block-height');
+  };
+
+  const clearPaginationMarks = (root) => {
+    root?.querySelectorAll?.('.notebook-fit-page').forEach(clearPageFit);
+    root?.querySelectorAll?.('[data-notebook-figure-number]').forEach((figure) => {
+      delete figure.dataset.notebookFigureNumber;
+    });
+    root?.querySelectorAll?.('[data-notebook-topic-number]').forEach((mark) => {
+      delete mark.dataset.notebookTopicNumber;
+    });
+  };
+
+  const restoreScrollPosition = ({left, top}) => {
+    window.scrollTo({left, top, behavior: 'instant'});
+    window.requestAnimationFrame(() => window.scrollTo({left, top, behavior: 'instant'}));
+  };
+
+  const collectTopics = (source) => {
+    const headings = Array.from(source.querySelectorAll(':scope > .section-head > h2[id]'));
+    if (!headings.length) {
+      const label = cleanConceptLabel(source.querySelector('h1')?.textContent) || 'Documento';
+      return [{
+        id: '',
+        index: 0,
+        label,
+        number: 1,
+        page: 1,
+        concepts: extractConcepts([source], [label]),
+      }];
+    }
+    return headings.map((heading, index) => {
+      const section = heading.parentElement;
+      section?.classList.add('notebook-section-tab');
+      if (section) {
+        section.dataset.topicIndex = String(index);
+        section.dataset.topicNumber = String(index + 1);
+      }
+      const roots = [];
+      let sibling = section?.nextElementSibling || null;
+      while (sibling && !sibling.matches('.section-head')) {
+        roots.push(sibling);
+        sibling = sibling.nextElementSibling;
+      }
+      const label = heading.textContent.trim();
+      return {
+        id: heading.id,
+        index,
+        label,
+        number: index + 1,
+        page: null,
+        concepts: extractConcepts(roots, [label]),
+      };
+    });
+  };
+
+  const setActiveTopic = (index) => {
+    if (!topics.length) return;
+    activeTopicIndex = Math.max(0, Math.min(topics.length - 1, index));
+    const current = String(activeTopicIndex);
+    document.querySelectorAll('.section-head.notebook-section-tab[data-topic-index]').forEach((section) => {
+      section.classList.toggle('is-current-topic', section.dataset.topicIndex === current);
+    });
+    for (const root of [topicNavigator, topicPanel]) {
+      if (!root) continue;
+      root.querySelectorAll('[data-topic-index]').forEach((button) => {
+        const active = button.dataset.topicIndex === current;
+        if (active) button.setAttribute('aria-current', 'location');
+        else button.removeAttribute('aria-current');
+      });
+      root.dataset.activeTopic = String(activeTopicIndex + 1);
+    }
+    document.documentElement.dataset.notebookTopic = String(activeTopicIndex + 1);
+  };
+
+  const setTopicPanel = (open, {focus = true} = {}) => {
+    if (!topicNavigator || !topicPanel) return;
+    if (open) {
+      setPaperPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
+      if (topicPanel.hidden) {
+        const active = document.activeElement;
+        topicPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    topicPanel.hidden = !open;
+    topicNavigator.dataset.open = open ? 'true' : 'false';
+    if (open) {
+      document.documentElement.dataset.notebookTopicIndex = 'open';
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          topicPanel.querySelector(`[data-topic-index="${activeTopicIndex}"]`)?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookTopicIndex;
+      if (focus && topicPanelReturnFocus?.isConnected) {
+        topicPanelReturnFocus.focus({preventScroll: true});
+      }
+      topicPanelReturnFocus = null;
+    }
+  };
+
+  const focusTopicHeading = (topic, root = document) => {
+    const heading = Array.from(root.querySelectorAll?.('h2[id]') || [])
+      .find((node) => node.id === topic.id);
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({preventScroll: true});
+  };
+
+  const navigateToTopic = (index) => {
+    const topic = topics[index];
+    if (!topic) return;
+    setActiveTopic(index);
+    setTopicPanel(false, {focus: false});
+
+    if (mounted && topic.page && readerNavigatePage) {
+      readerNavigatePage(topic.page);
+      window.requestAnimationFrame(() => focusTopicHeading(topic, reader || document));
+      return;
+    }
+
+    const heading = document.getElementById(topic.id);
+    if (!heading) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    heading.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+    window.setTimeout(() => focusTopicHeading(topic), reduced ? 0 : 320);
+  };
+
+  const makeTopicButton = (topic, className) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.dataset.topicIndex = String(topic.index);
+    button.setAttribute('aria-controls', topic.id);
+    button.setAttribute('aria-label', `Ir al Tema ${topic.number}: ${topic.label}`);
+    button.title = `Tema ${topic.number} · ${topic.label}`;
+    const ordinal = document.createElement('span');
+    ordinal.className = 'notebook-topic-item-number';
+    ordinal.textContent = `Tema ${topic.number}`;
+    const label = document.createElement('span');
+    label.className = 'notebook-topic-item-label';
+    label.textContent = topic.label;
+    button.append(ordinal, label);
+    button.addEventListener('click', () => navigateToTopic(topic.index));
+    return button;
+  };
+
+  const createTopicNavigation = () => {
+    if (topicNavigator || topics.length < 2) return;
+
+    // Keep a zero-chrome host for reader-mode state. The index is deliberately
+    // summoned only with T: a permanently visible shortcut label competes with
+    // the physical topic tabs and will be replaced by the shared shortcuts UI.
+    const nav = document.createElement('div');
+    nav.className = 'notebook-topic-tabs is-detached';
+    nav.setAttribute('aria-hidden', 'true');
+    nav.hidden = true;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-topic-index-panel';
+    panel.className = 'notebook-topic-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-topic-index-title');
+    panel.setAttribute('aria-keyshortcuts', 'T');
+    panel.hidden = true;
+
+    const panelHead = document.createElement('div');
+    panelHead.className = 'notebook-topic-panel-head';
+    const panelTitle = document.createElement('h2');
+    panelTitle.id = 'notebook-topic-index-title';
+    panelTitle.textContent = 'Índice de temas';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-topic-panel-shortcut';
+    shortcut.innerHTML = '<kbd>T</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-topic-panel-close';
+    close.setAttribute('aria-label', 'Cerrar índice de temas');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setTopicPanel(false));
+    panelHead.append(panelTitle, shortcut, close);
+
+    const list = document.createElement('ol');
+    list.className = 'notebook-topic-list';
+    topics.forEach((topic) => {
+      const item = document.createElement('li');
+      item.appendChild(makeTopicButton(topic, 'notebook-topic-list-button'));
+      list.appendChild(item);
+    });
+    const hint = document.createElement('p');
+    hint.className = 'notebook-topic-panel-hint';
+    hint.textContent = '↑ ↓ para recorrer · Enter para ir · Esc para cerrar';
+    panel.append(panelHead, list, hint);
+
+    document.body.append(nav, panel);
+    topicNavigator = nav;
+    topicPanel = panel;
+    setActiveTopic(0);
+
+    document.addEventListener('pointerdown', (event) => {
+      if (topicPanel?.hidden !== false) return;
+      if (topicPanel.contains(event.target) || topicNavigator.contains(event.target)) return;
+      setTopicPanel(false, {focus: false});
+    });
+  };
+
+  const detachTopicNavigation = () => {
+    topicScrollCleanup?.();
+    topicScrollCleanup = null;
+    if (topicNavigator) {
+      topicNavigator.hidden = true;
+      topicNavigator.classList.add('is-detached');
+    }
+    topicNavigator?.remove();
+    document.querySelectorAll('.notebook-topic-host').forEach((host) => {
+      host.classList.remove('notebook-topic-host');
+    });
+  };
+
+  const bindContinuousTopicTracking = () => {
+    topicScrollCleanup?.();
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const threshold = Math.min(window.innerHeight * .28, 240);
+      let current = 0;
+      topics.forEach((topic, index) => {
+        const heading = document.getElementById(topic.id);
+        if (heading && heading.getBoundingClientRect().top <= threshold) current = index;
+      });
+      // The last heading of a short document cannot always reach the threshold.
+      // Treat the physical end of the article as the final topic so a direct
+      // jump and manual scrolling agree on the selected tab.
+      const atDocumentEnd = window.scrollY + window.innerHeight
+        >= document.documentElement.scrollHeight - 2;
+      if (atDocumentEnd) current = topics.length - 1;
+      setActiveTopic(current);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', schedule, {passive: true});
+    window.addEventListener('resize', schedule);
+    topicScrollCleanup = () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+    update();
+  };
+
+  const attachTopicNavigation = (mode, host) => {
+    if (!host) return;
+    detachTopicNavigation();
+    // A single-topic document does not need an index panel.
+    if (!topicNavigator) {
+      if (mode === 'continuous') bindContinuousTopicTracking();
+      return;
+    }
+    topicNavigator.hidden = false;
+    topicNavigator.classList.remove('is-detached');
+    topicNavigator.classList.toggle('is-paged', mode === 'pages');
+    topicNavigator.classList.toggle('is-continuous', mode === 'continuous');
+    host.appendChild(topicNavigator);
+    if (mode === 'continuous') {
+      host.classList.add('notebook-topic-host');
+      topicNavigator.dataset.readerSide = 'front';
+      bindContinuousTopicTracking();
+    }
+  };
+
+  const mapTopicPages = (pages) => {
+    topics.forEach((topic) => {
+      const page = pages.find((candidate) => Array.from(candidate.querySelectorAll('h2[id]'))
+        .some((heading) => heading.id === topic.id));
+      topic.page = page ? Number(page.dataset.page) : null;
+    });
+  };
+
+  const syncTopicFromPage = (physicalPage, back) => {
+    if (!topics.length) return;
+    let current = 0;
+    topics.forEach((topic, index) => {
+      if (topic.page && topic.page <= physicalPage) current = index;
+    });
+    if (topicNavigator) topicNavigator.dataset.readerSide = back ? 'back' : 'front';
+    setActiveTopic(current);
+  };
+
+  const onTopicShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target) || !topicNavigator || print.matches) return;
+    const key = event.key?.toLowerCase();
+    if (key === 't') {
+      event.preventDefault();
+      setTopicPanel(topicPanel?.hidden !== false);
+      return;
+    }
+    if (topicPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setTopicPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(topicPanel.querySelectorAll('[data-topic-index]'));
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else next = (current - 1 + buttons.length) % buttons.length;
+    buttons[next]?.focus();
+  };
+
+  const currentViewMode = () => (mounted ? 'pages' : 'continuous');
+
+  const syncViewPanelSelection = () => {
+    if (!viewPanel) return;
+    const actualMode = currentViewMode();
+    viewPanel.querySelectorAll('[data-view-mode]').forEach((button) => {
+      const mode = button.dataset.viewMode;
+      const active = mode === actualMode;
+      const unavailable = mode === 'pages' && (!desktop.matches || Boolean(pageModeUnavailable));
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+      button.disabled = unavailable;
+      button.setAttribute('aria-disabled', String(unavailable));
+      const description = button.querySelector('.notebook-view-option-description');
+      if (description && mode === 'pages') {
+        description.textContent = !desktop.matches
+          ? 'Disponible en tablet y escritorio.'
+          : pageModeUnavailable
+            ? 'Este resumen necesita la vista continua.'
+            : 'Pasá hojas físicas, frente y dorso.';
+      }
+    });
+    viewPanel.dataset.mode = actualMode;
+  };
+
+  const setViewPanel = (open, {focus = true} = {}) => {
+    if (!viewPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setPaperPanel(false, {focus: false});
+      setWidthPanel(false, {focus: false});
+      if (viewPanel.hidden) {
+        const active = document.activeElement;
+        viewPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    viewPanel.hidden = !open;
+    if (open) {
+      document.documentElement.dataset.notebookViewMenu = 'open';
+      syncViewPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          viewPanel.querySelector('[data-view-mode].is-active:not(:disabled)')?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookViewMenu;
+      if (focus && viewPanelReturnFocus?.isConnected) {
+        viewPanelReturnFocus.focus({preventScroll: true});
+      }
+      viewPanelReturnFocus = null;
+    }
+  };
+
+  const makeViewSketch = (mode) => {
+    const sketch = document.createElement('span');
+    sketch.className = `notebook-view-sketch is-${mode}`;
+    sketch.setAttribute('aria-hidden', 'true');
+    if (mode === 'pages') {
+      sketch.innerHTML = `
+        <span class="notebook-view-sketch-sheet is-back"></span>
+        <span class="notebook-view-sketch-sheet is-middle"></span>
+        <span class="notebook-view-sketch-sheet is-front"></span>
+        <span class="notebook-view-sketch-turn"></span>
+      `;
+    } else {
+      sketch.innerHTML = `
+        <span class="notebook-view-sketch-strip"></span>
+        <span class="notebook-view-sketch-flow"></span>
+      `;
+    }
+    return sketch;
+  };
+
+  const chooseViewMode = async (mode) => {
+    setViewPanel(false, {focus: false});
+    const actual = await setViewMode(mode);
+    syncViewPanelSelection();
+    showModeToast(actual);
+  };
+
+  const createViewPanel = () => {
+    if (viewPanel) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-view-panel';
+    panel.className = 'notebook-view-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-view-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'V');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-view-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-view-panel-title';
+    title.textContent = 'Vista de lectura';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-view-panel-shortcut';
+    shortcut.innerHTML = '<kbd>V</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-view-panel-close';
+    close.setAttribute('aria-label', 'Cerrar selector de vista');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setViewPanel(false));
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-view-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Vistas de lectura');
+    const choices = [
+      {
+        mode: 'pages',
+        label: 'Hojas',
+        description: 'Pasá hojas físicas, frente y dorso.',
+      },
+      {
+        mode: 'continuous',
+        label: 'Continua',
+        description: 'Leé todo seguido desplazándote hacia abajo.',
+      },
+    ];
+    choices.forEach(({mode, label, description}) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'notebook-view-option';
+      button.dataset.viewMode = mode;
+      button.setAttribute('role', 'radio');
+      button.setAttribute('aria-checked', 'false');
+      button.setAttribute('aria-label', `${label}: ${description}`);
+
+      const copy = document.createElement('span');
+      copy.className = 'notebook-view-option-copy';
+      const optionLabel = document.createElement('strong');
+      optionLabel.className = 'notebook-view-option-label';
+      optionLabel.textContent = label;
+      const optionDescription = document.createElement('span');
+      optionDescription.className = 'notebook-view-option-description';
+      optionDescription.textContent = description;
+      copy.append(optionLabel, optionDescription);
+
+      button.append(makeViewSketch(mode), copy);
+      button.addEventListener('click', () => void chooseViewMode(mode));
+      list.appendChild(button);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-view-panel-hint';
+    hint.textContent = '↑ ↓ para recorrer · Enter para elegir · Esc para cerrar';
+    panel.append(head, list, hint);
+    document.body.appendChild(panel);
+    viewPanel = panel;
+    syncViewPanelSelection();
+
+    document.addEventListener('pointerdown', (event) => {
+      if (viewPanel?.hidden !== false) return;
+      if (viewPanel.contains(event.target)) return;
+      setViewPanel(false, {focus: false});
+    });
+  };
+
+  const onViewPanelKeydown = (event) => {
+    if (viewPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setViewPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(viewPanel.querySelectorAll('[data-view-mode]:not(:disabled)'));
+    if (!buttons.length) return;
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      void chooseViewMode(buttons[current]?.dataset.viewMode);
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
   const syncViewSwitch = () => {
     if (!viewSwitch) return;
     const actualMode = mounted ? 'pages' : 'continuous';
@@ -97,6 +1060,7 @@
           : 'La vista por hojas está disponible en tablet y escritorio';
       }
     });
+    syncViewPanelSelection();
   };
 
   // The old visual switch is kept as hidden semantic state for compatibility;
@@ -118,7 +1082,7 @@
     return control;
   };
 
-  const showModeToast = (mode) => {
+  const showToast = (text) => {
     let toast = document.querySelector('.notebook-mode-toast');
     if (!toast) {
       toast = document.createElement('div');
@@ -127,10 +1091,14 @@
       toast.setAttribute('aria-live', 'polite');
       document.body.appendChild(toast);
     }
-    toast.textContent = mode === 'pages' ? 'Vista Hojas · V' : 'Vista Continua · V';
+    toast.textContent = text;
     toast.classList.add('is-visible');
     if (toastTimer) window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1200);
+  };
+
+  const showModeToast = (mode) => {
+    showToast(mode === 'pages' ? 'Vista Hojas' : 'Vista Continua');
   };
 
   const createReaderShell = () => {
@@ -152,6 +1120,16 @@
 
   const paginate = (source, stack) => {
     const nodes = Array.from(source.children);
+    source.querySelectorAll(':scope > .section-head').forEach((heading, index) => {
+      const mark = heading.querySelector(':scope > .num');
+      if (mark) mark.dataset.notebookTopicNumber = String(index + 1);
+    });
+    source.querySelectorAll('figure').forEach((figure, index) => {
+      const number = String(index + 1);
+      figure.dataset.notebookFigureNumber = number;
+      const caption = figure.querySelector(':scope > figcaption');
+      if (caption) caption.dataset.notebookFigureNumber = number;
+    });
     const measure = document.createElement('div');
     measure.className = 'notebook-measure-host';
     stack.appendChild(measure);
@@ -166,8 +1144,37 @@
     measure.appendChild(current);
     pages.push(current);
 
+    const fitStudySketch = (page, node) => {
+      if (!node.matches?.('figure.study-sketch')) return false;
+
+      const originalHeight = node.getBoundingClientRect().height;
+      const firstTarget = Math.floor(originalHeight - (page.scrollHeight - page.clientHeight) - 2);
+      const minimumReadableHeight = Math.floor(page.clientHeight * .55);
+      if (firstTarget < minimumReadableHeight) return false;
+
+      node.style.setProperty('--notebook-fit-block-height', `${firstTarget}px`);
+      node.classList.add('notebook-fit-page');
+
+      // Grid/caption rounding can leave a residual pixel or two. Tighten the
+      // fitted block once more using the rendered overflow instead of clipping.
+      if (overflows(page)) {
+        const renderedHeight = node.getBoundingClientRect().height;
+        const correctedTarget = Math.floor(renderedHeight - (page.scrollHeight - page.clientHeight) - 2);
+        if (correctedTarget < minimumReadableHeight) {
+          clearPageFit(node);
+          return false;
+        }
+        node.style.setProperty('--notebook-fit-block-height', `${correctedTarget}px`);
+      }
+
+      if (!overflows(page)) return true;
+      clearPageFit(node);
+      return false;
+    };
+
     const fail = (reason) => {
       restorePageContent(source, pages);
+      clearPaginationMarks(source);
       measure.remove();
       source.dataset.notebookReaderFallback = reason;
       document.documentElement.dataset.notebookReader = 'continuous-fallback';
@@ -194,9 +1201,10 @@
       if (carry) current.appendChild(carry);
       current.appendChild(node);
 
-      // A component that cannot fit on an empty physical page falls back to the
-      // proven continuous renderer instead of clipping or inner scrolling.
-      if (overflows(current)) {
+      // Tall deterministic sketches may shrink to a dedicated leaf while their
+      // SVG keeps its aspect ratio. Any other indivisible oversize component
+      // falls back to the proven continuous renderer.
+      if (overflows(current) && !fitStudySketch(current, node)) {
         return fail(`oversize-block:${node.className || node.tagName.toLowerCase()}`);
       }
     }
@@ -288,6 +1296,10 @@
         leaf.classList.toggle('is-active', d === 0);
         leaf.classList.toggle('is-neighbor', distance === 1);
         leaf.classList.toggle('is-hidden', distance > 1);
+        // Keep distant sheets out of sight via opacity while leaving their text
+        // in the rendered DOM. aria-hidden still excludes them from assistive
+        // navigation until the sheet becomes active or adjacent.
+        leaf.style.visibility = distance > 1 ? 'visible' : '';
         leaf.style.zIndex = String(20 - Math.min(distance, 19));
         leaf.tabIndex = distance === 1 ? 0 : -1;
         leaf.setAttribute('aria-hidden', distance > 1 ? 'true' : 'false');
@@ -313,15 +1325,23 @@
       status.textContent = `Hoja ${active + 1} de ${leaves.length} · ${back ? 'dorso' : 'frente'} · p. ${Math.min(physicalPage, pages.length)}`;
       shell.dataset.activeLeaf = String(active + 1);
       shell.dataset.activeSide = back ? 'back' : 'front';
+      syncTopicFromPage(Math.min(physicalPage, pages.length), back);
     };
 
-    const go = (index) => {
+    const go = (index, {back = false} = {}) => {
       const next = Math.max(0, Math.min(leaves.length - 1, index));
-      if (next === active) return;
-      rotations[active] = 0;
-      active = next;
-      rotations[active] = 0;
+      const targetRotation = back ? 180 : 0;
+      if (next !== active) {
+        rotations[active] = 0;
+        active = next;
+      }
+      rotations[active] = targetRotation;
       update();
+    };
+
+    readerNavigatePage = (pageNumber) => {
+      const targetPage = Math.max(1, Math.min(pages.length, Number(pageNumber) || 1));
+      go(Math.floor((targetPage - 1) / 2), {back: targetPage % 2 === 0});
     };
 
     pagePairs.forEach(([front, back], index) => {
@@ -349,7 +1369,7 @@
       const numberBack = document.createElement('div');
       numberBack.className = 'notebook-page-number';
       numberBack.textContent = `— ${index * 2 + 2} —`;
-      backFace.appendChild(back);
+      backFace.appendChild(numberBack);
 
       const setRotation = (value, dragging = false) => {
         rotations[index] = value;
@@ -382,7 +1402,8 @@
     });
 
     const onKeydown = (event) => {
-      if (!shell.isConnected || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (!shell.isConnected || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (topicPanel?.hidden === false || viewPanel?.hidden === false) return;
       const activeElement = document.activeElement;
       const tag = activeElement?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || activeElement?.isContentEditable) return;
@@ -398,8 +1419,11 @@
   };
 
   const restoreContinuous = (state = 'continuous') => {
+    setTopicPanel(false, {focus: false});
+    detachTopicNavigation();
     readerCleanup?.();
     readerCleanup = null;
+    readerNavigatePage = null;
     if (mounted && reader?.isConnected && originalTemplate) {
       reader.replaceWith(originalTemplate.cloneNode(true));
     }
@@ -408,13 +1432,15 @@
     document.documentElement.dataset.notebookReader = state;
     delete document.documentElement.dataset.notebookPages;
     syncViewSwitch();
+    attachTopicNavigation('continuous', document.querySelector('.study-grid > article'));
   };
 
-  const mount = async () => {
-    if (mounted || mounting || effectiveMode() !== 'pages') return;
+  const mount = async ({persistFallback = false} = {}) => {
+    if (mounted) return true;
+    if (mounting || effectiveMode() !== 'pages' || pageModeUnavailable) return false;
     const grid = document.querySelector('.study-grid');
     const source = grid?.querySelector(':scope > article');
-    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
+    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return false;
 
     if (!originalTemplate) originalTemplate = source.cloneNode(true);
     mounting = true;
@@ -422,96 +1448,137 @@
     if (effectiveMode() !== 'pages' || !source.isConnected) {
       mounting = false;
       syncViewSwitch();
-      return;
+      if (source.isConnected) attachTopicNavigation('continuous', source);
+      return false;
     }
 
+    setTopicPanel(false, {focus: false});
+    detachTopicNavigation();
+    delete source.dataset.notebookReaderFallback;
+    const scrollPosition = {left: window.scrollX, top: window.scrollY};
     const {shell, stack, status} = createReaderShell();
     grid.insertBefore(shell, source);
     const pages = paginate(source, stack);
     if (!pages) {
+      pageModeUnavailable = source.dataset.notebookReaderFallback || 'pagination-failed';
       shell.remove();
       mounting = false;
+      preferredMode = 'continuous';
+      if (persistFallback) writeStoredMode('continuous');
       syncViewSwitch();
-      return;
+      attachTopicNavigation('continuous', source);
+      restoreScrollPosition(scrollPosition);
+      return false;
     }
 
     // A one-page artifact gains nothing from the reader.
     if (pages.length < 2) {
       restorePageContent(source, pages);
+      clearPaginationMarks(source);
       shell.remove();
       mounting = false;
+      pageModeUnavailable = 'single-page';
+      preferredMode = 'continuous';
+      if (persistFallback) writeStoredMode('continuous');
       document.documentElement.dataset.notebookReader = 'continuous';
       syncViewSwitch();
-      return;
+      attachTopicNavigation('continuous', source);
+      restoreScrollPosition(scrollPosition);
+      return false;
     }
 
+    mapTopicPages(pages);
     reader = buildReader(source, pages, shell, stack, status);
+    attachTopicNavigation('pages', stack);
     source.remove();
     mounted = true;
     mounting = false;
     document.documentElement.dataset.notebookReader = 'ready';
     document.documentElement.dataset.notebookPages = String(pages.length);
     syncViewSwitch();
+    return true;
   };
 
-  const setViewMode = (mode, {persist = true} = {}) => {
-    if (mode !== 'continuous' && mode !== 'pages') return;
-    if (mode === 'pages' && !desktop.matches) return;
+  const setViewMode = async (mode, {persist = true} = {}) => {
+    if (mode !== 'continuous' && mode !== 'pages') return mounted ? 'pages' : 'continuous';
+    if (mode === 'pages' && (!desktop.matches || pageModeUnavailable)) {
+      preferredMode = 'continuous';
+      if (persist) writeStoredMode('continuous');
+      syncViewSwitch();
+      return 'continuous';
+    }
     preferredMode = mode;
     if (persist) writeStoredMode(mode);
 
     if (effectiveMode() === 'pages') {
-      mount();
+      const ready = await mount({persistFallback: persist});
+      return ready ? 'pages' : 'continuous';
     } else {
       restoreContinuous('continuous');
     }
     syncViewSwitch();
-  };
-
-  const toggleViewMode = () => {
-    if (!desktop.matches || print.matches) return;
-    const next = mounted || mounting ? 'continuous' : 'pages';
-    setViewMode(next);
-    showModeToast(next);
-  };
-
-  const isEditableTarget = (target) => {
-    const tag = target?.tagName?.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || target?.isContentEditable;
+    return 'continuous';
   };
 
   const onViewShortcut = (event) => {
     if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
-    if (isEditableTarget(event.target)) return;
+    if (isEditableTarget(event.target) || !viewPanel || print.matches) return;
     if (event.key?.toLowerCase() !== 'v') return;
-    if (!desktop.matches || print.matches) return;
     event.preventDefault();
-    toggleViewMode();
+    setViewPanel(viewPanel.hidden);
   };
 
   const restoreForPrint = () => {
+    setViewPanel(false, {focus: false});
     if (mounted) restoreContinuous('print-continuous');
   };
 
   const init = () => {
+    paperColorIndex = readStoredPaperColor();
+    applyPaperColor(paperColorIndex);
+    document.addEventListener('keydown', onPaperColorShortcut);
+    document.addEventListener('keydown', onPaperPanelKeydown);
+
+    applyWidthMode(readStoredWidth());
+    document.addEventListener('keydown', onWidthShortcut);
+    document.addEventListener('keydown', onWidthPanelKeydown);
+
     const source = document.querySelector('.study-grid > article');
-    if (!source || !PAGED_KINDS.has(source.dataset.kind || '')) return;
+    if (!source) return;
+    const pagedEligible = PAGED_KINDS.has(source.dataset.kind || '');
+    topics = collectTopics(source);
+    setActiveTopic(0);
+    createTopicNavigation();
+    document.addEventListener('keydown', onTopicShortcut);
+
+    // Long guides keep their established continuous surface and TOC, while
+    // sharing the same edge-tab/topic-index contract requested for every
+    // semantic top-level topic.
+    if (!pagedEligible) {
+      attachTopicNavigation('continuous', source);
+      return;
+    }
+
     originalTemplate = source.cloneNode(true);
     createViewSwitch();
+    createViewPanel();
+    document.addEventListener('keydown', onViewPanelKeydown);
     document.addEventListener('keydown', onViewShortcut);
-    if (effectiveMode() === 'pages') mount();
+    if (effectiveMode() === 'pages') void mount();
     else {
       document.documentElement.dataset.notebookReader = 'continuous';
       syncViewSwitch();
+      attachTopicNavigation('continuous', source);
     }
   };
 
   window.addEventListener('beforeprint', restoreForPrint);
   window.addEventListener('afterprint', () => {
-    if (effectiveMode() === 'pages') mount();
+    if (effectiveMode() === 'pages') void mount();
   });
   desktop.addEventListener?.('change', () => {
-    if (effectiveMode() === 'pages') mount();
+    pageModeUnavailable = null;
+    if (effectiveMode() === 'pages') void mount();
     else restoreContinuous('continuous');
     syncViewSwitch();
   });

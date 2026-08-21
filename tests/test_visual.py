@@ -38,10 +38,16 @@ class VisualSystemTests(unittest.TestCase):
         self.assertIn("data-study-theme=\"dark\"", css)
         self.assertIn("print-color-adjust", css)
         self.assertIn("semantic rails", css.lower())
-        self.assertIn("--study-paper: #fbf9f4", css)
-        self.assertNotIn("linear-gradient", css)
+        self.assertIn("--study-paper: #f2ece0", css)
+        self.assertIn("--notebook-measure: 66rem", css)
+        self.assertIn("--notebook-wide: 48rem", css)
+        self.assertIn("--notebook-paper-width: 76rem", css)
+        # Ruled paper and restrained physical-depth cues are the active Carpeta
+        # notebook grammar; gradients are no longer categorically forbidden.
+        self.assertIn("--notebook-rule-image", css)
+        self.assertIn("background-image:", css)
         self.assertIn("--shadow-paper: none", css)
-        self.assertIn("contemporary technical manual", (ROOT / "design" / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("university study notebook", (ROOT / "design" / "README.md").read_text(encoding="utf-8").lower())
         self.assertIn(".book-running-line", css)
         self.assertIn(".section-head", css)
         self.assertIn(".row > .mark", css)
@@ -296,7 +302,7 @@ FinProceso
             (asset_dir / "x.png").write_bytes(b"png")
             md = source_dir / "u1.md"
             out = td / "resumenes" / "u1.html"
-            md.write_text("# X\n\n![Figura](../../assets/figures/x.png)\n", encoding="utf-8")
+            md.write_text("![Figura](../../assets/figures/x.png)\n", encoding="utf-8")
             cp = subprocess.run([sys.executable, str(RENDER), str(md), str(out), "--check"], cwd=ROOT, text=True, capture_output=True)
             self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
             page = out.read_text(encoding="utf-8")
@@ -313,7 +319,6 @@ FinProceso
         self.assertIn("PyMuPDF", req)
         help_cp = subprocess.run([sys.executable, str(FIGURES), "--help"], cwd=ROOT, text=True, capture_output=True)
         self.assertEqual(help_cp.returncode, 0)
-
 
     def test_captions_allow_blank_lines_but_orphans_fail_check(self):
         with tempfile.TemporaryDirectory() as td:

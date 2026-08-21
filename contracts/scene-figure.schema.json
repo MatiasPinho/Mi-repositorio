@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://carpeta.local/contracts/scene-figure.schema.json",
+  "title": "Carpeta Visual System V2 scene",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "title", "visual_treatment", "description", "alt", "caption", "based_on", "elements", "layouts"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 120},
+    "visual_treatment": {"enum": ["reinterpret", "preserve+derived_sketch"]},
+    "role": {"enum": ["essential", "supporting"], "default": "supporting"},
+    "representation_role": {"enum": ["literal", "structural", "pedagogical_analogy"], "default": "structural"},
+    "description": {"type": "string", "minLength": 1, "maxLength": 320},
+    "alt": {"type": "string", "minLength": 1, "maxLength": 320},
+    "caption": {"type": "string", "minLength": 1, "maxLength": 320},
+    "based_on": {"type": "array", "minItems": 1, "maxItems": 96, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*:.+"}},
+    "concepts": {"type": "array", "maxItems": 24, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 100}},
+    "learner_focus": {"type": "array", "maxItems": 10, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 180}},
+    "source_figure_id": {"type": "string", "minLength": 1, "maxLength": 100},
+    "elements": {"type": "array", "minItems": 1, "maxItems": 80, "items": {"$ref": "#/$defs/element"}},
+    "layouts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wide", "narrow"],
+      "properties": {
+        "wide": {"$ref": "#/$defs/layout"},
+        "narrow": {"$ref": "#/$defs/layout"}
+      }
+    }
+  },
+  "$defs": {
+    "element": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+        "type": {"enum": ["text", "shape", "line", "path", "connector", "arrow", "group", "region", "brace", "axis", "divider", "annotation"]},
+        "tone": {"enum": ["neutral", "primary", "example", "warning", "connection", "danger"]},
+        "semantic": {"type": "boolean"},
+        "based_on": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "representation_role": {"enum": ["literal", "structural", "pedagogical_analogy"]},
+        "text": {"type": "string", "maxLength": 220},
+        "text_role": {"enum": ["label", "detail", "title", "caption", "annotation"]},
+        "shape": {"enum": ["rectangle", "rounded", "circle", "ellipse", "polygon", "decision", "data", "note", "component", "datastore"]},
+        "label": {"type": "string", "maxLength": 120},
+        "detail": {"type": "string", "maxLength": 220},
+        "style": {"enum": ["solid", "dashed"]},
+        "from": {"type": "string"},
+        "to": {"type": "string"},
+        "relation": {"enum": ["flow", "relation", "dependency", "feedback", "association"]},
+        "arrowheads": {"enum": ["none", "start", "end", "both"]},
+        "members": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canvas", "placements"],
+      "properties": {
+        "canvas": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": {"type": "number", "minimum": 240, "maximum": 2400},
+            "height": {"type": "number", "minimum": 180, "maximum": 2400}
+          }
+        },
+        "placements": {"type": "object", "minProperties": 1},
+        "allowed_overlaps": {
+          "type": "array",
+          "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}
