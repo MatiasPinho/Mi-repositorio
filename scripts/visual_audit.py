@@ -276,6 +276,84 @@ def _topic_metrics(page) -> dict:
     )
 
 
+def _context_note_metrics(page) -> dict:
+    return page.evaluate(
+        """() => ({
+          present: Boolean(document.querySelector('.notebook-context-note'))
+        })"""
+    )
+
+def _view_metrics(page) -> dict:
+    return page.evaluate(
+        """() => {
+          const panel = document.querySelector('#notebook-view-panel');
+          if (!panel) return {present: false};
+          const options = Array.from(panel.querySelectorAll('[data-view-mode]'));
+          return {
+            present: true,
+            options: options.length,
+            labels: options.map(node => node.querySelector('.notebook-view-option-label')?.textContent.trim()),
+            sketches: panel.querySelectorAll('.notebook-view-sketch').length,
+            pencilSketches: options.filter(node => {
+              const drawing = node.dataset.viewMode === 'pages'
+                ? node.querySelector('.notebook-view-sketch-sheet.is-front')
+                : node.querySelector('.notebook-view-sketch-strip');
+              if (!drawing) return false;
+              const outer = getComputedStyle(drawing);
+              const inner = getComputedStyle(drawing, '::before');
+              return parseFloat(outer.borderLeftWidth) > 0
+                && parseFloat(inner.borderLeftWidth) > 0
+                && outer.backgroundImage.includes('linear-gradient');
+            }).length,
+            checked: options.filter(node => node.getAttribute('aria-checked') === 'true').length,
+            disabled: options.filter(node => node.disabled).length,
+            panelHidden: panel.hidden,
+            mobile: matchMedia('(max-width: 48rem)').matches
+          };
+        }"""
+    )
+
+
+def _exercise_view_navigation(page, metrics: dict) -> list[str]:
+    """Exercise the V selector without changing the reader's selected mode."""
+    if not metrics.get("present"):
+        return []
+    issues: list[str] = []
+    if metrics.get("options") != 2 or metrics.get("sketches") != 2:
+        issues.append("view-menu:incomplete")
+    if metrics.get("labels") != ["Hojas", "Continua"]:
+        issues.append("view-menu:labels-invalid")
+    if metrics.get("pencilSketches") != 2:
+        issues.append("view-menu:pencil-previews-missing")
+    if metrics.get("checked") != 1:
+        issues.append("view-menu:selection-invalid")
+    if metrics.get("mobile") and metrics.get("disabled") != 1:
+        issues.append("view-menu:mobile-pages-not-disabled")
+
+    page.keyboard.press("v")
+    try:
+        page.wait_for_function(
+            """() => {
+              const panel = document.querySelector('#notebook-view-panel');
+              return Boolean(panel && !panel.hidden
+                && document.activeElement?.matches('[data-view-mode][aria-checked="true"]'));
+            }""",
+            timeout=800,
+        )
+        opened = True
+    except Exception:
+        opened = False
+    if not opened:
+        issues.append("view-menu:keyboard-open-failed")
+        return issues
+    if page.evaluate("getComputedStyle(document.activeElement).outlineStyle === 'none'"):
+        issues.append("view-menu:focus-not-visible")
+    page.keyboard.press("Escape")
+    if not page.evaluate("document.querySelector('#notebook-view-panel')?.hidden"):
+        issues.append("view-menu:escape-close-failed")
+    return issues
+
+
 def _exercise_topic_navigation(page, metrics: dict) -> list[str]:
     """Exercise the topic index entirely from its documented keyboard contract."""
     if int(metrics.get("topics") or 0) < 2:
@@ -495,6 +573,8 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
             metrics["image_states"] = image_states
             metrics["notebook_reader"] = reader
             metrics["topic_navigation"] = _topic_metrics(page)
+            metrics["context_note"] = _context_note_metrics(page)
+            metrics["view_navigation"] = _view_metrics(page)
 
             if metrics["scrollWidth"] > metrics["clientWidth"] + 2:
                 report["issues"].append(f"{name}:horizontal-overflow")
@@ -515,6 +595,10 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
                 and reader.get("state") not in {"continuous", "continuous-fallback"}
             ):
                 report["issues"].append(f"{name}:reader-incomplete:{reader.get('state')}")
+
+            context = metrics["context_note"]
+            if context.get("present"):
+                report["issues"].append(f"{name}:persistent-reading-guide-remains")
 
             shot = out_dir / f"{name}.png"
             if name == "print":
@@ -546,6 +630,10 @@ def audit(html_path: Path, out_dir: Path, viewport_names: tuple[str, ...] | None
                 report["issues"].extend(
                     f"{name}:{issue}"
                     for issue in _exercise_topic_navigation(page, metrics["topic_navigation"])
+                )
+                report["issues"].extend(
+                    f"{name}:{issue}"
+                    for issue in _exercise_view_navigation(page, metrics["view_navigation"])
                 )
 
             report["screenshots"][name] = str(shot)

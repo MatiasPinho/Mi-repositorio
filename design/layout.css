@@ -25,6 +25,9 @@ article {
   isolation: isolate;
   --notebook-paper-padding-start: clamp(5.4rem, 10vw, 7.2rem);
   --notebook-paper-padding-end: clamp(1.25rem, 4vw, 2.5rem);
+  --notebook-margin-offset: clamp(4.05rem, 7.2vw, 5.35rem);
+  --notebook-rule-inline-start: var(--notebook-margin-offset);
+  --notebook-rule-inline-end: 0rem;
   flex: 1 1 34rem;
   width: min(100%, var(--notebook-paper-width));
   max-width: var(--notebook-paper-width);
@@ -50,16 +53,16 @@ article {
     ),
     radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, .06) 0%, rgba(0, 0, 0, 0) 58%),
     linear-gradient(to bottom, color-mix(in srgb, var(--study-paper) 94%, white 6%), var(--study-paper));
-  background-origin: content-box, border-box, border-box, border-box, border-box, border-box;
+  background-origin: border-box, border-box, border-box, border-box, border-box, border-box;
   background-size:
-    calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch),
+    calc(100% - var(--notebook-rule-inline-start) - var(--notebook-rule-inline-end)) var(--notebook-line-pitch),
     7px 7px,
     11px 11px,
     100% 100%,
     13rem 13rem,
     100% 100%;
   background-position:
-    calc(-1 * var(--notebook-paper-padding-start)) 0,
+    var(--notebook-rule-inline-start) 0,
     0 0,
     4px 6px,
     0 0,
@@ -70,6 +73,13 @@ article {
   border-radius: 1px 7px 7px 1px;
   box-shadow: var(--notebook-shadow);
   counter-reset: study-figure study-table study-code study-section;
+}
+
+/* The ruled writing area touches the red margin and reaches the opposite paper
+   edge. Reverse faces mirror that geometry with the binding on the right. */
+article.notebook-back {
+  --notebook-rule-inline-start: 0rem;
+  --notebook-rule-inline-end: var(--notebook-margin-offset);
 }
 
 /* Every top-level content block finishes on the same 27px rhythm. Without
@@ -99,7 +109,7 @@ article::before {
   z-index: 1;
   top: 0;
   bottom: 0;
-  left: clamp(4.05rem, 7.2vw, 5.35rem);
+  left: var(--notebook-margin-offset);
   width: 4px;
   border-inline: 1px solid var(--study-margin-rule);
   opacity: .9;
@@ -127,7 +137,7 @@ article::after {
 /* Prose no longer pays for a permanent semantic gutter. */
 .row {
   display: block;
-  max-width: var(--notebook-wide);
+  max-width: var(--notebook-measure);
 }
 .row > .mark:empty { display: none; }
 /* Block snapping and metric-based type trimming share one origin: the article
@@ -245,8 +255,8 @@ article::after {
   flex: 0 1 var(--study-toc-width);
   margin-right: auto;
   position: sticky;
-  top: 2.5rem;
-  max-height: calc(100vh - 5rem);
+  top: .9rem;
+  max-height: calc(100vh - 1.8rem);
   overflow: auto;
   padding: .35rem 0;
   display: flex;
@@ -297,6 +307,7 @@ article::after {
   article {
     --notebook-paper-padding-start: 3.45rem;
     --notebook-paper-padding-end: 1.2rem;
+    --notebook-margin-offset: 2.75rem;
     width: 100%;
     max-width: none;
     border: 0;
@@ -304,7 +315,7 @@ article::after {
     box-shadow: none;
     padding: var(--notebook-line-pitch) 1.2rem 4rem 3.45rem;
   }
-  article::before { left: 2.75rem; }
+  article::before { left: var(--notebook-margin-offset); }
   article::after { display: none; }
   .row > .body,
   .study-header > .body,
@@ -321,6 +332,7 @@ article::after {
 @media (max-width: 34rem) {
   article {
     --notebook-paper-padding-start: 1.2rem;
+    --notebook-margin-offset: 0rem;
     padding-left: var(--notebook-paper-padding-start);
   }
   article::before { display: none; }

@@ -38,7 +38,10 @@ class VisualSystemTests(unittest.TestCase):
         self.assertIn("data-study-theme=\"dark\"", css)
         self.assertIn("print-color-adjust", css)
         self.assertIn("semantic rails", css.lower())
-        self.assertIn("--study-paper: #fbf9f4", css)
+        self.assertIn("--study-paper: #f2ece0", css)
+        self.assertIn("--notebook-measure: 66rem", css)
+        self.assertIn("--notebook-wide: 48rem", css)
+        self.assertIn("--notebook-paper-width: 76rem", css)
         # Ruled paper and restrained physical-depth cues are the active Carpeta
         # notebook grammar; gradients are no longer categorically forbidden.
         self.assertIn("--notebook-rule-image", css)

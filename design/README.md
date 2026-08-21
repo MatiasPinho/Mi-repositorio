@@ -29,12 +29,13 @@ filtered or converted by that generator.
 ## Composition rules
 
 1. Ordinary prose is capped at a comfortable reading measure. Do not widen it just because the sheet has space.
-2. Binding holes, ruled lines and the red margin are chrome owned by CSS. Never write them into artifact HTML or Markdown.
-3. Major sections use compact `§N` markers because the number represents real document order.
-4. Figures, tables and code may use more width than prose but stay visually attached to the explanation they support.
-5. Semantic meaning is always written in words. Colour, marker strokes and handwriting can reinforce a role but never define it alone.
-6. Handwriting is an accent for annotations, exam relevance and captions. Body explanations remain in the practical reading face.
-7. Retrieval prompts remain visible and include answer space; they are study material, not collapsible UI.
+2. The right rail stays intentionally empty for future drawings and notes; summaries do not place a persistent guide, progress widget or topic tabs there.
+3. Binding holes, ruled lines and the red margin are chrome owned by CSS. Never write them into artifact HTML or Markdown.
+4. Major sections use compact `§N` markers because the number represents real document order.
+5. Figures, tables and code may use more width than prose but stay visually attached to the explanation they support.
+6. Semantic meaning is always written in words. Colour, marker strokes and handwriting can reinforce a role but never define it alone.
+7. Handwriting is an accent for annotations, exam relevance and captions. Body explanations remain in the practical reading face.
+8. Retrieval prompts remain visible and include answer space; they are study material, not collapsible UI.
 
 ## Physical leaf reader
 
@@ -46,6 +47,7 @@ Navigation follows the paper metaphor:
 - only the bottom corner of the active sheet controls front/back flipping, leaving the page body free for text selection and future highlighting or handwriting;
 - left/right keyboard arrows provide an accessible secondary way to move between physical leaves;
 - each top-level topic heading is its own full-title index tab at the exact point where that topic starts; its title keeps the original left alignment while a translucent warm-pencil tab protrudes into the left margin and lets the ruled paper and margin line remain visible through its shading; every tab permanently repeats the menu index's blue double contour and inset blue rail, while the current topic uses denser pencil shading; tab spacing stays on whole notebook-line increments so later prose never drifts off the ruled rhythm, and `T` opens that full keyboard-accessible index in both physical and continuous views without a permanently visible shortcut label;
+- `V` opens a ruled-paper reading-view selector instead of changing modes immediately; its `Hojas` and `Continua` choices pair plain-language explanations with small CSS pencil sketches, expose radio semantics and full keyboard navigation, and keep `Hojas` visible but unavailable where the physical reader cannot run;
 - pagination never introduces inner scrolling or clips an oversized semantic block. If a safe page split cannot be produced, the reader falls back to the proven continuous document;
 - print stays continuous and paged-media driven rather than printing the interactive 3D stack;
 - mobile keeps the continuous reading surface rather than shrinking a desktop-sized physical sheet.

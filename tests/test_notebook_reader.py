@@ -132,20 +132,29 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertIn(".notebook-measure-host {", css)
         self.assertIn("inset: 0", css)
 
-    def test_view_shortcut_is_persistent_presentation_state(self):
+    def test_view_shortcut_opens_pencil_selector_and_persists_state(self):
         js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
         css = (ROOT / "assets" / "notebook-reader.css").read_text(encoding="utf-8")
         self.assertIn("university-study:reader-mode", js)
         self.assertIn("event.key?.toLowerCase() !== 'v'", js)
-        self.assertIn("toggleViewMode", js)
+        self.assertIn("createViewPanel", js)
+        self.assertIn("chooseViewMode", js)
+        self.assertIn("setViewPanel(viewPanel.hidden)", js)
         self.assertIn("showModeToast", js)
         self.assertIn("localStorage", js)
         self.assertIn("restoreContinuous", js)
         self.assertIn("setViewMode", js)
         self.assertIn(".notebook-view-switch { display: none; }", css)
+        self.assertIn(".notebook-view-panel", css)
+        self.assertIn(".notebook-view-sketch-sheet", css)
+        self.assertIn(".notebook-view-sketch-strip", css)
+        self.assertIn(".notebook-view-sketch-flow", css)
         self.assertIn(".notebook-mode-toast", css)
-        self.assertIn("Vista Hojas · V", js)
-        self.assertIn("Vista Continua · V", js)
+        self.assertIn("Vista de lectura", js)
+        self.assertIn("Pasá hojas físicas, frente y dorso.", js)
+        self.assertIn("Leé todo seguido desplazándote hacia abajo.", js)
+        self.assertIn("Vista Hojas", js)
+        self.assertIn("Vista Continua", js)
         self.assertIn("pageModeUnavailable", js)
         self.assertIn("restoreScrollPosition", js)
         self.assertIn("data-notebook-figure-number", css)
@@ -175,6 +184,16 @@ class NotebookReaderTests(unittest.TestCase):
         self.assertNotIn("makeTopicButton(topic, 'notebook-topic-tab'", js)
         self.assertIn("@media print", css)
 
+    def test_right_rail_stays_reserved_without_persistent_reading_guide(self):
+        js = (ROOT / "assets" / "notebook-reader.js").read_text(encoding="utf-8")
+        theme = (ROOT / "assets" / "study-theme.css").read_text(encoding="utf-8")
+
+        init = js.split("const init = () => {", 1)[1].split("init();", 1)[0]
+        self.assertNotIn("createContextNote();", init)
+        self.assertIn("--notebook-measure: 66rem", theme)
+        self.assertIn("--notebook-wide: 48rem", theme)
+        self.assertIn("--notebook-paper-width: 76rem", theme)
+
     def test_browser_topic_index_jumps_to_exact_topic_and_survives_view_switch(self):
         try:
             from playwright.sync_api import sync_playwright
@@ -188,8 +207,9 @@ class NotebookReaderTests(unittest.TestCase):
             blocks = []
             for topic in range(1, 4):
                 blocks.append(f"## Tema extenso {topic}")
+                blocks.append(f"### Concepto central {topic}")
                 blocks.extend(
-                    f"Párrafo {topic}.{i} con contenido suficiente para distribuir cada tema entre hojas físicas."
+                    f"Párrafo {topic}.{i} con **concepto {topic}** y contenido suficiente para distribuir cada tema entre hojas físicas."
                     for i in range(1, 22)
                 )
             md.write_text(
@@ -211,12 +231,14 @@ class NotebookReaderTests(unittest.TestCase):
                 if executable:
                     kwargs["executable_path"] = executable
                 browser = pw.chromium.launch(**kwargs)
-                page = browser.new_page(viewport={"width": 1200, "height": 1000})
+                page = browser.new_page(viewport={"width": 1440, "height": 1000})
                 page.set_content(html_text, wait_until="domcontentloaded", timeout=10000)
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'ready'",
                     timeout=6000,
                 )
+
+                self.assertEqual(page.locator(".notebook-context-note").count(), 0)
 
                 tabs = page.locator(".section-head.notebook-section-tab")
                 self.assertEqual(tabs.count(), 3)
@@ -294,14 +316,23 @@ class NotebookReaderTests(unittest.TestCase):
                 )
 
                 page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                page.keyboard.press("End")
+                page.keyboard.press("Enter")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'continuous'",
                     timeout=3000,
                 )
                 self.assertEqual(page.locator(".notebook-topic-tabs.is-continuous").count(), 1)
+                self.assertEqual(page.locator(".notebook-context-note").count(), 0)
                 self.assertEqual(page.locator(".section-head.notebook-section-tab").count(), 3)
                 self.assertEqual(page.locator(".notebook-topic-tab").count(), 0)
                 self.assertEqual(page.locator(".notebook-topic-index-trigger").count(), 0)
+                page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+                page.wait_for_function(
+                    "() => document.documentElement.dataset.notebookTopic === '3'",
+                    timeout=2000,
+                )
                 page.keyboard.press("t")
                 self.assertTrue(panel.is_visible())
                 page.keyboard.press("Escape")
@@ -314,6 +345,7 @@ class NotebookReaderTests(unittest.TestCase):
                     timeout=3000,
                 )
                 self.assertEqual(mobile.locator(".notebook-topic-index-trigger").count(), 0)
+                self.assertEqual(mobile.locator(".notebook-context-note").count(), 0)
                 self.assertTrue(mobile.locator(".section-head.notebook-section-tab").first.is_visible())
                 self.assertEqual(mobile.locator(".notebook-topic-tab").count(), 0)
                 running_parts = mobile.locator(".book-running-line > span").evaluate_all(
@@ -326,6 +358,13 @@ class NotebookReaderTests(unittest.TestCase):
                 )
                 mobile.keyboard.press("t")
                 self.assertTrue(mobile.locator("#notebook-topic-index-panel").is_visible())
+                mobile.keyboard.press("v")
+                self.assertFalse(mobile.locator("#notebook-topic-index-panel").is_visible())
+                self.assertTrue(mobile.locator("#notebook-view-panel").is_visible())
+                self.assertEqual(mobile.locator(".notebook-view-sketch").count(), 2)
+                self.assertTrue(mobile.locator('[data-view-mode="pages"]').is_disabled())
+                mobile.keyboard.press("Escape")
+                self.assertFalse(mobile.locator("#notebook-view-panel").is_visible())
                 mobile.close()
                 browser.close()
 
@@ -369,13 +408,40 @@ class NotebookReaderTests(unittest.TestCase):
                 )
                 self.assertEqual(page.locator(".notebook-view-switch").count(), 1)
                 self.assertFalse(page.locator(".notebook-view-switch").is_visible())
+                view_panel = page.locator("#notebook-view-panel")
+                self.assertEqual(view_panel.count(), 1)
+                self.assertFalse(view_panel.is_visible())
                 original_text = page.locator("body").inner_text()
 
                 page.keyboard.press("v")
+                self.assertTrue(view_panel.is_visible())
+                self.assertEqual(view_panel.locator("[data-view-mode]").count(), 2)
+                self.assertEqual(
+                    view_panel.locator(".notebook-view-option-label").all_inner_texts(),
+                    ["Hojas", "Continua"],
+                )
+                self.assertEqual(view_panel.locator(".notebook-view-sketch").count(), 2)
+                self.assertEqual(view_panel.locator(".notebook-view-sketch-sheet").count(), 3)
+                self.assertEqual(view_panel.locator(".notebook-view-sketch-strip").count(), 1)
+                page.wait_for_function(
+                    "() => document.activeElement?.dataset.viewMode === 'pages'",
+                    timeout=1000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.viewMode"),
+                    "pages",
+                )
+                page.keyboard.press("End")
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.viewMode"),
+                    "continuous",
+                )
+                page.keyboard.press("Enter")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'continuous'",
                     timeout=3000,
                 )
+                self.assertFalse(view_panel.is_visible())
                 self.assertEqual(page.locator(".notebook-reader").count(), 0)
                 self.assertEqual(page.locator(".study-grid > article").count(), 1)
                 self.assertIn("Párrafo 89", page.locator("body").inner_text())
@@ -383,6 +449,17 @@ class NotebookReaderTests(unittest.TestCase):
                 self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
 
                 page.keyboard.press("v")
+                self.assertTrue(view_panel.is_visible())
+                page.wait_for_function(
+                    "() => document.activeElement?.dataset.viewMode === 'continuous'",
+                    timeout=1000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.viewMode"),
+                    "continuous",
+                )
+                page.keyboard.press("Home")
+                page.keyboard.press("Enter")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'ready'",
                     timeout=6000,
@@ -391,6 +468,10 @@ class NotebookReaderTests(unittest.TestCase):
                 self.assertIn("Párrafo 89", page.locator("body").inner_text())
                 self.assertIn("Vista Hojas", page.locator(".notebook-mode-toast").inner_text())
                 self.assertIn("Unidad 3", original_text)
+                page.keyboard.press("v")
+                self.assertTrue(view_panel.is_visible())
+                page.keyboard.press("Escape")
+                self.assertFalse(view_panel.is_visible())
                 browser.close()
 
     def test_tall_study_sketch_fits_a_leaf_and_v_reports_the_actual_mode(self):
@@ -464,6 +545,9 @@ class NotebookReaderTests(unittest.TestCase):
                 )
 
                 page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                page.keyboard.press("End")
+                page.keyboard.press("Enter")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'continuous'",
                     timeout=3000,
@@ -472,6 +556,9 @@ class NotebookReaderTests(unittest.TestCase):
                 self.assertEqual(page.locator("h1").inner_text(), "Unidad 1")
 
                 page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                page.keyboard.press("Home")
+                page.keyboard.press("Enter")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'ready'",
                     timeout=6000,
@@ -525,6 +612,17 @@ class NotebookReaderTests(unittest.TestCase):
                 before = page.evaluate("window.scrollY")
 
                 page.keyboard.press("v")
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                page.wait_for_function(
+                    "() => document.activeElement?.dataset.viewMode === 'continuous'",
+                    timeout=1000,
+                )
+                self.assertEqual(
+                    page.evaluate("document.activeElement?.dataset.viewMode"),
+                    "continuous",
+                )
+                page.keyboard.press("Home")
+                page.keyboard.press("Enter")
                 page.wait_for_function(
                     "() => document.documentElement.dataset.notebookReader === 'continuous-fallback'",
                     timeout=6000,
@@ -536,13 +634,20 @@ class NotebookReaderTests(unittest.TestCase):
                 self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
 
                 page.keyboard.press("v")
-                page.wait_for_timeout(100)
+                page.wait_for_selector("#notebook-view-panel:not([hidden])")
+                self.assertTrue(
+                    page.locator('[data-view-mode="pages"]').is_disabled()
+                )
+                self.assertEqual(
+                    page.locator('[data-view-mode="continuous"]').get_attribute("aria-checked"),
+                    "true",
+                )
+                page.keyboard.press("Escape")
                 self.assertEqual(
                     page.evaluate("document.documentElement.dataset.notebookReader"),
                     "continuous-fallback",
                 )
                 self.assertEqual(page.locator(".notebook-reader").count(), 0)
-                self.assertIn("Vista Continua", page.locator(".notebook-mode-toast").inner_text())
                 browser.close()
 
     def test_tablet_browser_audit_has_no_horizontal_or_page_overflow(self):

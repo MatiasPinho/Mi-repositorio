@@ -264,3 +264,5 @@ pre:has(+ .code-caption),
   line-height: var(--notebook-line-pitch);
   text-wrap: pretty;
 }
+
+/* The right rail stays intentionally empty for future drawings and notes. */

@@ -11,6 +11,8 @@
   let reader = null;
   let readerCleanup = null;
   let viewSwitch = null;
+  let viewPanel = null;
+  let viewPanelReturnFocus = null;
   let toastTimer = null;
   let pageModeUnavailable = null;
   let topicNavigator = null;
@@ -85,6 +87,7 @@
     if (!paperColorPanel) return;
     if (open) {
       setTopicPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
       if (paperColorPanel.hidden) {
         const active = document.activeElement;
         paperColorReturnFocus = active instanceof HTMLElement
@@ -273,6 +276,37 @@
 
   const isHeadingLike = (node) => node?.matches?.('.section-head, .subsection-head, .minor-head');
 
+  const cleanConceptLabel = (value) => String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s\-–—:;,.]+|[\s\-–—:;,.]+$/g, '')
+    .trim();
+
+  const extractConcepts = (roots, fallback = []) => {
+    const concepts = [];
+    const seen = new Set();
+    const add = (value) => {
+      const label = cleanConceptLabel(value);
+      const key = label.toLocaleLowerCase('es');
+      if (!label || label.length < 2 || label.length > 52 || label.split(/\s+/).length > 8) return;
+      if (/^\d+(?:[.,]\d+)?$/.test(label) || seen.has(key)) return;
+      seen.add(key);
+      concepts.push(label);
+    };
+    const collect = (selector) => {
+      roots.forEach((root) => {
+        if (root.matches?.(selector)) add(root.textContent);
+        root.querySelectorAll?.(selector).forEach((node) => add(node.textContent));
+      });
+    };
+
+    // Structural labels and explicit semantic terms outrank inline emphasis;
+    // bold text fills any remaining slots without becoming an invented index.
+    collect('.subsection-head h3, .minor-head h4, .callout .term');
+    collect('strong');
+    fallback.forEach(add);
+    return concepts.slice(0, 4);
+  };
+
   const makePage = (source, pageIndex) => {
     const page = source.cloneNode(false);
     const back = pageIndex % 2 === 1;
@@ -309,23 +343,43 @@
     window.requestAnimationFrame(() => window.scrollTo({left, top, behavior: 'instant'}));
   };
 
-  const collectTopics = (source) => Array.from(
-    source.querySelectorAll(':scope > .section-head > h2[id]')
-  ).map((heading, index) => {
-    const section = heading.parentElement;
-    section?.classList.add('notebook-section-tab');
-    if (section) {
-      section.dataset.topicIndex = String(index);
-      section.dataset.topicNumber = String(index + 1);
+  const collectTopics = (source) => {
+    const headings = Array.from(source.querySelectorAll(':scope > .section-head > h2[id]'));
+    if (!headings.length) {
+      const label = cleanConceptLabel(source.querySelector('h1')?.textContent) || 'Documento';
+      return [{
+        id: '',
+        index: 0,
+        label,
+        number: 1,
+        page: 1,
+        concepts: extractConcepts([source], [label]),
+      }];
     }
-    return {
-      id: heading.id,
-      index,
-      label: heading.textContent.trim(),
-      number: index + 1,
-      page: null,
-    };
-  });
+    return headings.map((heading, index) => {
+      const section = heading.parentElement;
+      section?.classList.add('notebook-section-tab');
+      if (section) {
+        section.dataset.topicIndex = String(index);
+        section.dataset.topicNumber = String(index + 1);
+      }
+      const roots = [];
+      let sibling = section?.nextElementSibling || null;
+      while (sibling && !sibling.matches('.section-head')) {
+        roots.push(sibling);
+        sibling = sibling.nextElementSibling;
+      }
+      const label = heading.textContent.trim();
+      return {
+        id: heading.id,
+        index,
+        label,
+        number: index + 1,
+        page: null,
+        concepts: extractConcepts(roots, [label]),
+      };
+    });
+  };
 
   const setActiveTopic = (index) => {
     if (!topics.length) return;
@@ -350,6 +404,7 @@
     if (!topicNavigator || !topicPanel) return;
     if (open) {
       setPaperPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
       if (topicPanel.hidden) {
         const active = document.activeElement;
         topicPanelReturnFocus = active instanceof HTMLElement
@@ -529,8 +584,13 @@
   };
 
   const attachTopicNavigation = (mode, host) => {
-    if (!topicNavigator || !host) return;
+    if (!host) return;
     detachTopicNavigation();
+    // A single-topic document does not need an index panel.
+    if (!topicNavigator) {
+      if (mode === 'continuous') bindContinuousTopicTracking();
+      return;
+    }
     topicNavigator.hidden = false;
     topicNavigator.classList.remove('is-detached');
     topicNavigator.classList.toggle('is-paged', mode === 'pages');
@@ -588,6 +648,197 @@
     buttons[next]?.focus();
   };
 
+  const currentViewMode = () => (mounted ? 'pages' : 'continuous');
+
+  const syncViewPanelSelection = () => {
+    if (!viewPanel) return;
+    const actualMode = currentViewMode();
+    viewPanel.querySelectorAll('[data-view-mode]').forEach((button) => {
+      const mode = button.dataset.viewMode;
+      const active = mode === actualMode;
+      const unavailable = mode === 'pages' && (!desktop.matches || Boolean(pageModeUnavailable));
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+      button.disabled = unavailable;
+      button.setAttribute('aria-disabled', String(unavailable));
+      const description = button.querySelector('.notebook-view-option-description');
+      if (description && mode === 'pages') {
+        description.textContent = !desktop.matches
+          ? 'Disponible en tablet y escritorio.'
+          : pageModeUnavailable
+            ? 'Este resumen necesita la vista continua.'
+            : 'Pasá hojas físicas, frente y dorso.';
+      }
+    });
+    viewPanel.dataset.mode = actualMode;
+  };
+
+  const setViewPanel = (open, {focus = true} = {}) => {
+    if (!viewPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setPaperPanel(false, {focus: false});
+      if (viewPanel.hidden) {
+        const active = document.activeElement;
+        viewPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    viewPanel.hidden = !open;
+    if (open) {
+      document.documentElement.dataset.notebookViewMenu = 'open';
+      syncViewPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          viewPanel.querySelector('[data-view-mode].is-active:not(:disabled)')?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookViewMenu;
+      if (focus && viewPanelReturnFocus?.isConnected) {
+        viewPanelReturnFocus.focus({preventScroll: true});
+      }
+      viewPanelReturnFocus = null;
+    }
+  };
+
+  const makeViewSketch = (mode) => {
+    const sketch = document.createElement('span');
+    sketch.className = `notebook-view-sketch is-${mode}`;
+    sketch.setAttribute('aria-hidden', 'true');
+    if (mode === 'pages') {
+      sketch.innerHTML = `
+        <span class="notebook-view-sketch-sheet is-back"></span>
+        <span class="notebook-view-sketch-sheet is-middle"></span>
+        <span class="notebook-view-sketch-sheet is-front"></span>
+        <span class="notebook-view-sketch-turn"></span>
+      `;
+    } else {
+      sketch.innerHTML = `
+        <span class="notebook-view-sketch-strip"></span>
+        <span class="notebook-view-sketch-flow"></span>
+      `;
+    }
+    return sketch;
+  };
+
+  const chooseViewMode = async (mode) => {
+    setViewPanel(false, {focus: false});
+    const actual = await setViewMode(mode);
+    syncViewPanelSelection();
+    showModeToast(actual);
+  };
+
+  const createViewPanel = () => {
+    if (viewPanel) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-view-panel';
+    panel.className = 'notebook-view-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-view-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'V');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-view-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-view-panel-title';
+    title.textContent = 'Vista de lectura';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-view-panel-shortcut';
+    shortcut.innerHTML = '<kbd>V</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-view-panel-close';
+    close.setAttribute('aria-label', 'Cerrar selector de vista');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setViewPanel(false));
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-view-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Vistas de lectura');
+    const choices = [
+      {
+        mode: 'pages',
+        label: 'Hojas',
+        description: 'Pasá hojas físicas, frente y dorso.',
+      },
+      {
+        mode: 'continuous',
+        label: 'Continua',
+        description: 'Leé todo seguido desplazándote hacia abajo.',
+      },
+    ];
+    choices.forEach(({mode, label, description}) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'notebook-view-option';
+      button.dataset.viewMode = mode;
+      button.setAttribute('role', 'radio');
+      button.setAttribute('aria-checked', 'false');
+      button.setAttribute('aria-label', `${label}: ${description}`);
+
+      const copy = document.createElement('span');
+      copy.className = 'notebook-view-option-copy';
+      const optionLabel = document.createElement('strong');
+      optionLabel.className = 'notebook-view-option-label';
+      optionLabel.textContent = label;
+      const optionDescription = document.createElement('span');
+      optionDescription.className = 'notebook-view-option-description';
+      optionDescription.textContent = description;
+      copy.append(optionLabel, optionDescription);
+
+      button.append(makeViewSketch(mode), copy);
+      button.addEventListener('click', () => void chooseViewMode(mode));
+      list.appendChild(button);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-view-panel-hint';
+    hint.textContent = '↑ ↓ para recorrer · Enter para elegir · Esc para cerrar';
+    panel.append(head, list, hint);
+    document.body.appendChild(panel);
+    viewPanel = panel;
+    syncViewPanelSelection();
+
+    document.addEventListener('pointerdown', (event) => {
+      if (viewPanel?.hidden !== false) return;
+      if (viewPanel.contains(event.target)) return;
+      setViewPanel(false, {focus: false});
+    });
+  };
+
+  const onViewPanelKeydown = (event) => {
+    if (viewPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setViewPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(viewPanel.querySelectorAll('[data-view-mode]:not(:disabled)'));
+    if (!buttons.length) return;
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      void chooseViewMode(buttons[current]?.dataset.viewMode);
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
   const syncViewSwitch = () => {
     if (!viewSwitch) return;
     const actualMode = mounted ? 'pages' : 'continuous';
@@ -602,6 +853,7 @@
           : 'La vista por hojas está disponible en tablet y escritorio';
       }
     });
+    syncViewPanelSelection();
   };
 
   // The old visual switch is kept as hidden semantic state for compatibility;
@@ -632,7 +884,7 @@
       toast.setAttribute('aria-live', 'polite');
       document.body.appendChild(toast);
     }
-    toast.textContent = mode === 'pages' ? 'Vista Hojas · V' : 'Vista Continua · V';
+    toast.textContent = mode === 'pages' ? 'Vista Hojas' : 'Vista Continua';
     toast.classList.add('is-visible');
     if (toastTimer) window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1200);
@@ -940,7 +1192,7 @@
 
     const onKeydown = (event) => {
       if (!shell.isConnected || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
-      if (topicPanel?.hidden === false) return;
+      if (topicPanel?.hidden === false || viewPanel?.hidden === false) return;
       const activeElement = document.activeElement;
       const tag = activeElement?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || activeElement?.isContentEditable) return;
@@ -1057,23 +1309,16 @@
     return 'continuous';
   };
 
-  const toggleViewMode = async () => {
-    if (!desktop.matches || print.matches) return;
-    const next = mounted || mounting ? 'continuous' : 'pages';
-    const actual = await setViewMode(next);
-    showModeToast(actual);
-  };
-
   const onViewShortcut = (event) => {
     if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
-    if (isEditableTarget(event.target)) return;
+    if (isEditableTarget(event.target) || !viewPanel || print.matches) return;
     if (event.key?.toLowerCase() !== 'v') return;
-    if (!desktop.matches || print.matches) return;
     event.preventDefault();
-    void toggleViewMode();
+    setViewPanel(viewPanel.hidden);
   };
 
   const restoreForPrint = () => {
+    setViewPanel(false, {focus: false});
     if (mounted) restoreContinuous('print-continuous');
   };
 
@@ -1087,6 +1332,7 @@
     if (!source) return;
     const pagedEligible = PAGED_KINDS.has(source.dataset.kind || '');
     topics = collectTopics(source);
+    setActiveTopic(0);
     createTopicNavigation();
     document.addEventListener('keydown', onTopicShortcut);
 
@@ -1100,6 +1346,8 @@
 
     originalTemplate = source.cloneNode(true);
     createViewSwitch();
+    createViewPanel();
+    document.addEventListener('keydown', onViewPanelKeydown);
     document.addEventListener('keydown', onViewShortcut);
     if (effectiveMode() === 'pages') void mount();
     else {

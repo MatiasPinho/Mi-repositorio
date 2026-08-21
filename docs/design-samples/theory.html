@@ -32,7 +32,7 @@
   --study-concept: #1f4b7a;
   --study-example: #50664f;
   --study-warning: #8a642b;
-  --study-danger: #a8564a;
+  --study-danger: #a04e43;
   --study-connection: #5d586f;
   --study-recall: #1f4b7a;
   --study-danger-soft: #fbefec;
@@ -79,12 +79,14 @@
   --notebook-line-pitch: 1.6875rem;
   --notebook-frame-inset: calc(var(--notebook-line-pitch) / 2);
   --notebook-frame-padding-inline: calc(var(--notebook-line-pitch) * .75);
-  --notebook-measure: 40rem;
-  --notebook-wide: 44rem;
-  --notebook-paper-width: 58rem;
+  --notebook-measure: 66rem;
+  --notebook-wide: 48rem;
+  /* Prose fills the sheet's writing area; the token only mirrors the usable
+     width so consumers with min() caps degrade gracefully on small screens. */
+  --notebook-paper-width: 76rem;
   --notebook-section-mark: 1.8rem;
   --notebook-shadow: 0 14px 30px rgba(0, 0, 0, .28), 0 2px 0 rgba(255, 255, 255, .42) inset;
-  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 .5H1000' stroke='%23c9d6e4' stroke-width='1'/%3E%3C/svg%3E");
+  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27' preserveAspectRatio='none'%3E%3Cpath d='M0 .5H1000' stroke='%23c9d6e4' stroke-width='1'/%3E%3C/svg%3E");
   /* Variante 02: dos recorridos independientes del mismo contorno. They are
      masks so every semantic role can keep its own ink colour. */
   --notebook-frame-trace-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C80 1 170 7 262 3 C328 1 390 5 396 8 C399 35 397 70 395 95 C300 99 185 94 98 98 C56 100 10 97 4 94 C1 62 2 30 4 5' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
@@ -137,7 +139,7 @@ html[data-study-theme="dark"] {
   --notebook-code-operator: #d1aaa5;
   --notebook-code-punctuation: #a8a297;
   --notebook-shadow: 0 16px 36px rgba(0, 0, 0, .46);
-  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27'%3E%3Cpath d='M0 .5H1000' stroke='%2333363d' stroke-width='1'/%3E%3C/svg%3E");
+  --notebook-rule-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='27' viewBox='0 0 1000 27' preserveAspectRatio='none'%3E%3Cpath d='M0 .5H1000' stroke='%2333363d' stroke-width='1'/%3E%3C/svg%3E");
 }
 
 /* --- typography.css --- */
@@ -462,6 +464,9 @@ article {
   isolation: isolate;
   --notebook-paper-padding-start: clamp(5.4rem, 10vw, 7.2rem);
   --notebook-paper-padding-end: clamp(1.25rem, 4vw, 2.5rem);
+  --notebook-margin-offset: clamp(4.05rem, 7.2vw, 5.35rem);
+  --notebook-rule-inline-start: var(--notebook-margin-offset);
+  --notebook-rule-inline-end: 0rem;
   flex: 1 1 34rem;
   width: min(100%, var(--notebook-paper-width));
   max-width: var(--notebook-paper-width);
@@ -487,16 +492,16 @@ article {
     ),
     radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, .06) 0%, rgba(0, 0, 0, 0) 58%),
     linear-gradient(to bottom, color-mix(in srgb, var(--study-paper) 94%, white 6%), var(--study-paper));
-  background-origin: content-box, border-box, border-box, border-box, border-box, border-box;
+  background-origin: border-box, border-box, border-box, border-box, border-box, border-box;
   background-size:
-    calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch),
+    calc(100% - var(--notebook-rule-inline-start) - var(--notebook-rule-inline-end)) var(--notebook-line-pitch),
     7px 7px,
     11px 11px,
     100% 100%,
     13rem 13rem,
     100% 100%;
   background-position:
-    calc(-1 * var(--notebook-paper-padding-start)) 0,
+    var(--notebook-rule-inline-start) 0,
     0 0,
     4px 6px,
     0 0,
@@ -507,6 +512,13 @@ article {
   border-radius: 1px 7px 7px 1px;
   box-shadow: var(--notebook-shadow);
   counter-reset: study-figure study-table study-code study-section;
+}
+
+/* The ruled writing area touches the red margin and reaches the opposite paper
+   edge. Reverse faces mirror that geometry with the binding on the right. */
+article.notebook-back {
+  --notebook-rule-inline-start: 0rem;
+  --notebook-rule-inline-end: var(--notebook-margin-offset);
 }
 
 /* Every top-level content block finishes on the same 27px rhythm. Without
@@ -536,7 +548,7 @@ article::before {
   z-index: 1;
   top: 0;
   bottom: 0;
-  left: clamp(4.05rem, 7.2vw, 5.35rem);
+  left: var(--notebook-margin-offset);
   width: 4px;
   border-inline: 1px solid var(--study-margin-rule);
   opacity: .9;
@@ -564,7 +576,7 @@ article::after {
 /* Prose no longer pays for a permanent semantic gutter. */
 .row {
   display: block;
-  max-width: var(--notebook-wide);
+  max-width: var(--notebook-measure);
 }
 .row > .mark:empty { display: none; }
 /* Block snapping and metric-based type trimming share one origin: the article
@@ -682,8 +694,8 @@ article::after {
   flex: 0 1 var(--study-toc-width);
   margin-right: auto;
   position: sticky;
-  top: 2.5rem;
-  max-height: calc(100vh - 5rem);
+  top: .9rem;
+  max-height: calc(100vh - 1.8rem);
   overflow: auto;
   padding: .35rem 0;
   display: flex;
@@ -734,6 +746,7 @@ article::after {
   article {
     --notebook-paper-padding-start: 3.45rem;
     --notebook-paper-padding-end: 1.2rem;
+    --notebook-margin-offset: 2.75rem;
     width: 100%;
     max-width: none;
     border: 0;
@@ -741,7 +754,7 @@ article::after {
     box-shadow: none;
     padding: var(--notebook-line-pitch) 1.2rem 4rem 3.45rem;
   }
-  article::before { left: 2.75rem; }
+  article::before { left: var(--notebook-margin-offset); }
   article::after { display: none; }
   .row > .body,
   .study-header > .body,
@@ -758,6 +771,7 @@ article::after {
 @media (max-width: 34rem) {
   article {
     --notebook-paper-padding-start: 1.2rem;
+    --notebook-margin-offset: 0rem;
     padding-left: var(--notebook-paper-padding-start);
   }
   article::before { display: none; }
@@ -1042,6 +1056,8 @@ pre:has(+ .code-caption),
   text-wrap: pretty;
 }
 
+/* The right rail stays intentionally empty for future drawings and notes. */
+
 /* --- figures.css --- */
 /* Figures are study objects inside the notebook. The image itself is never
    stylized or filtered; only its placement and caption take on notebook cues. */
@@ -1159,6 +1175,7 @@ figure.wide { max-width: none; }
   article {
     --notebook-paper-padding-start: 11mm;
     --notebook-paper-padding-end: 0mm;
+    --notebook-margin-offset: 7mm;
     max-width: none;
     padding: 0 var(--notebook-paper-padding-end) 0 var(--notebook-paper-padding-start);
     border: 0;
@@ -1167,14 +1184,14 @@ figure.wide { max-width: none; }
     overflow: visible;
     background-color: #fff;
     background-image: var(--notebook-rule-image);
-    background-origin: content-box;
-    background-size: calc(100% + var(--notebook-paper-padding-start) + var(--notebook-paper-padding-end)) var(--notebook-line-pitch);
-    background-position: calc(-1 * var(--notebook-paper-padding-start)) 0;
+    background-origin: border-box;
+    background-size: calc(100% - var(--notebook-margin-offset)) var(--notebook-line-pitch);
+    background-position: var(--notebook-margin-offset) 0;
     background-repeat: repeat-y;
   }
   article::before {
     display: block;
-    left: 7mm;
+    left: var(--notebook-margin-offset);
   }
   article::after { display: none; }
 
@@ -1762,6 +1779,278 @@ article ul > li:nth-child(even)::before {
 }
 
 .notebook-paper-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+/* V opens a compact reading-view chooser that uses the same ruled-paper
+   dialog grammar as the topic index. Each choice explains itself with a small
+   deterministic pencil sketch instead of an app-style icon. */
+.notebook-view-panel[hidden] { display: none !important; }
+
+.notebook-view-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(31rem, calc(100vw - 2rem));
+  max-height: min(78vh, 35rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-view-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-view-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-view-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-view-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.notebook-view-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-view-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-view-list {
+  display: grid;
+  gap: .1rem;
+  margin: .35rem 0 0;
+}
+
+.notebook-view-option {
+  appearance: none;
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 4);
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: .8rem;
+  align-items: center;
+  padding: .45rem .55rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notebook-view-option:hover,
+.notebook-view-option:focus-visible,
+.notebook-view-option[aria-checked="true"] {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-view-option:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: -2px;
+}
+
+.notebook-view-option[aria-checked="true"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+.notebook-view-option:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
+.notebook-view-option-copy {
+  display: grid;
+  align-content: center;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.notebook-view-option-label {
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.13rem;
+  line-height: var(--notebook-line-pitch);
+  font-weight: 500;
+}
+
+.notebook-view-option[aria-checked="true"] .notebook-view-option-label {
+  color: var(--study-accent);
+}
+
+.notebook-view-option-description {
+  color: var(--study-ink-soft);
+  font-size: .84rem;
+  line-height: 1.35;
+}
+
+.notebook-view-sketch {
+  position: relative;
+  display: block;
+  width: 6rem;
+  height: calc(var(--notebook-line-pitch) * 3.2);
+  justify-self: center;
+  color: color-mix(in srgb, var(--study-accent) 72%, var(--study-ink-soft));
+}
+
+.notebook-view-sketch-sheet,
+.notebook-view-sketch-strip {
+  position: absolute;
+  display: block;
+  border: 1.15px solid color-mix(in srgb, currentColor 72%, transparent);
+  border-radius: 2px 5px 4px 2px / 3px 4px 6px 2px;
+  background-color: color-mix(in srgb, var(--study-paper) 88%, transparent);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 .62rem,
+    color-mix(in srgb, var(--study-rule-strong) 58%, transparent) .62rem .68rem
+  );
+  box-shadow: .07rem .08rem 0 color-mix(in srgb, var(--study-ink) 9%, transparent);
+}
+
+.notebook-view-sketch-sheet::before,
+.notebook-view-sketch-strip::before {
+  content: "";
+  position: absolute;
+  inset: .08rem -.1rem -.08rem .07rem;
+  border: .7px solid color-mix(in srgb, currentColor 36%, transparent);
+  border-radius: 3px 4px 5px 1px / 2px 6px 4px 3px;
+  transform: rotate(.35deg) skewX(-.15deg);
+  pointer-events: none;
+}
+
+.notebook-view-sketch-sheet {
+  width: 3.25rem;
+  height: 3.65rem;
+}
+
+.notebook-view-sketch-sheet.is-back {
+  top: .62rem;
+  left: .8rem;
+  transform: rotate(-4deg);
+  opacity: .58;
+}
+
+.notebook-view-sketch-sheet.is-middle {
+  top: .42rem;
+  left: 1.38rem;
+  transform: rotate(2.4deg);
+  opacity: .76;
+}
+
+.notebook-view-sketch-sheet.is-front {
+  top: .22rem;
+  left: 1.95rem;
+  transform: rotate(-.7deg);
+}
+
+.notebook-view-sketch-turn {
+  position: absolute;
+  right: .42rem;
+  top: .76rem;
+  width: 1.15rem;
+  height: 1.45rem;
+  border-top: 1.2px solid currentColor;
+  border-right: 1.2px solid currentColor;
+  border-radius: 0 1.15rem 0 0;
+  transform: rotate(16deg);
+}
+
+.notebook-view-sketch-turn::after {
+  content: "";
+  position: absolute;
+  right: -.18rem;
+  bottom: -.04rem;
+  width: .32rem;
+  height: .32rem;
+  border-right: 1.2px solid currentColor;
+  border-bottom: 1.2px solid currentColor;
+  transform: rotate(34deg);
+}
+
+.notebook-view-sketch-strip {
+  inset: .12rem auto .12rem 1.48rem;
+  width: 3.05rem;
+  transform: rotate(-.35deg) skewY(.12deg);
+}
+
+.notebook-view-sketch-flow {
+  position: absolute;
+  top: .72rem;
+  right: .62rem;
+  height: 2.55rem;
+  border-left: 1.25px solid currentColor;
+  transform: rotate(1.8deg);
+}
+
+.notebook-view-sketch-flow::after {
+  content: "";
+  position: absolute;
+  left: -.22rem;
+  bottom: -.02rem;
+  width: .35rem;
+  height: .35rem;
+  border-right: 1.25px solid currentColor;
+  border-bottom: 1.25px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.notebook-view-panel-hint {
   margin: .55rem 0 0;
   color: var(--study-ink-muted);
   font-family: var(--study-font-utility);
@@ -2409,6 +2698,17 @@ article.notebook-page.notebook-back::after {
     padding: .85rem .85rem .7rem;
   }
 
+  .notebook-view-panel {
+    top: auto;
+    right: .65rem;
+    bottom: .65rem;
+    left: .65rem;
+    width: auto;
+    max-height: calc(100vh - 1.3rem);
+    transform: none;
+    padding: .85rem .85rem .7rem;
+  }
+
   .notebook-topic-panel-head {
     grid-template-columns: minmax(0, 1fr) auto;
   }
@@ -2417,15 +2717,29 @@ article.notebook-page.notebook-back::after {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
+  .notebook-view-panel-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
   .notebook-topic-panel-shortcut { display: none; }
   .notebook-paper-panel-shortcut { display: none; }
+  .notebook-view-panel-shortcut { display: none; }
 
   .notebook-topic-list-button {
     grid-template-columns: 3.65rem minmax(0, 1fr);
     min-height: calc(var(--notebook-line-pitch) * 2);
   }
 
-  .notebook-topic-panel-hint { text-align: left; }
+  .notebook-view-option {
+    grid-template-columns: 6.2rem minmax(0, 1fr);
+    min-height: calc(var(--notebook-line-pitch) * 4);
+    padding-inline: .35rem;
+  }
+
+  .notebook-view-sketch { transform: scale(.9); }
+
+  .notebook-topic-panel-hint,
+  .notebook-view-panel-hint { text-align: left; }
 }
 
 @media print {
@@ -2434,6 +2748,7 @@ article.notebook-page.notebook-back::after {
   .notebook-topic-tabs,
   .notebook-topic-panel,
   .notebook-paper-panel,
+  .notebook-view-panel,
   .notebook-reader-status,
   .notebook-turn-corner { display: none !important; }
 
@@ -2455,7 +2770,7 @@ article.notebook-page.notebook-back::after {
   .section-head.notebook-section-tab::after { display: none; }
 }
 </style></head>
-<body><main class="study-shell"><div class="study-grid without-toc"><article data-kind="summary"><div class="book-frontmatter"><div class="book-running-line"><span class="book-course">Material de estudio</span><span class="book-kind">Resumen</span></div></div><header class="study-header"><div class="mark"></div><div class="body"><h1 id="programar-antes-de-escribir-código">Programar antes de escribir código</h1><p class="study-lede">Cómo se comporta el sistema con teoría continua, definiciones y distinciones, sin depender de imágenes.</p></div></header>
+<body><main class="study-shell"><div class="study-grid without-toc"><article data-kind="summary"><div class="book-frontmatter"><div class="book-running-line"><span class="book-course">Algoritmos y Estructuras de Datos</span><span class="book-kind">Resumen · Unidad 1</span></div></div><header class="study-header"><div class="mark">Capítulo 1</div><div class="body"><h1 id="programar-antes-de-escribir-código">Programar antes de escribir código</h1><p class="study-lede">Cómo se comporta el sistema con teoría continua, definiciones y distinciones, sin depender de imágenes.</p></div></header>
 <div class="section-head"><div class="num"></div><h2 id="del-problema-a-la-solución">Del problema a la solución</h2></div>
 <div class="row"><div class="mark"></div><div class="body"><p>Antes de escribir instrucciones hay que comprender qué se quiere obtener, con qué datos se cuenta y qué condiciones ya vienen garantizadas. El diseño ordena esa comprensión en una solución independiente del lenguaje.</p></div></div>
 <aside class="callout definition"><div class="callout-title">Definición</div><div class="callout-body"><p class="term">Precondición</p><p>Una condición que el problema da por garantizada sobre los datos de entrada. Si está garantizada, no se vuelve a validar como si fuera un dato incierto.</p></div></aside>
@@ -2485,6 +2800,8 @@ article.notebook-page.notebook-back::after {
   let reader = null;
   let readerCleanup = null;
   let viewSwitch = null;
+  let viewPanel = null;
+  let viewPanelReturnFocus = null;
   let toastTimer = null;
   let pageModeUnavailable = null;
   let topicNavigator = null;
@@ -2559,6 +2876,7 @@ article.notebook-page.notebook-back::after {
     if (!paperColorPanel) return;
     if (open) {
       setTopicPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
       if (paperColorPanel.hidden) {
         const active = document.activeElement;
         paperColorReturnFocus = active instanceof HTMLElement
@@ -2747,6 +3065,37 @@ article.notebook-page.notebook-back::after {
 
   const isHeadingLike = (node) => node?.matches?.('.section-head, .subsection-head, .minor-head');
 
+  const cleanConceptLabel = (value) => String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s\-–—:;,.]+|[\s\-–—:;,.]+$/g, '')
+    .trim();
+
+  const extractConcepts = (roots, fallback = []) => {
+    const concepts = [];
+    const seen = new Set();
+    const add = (value) => {
+      const label = cleanConceptLabel(value);
+      const key = label.toLocaleLowerCase('es');
+      if (!label || label.length < 2 || label.length > 52 || label.split(/\s+/).length > 8) return;
+      if (/^\d+(?:[.,]\d+)?$/.test(label) || seen.has(key)) return;
+      seen.add(key);
+      concepts.push(label);
+    };
+    const collect = (selector) => {
+      roots.forEach((root) => {
+        if (root.matches?.(selector)) add(root.textContent);
+        root.querySelectorAll?.(selector).forEach((node) => add(node.textContent));
+      });
+    };
+
+    // Structural labels and explicit semantic terms outrank inline emphasis;
+    // bold text fills any remaining slots without becoming an invented index.
+    collect('.subsection-head h3, .minor-head h4, .callout .term');
+    collect('strong');
+    fallback.forEach(add);
+    return concepts.slice(0, 4);
+  };
+
   const makePage = (source, pageIndex) => {
     const page = source.cloneNode(false);
     const back = pageIndex % 2 === 1;
@@ -2783,23 +3132,43 @@ article.notebook-page.notebook-back::after {
     window.requestAnimationFrame(() => window.scrollTo({left, top, behavior: 'instant'}));
   };
 
-  const collectTopics = (source) => Array.from(
-    source.querySelectorAll(':scope > .section-head > h2[id]')
-  ).map((heading, index) => {
-    const section = heading.parentElement;
-    section?.classList.add('notebook-section-tab');
-    if (section) {
-      section.dataset.topicIndex = String(index);
-      section.dataset.topicNumber = String(index + 1);
+  const collectTopics = (source) => {
+    const headings = Array.from(source.querySelectorAll(':scope > .section-head > h2[id]'));
+    if (!headings.length) {
+      const label = cleanConceptLabel(source.querySelector('h1')?.textContent) || 'Documento';
+      return [{
+        id: '',
+        index: 0,
+        label,
+        number: 1,
+        page: 1,
+        concepts: extractConcepts([source], [label]),
+      }];
     }
-    return {
-      id: heading.id,
-      index,
-      label: heading.textContent.trim(),
-      number: index + 1,
-      page: null,
-    };
-  });
+    return headings.map((heading, index) => {
+      const section = heading.parentElement;
+      section?.classList.add('notebook-section-tab');
+      if (section) {
+        section.dataset.topicIndex = String(index);
+        section.dataset.topicNumber = String(index + 1);
+      }
+      const roots = [];
+      let sibling = section?.nextElementSibling || null;
+      while (sibling && !sibling.matches('.section-head')) {
+        roots.push(sibling);
+        sibling = sibling.nextElementSibling;
+      }
+      const label = heading.textContent.trim();
+      return {
+        id: heading.id,
+        index,
+        label,
+        number: index + 1,
+        page: null,
+        concepts: extractConcepts(roots, [label]),
+      };
+    });
+  };
 
   const setActiveTopic = (index) => {
     if (!topics.length) return;
@@ -2824,6 +3193,7 @@ article.notebook-page.notebook-back::after {
     if (!topicNavigator || !topicPanel) return;
     if (open) {
       setPaperPanel(false, {focus: false});
+      setViewPanel(false, {focus: false});
       if (topicPanel.hidden) {
         const active = document.activeElement;
         topicPanelReturnFocus = active instanceof HTMLElement
@@ -3003,8 +3373,13 @@ article.notebook-page.notebook-back::after {
   };
 
   const attachTopicNavigation = (mode, host) => {
-    if (!topicNavigator || !host) return;
+    if (!host) return;
     detachTopicNavigation();
+    // A single-topic document does not need an index panel.
+    if (!topicNavigator) {
+      if (mode === 'continuous') bindContinuousTopicTracking();
+      return;
+    }
     topicNavigator.hidden = false;
     topicNavigator.classList.remove('is-detached');
     topicNavigator.classList.toggle('is-paged', mode === 'pages');
@@ -3062,6 +3437,197 @@ article.notebook-page.notebook-back::after {
     buttons[next]?.focus();
   };
 
+  const currentViewMode = () => (mounted ? 'pages' : 'continuous');
+
+  const syncViewPanelSelection = () => {
+    if (!viewPanel) return;
+    const actualMode = currentViewMode();
+    viewPanel.querySelectorAll('[data-view-mode]').forEach((button) => {
+      const mode = button.dataset.viewMode;
+      const active = mode === actualMode;
+      const unavailable = mode === 'pages' && (!desktop.matches || Boolean(pageModeUnavailable));
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-checked', String(active));
+      button.disabled = unavailable;
+      button.setAttribute('aria-disabled', String(unavailable));
+      const description = button.querySelector('.notebook-view-option-description');
+      if (description && mode === 'pages') {
+        description.textContent = !desktop.matches
+          ? 'Disponible en tablet y escritorio.'
+          : pageModeUnavailable
+            ? 'Este resumen necesita la vista continua.'
+            : 'Pasá hojas físicas, frente y dorso.';
+      }
+    });
+    viewPanel.dataset.mode = actualMode;
+  };
+
+  const setViewPanel = (open, {focus = true} = {}) => {
+    if (!viewPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      setPaperPanel(false, {focus: false});
+      if (viewPanel.hidden) {
+        const active = document.activeElement;
+        viewPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    viewPanel.hidden = !open;
+    if (open) {
+      document.documentElement.dataset.notebookViewMenu = 'open';
+      syncViewPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          viewPanel.querySelector('[data-view-mode].is-active:not(:disabled)')?.focus();
+        });
+      }
+    } else {
+      delete document.documentElement.dataset.notebookViewMenu;
+      if (focus && viewPanelReturnFocus?.isConnected) {
+        viewPanelReturnFocus.focus({preventScroll: true});
+      }
+      viewPanelReturnFocus = null;
+    }
+  };
+
+  const makeViewSketch = (mode) => {
+    const sketch = document.createElement('span');
+    sketch.className = `notebook-view-sketch is-${mode}`;
+    sketch.setAttribute('aria-hidden', 'true');
+    if (mode === 'pages') {
+      sketch.innerHTML = `
+        <span class="notebook-view-sketch-sheet is-back"></span>
+        <span class="notebook-view-sketch-sheet is-middle"></span>
+        <span class="notebook-view-sketch-sheet is-front"></span>
+        <span class="notebook-view-sketch-turn"></span>
+      `;
+    } else {
+      sketch.innerHTML = `
+        <span class="notebook-view-sketch-strip"></span>
+        <span class="notebook-view-sketch-flow"></span>
+      `;
+    }
+    return sketch;
+  };
+
+  const chooseViewMode = async (mode) => {
+    setViewPanel(false, {focus: false});
+    const actual = await setViewMode(mode);
+    syncViewPanelSelection();
+    showModeToast(actual);
+  };
+
+  const createViewPanel = () => {
+    if (viewPanel) return;
+
+    const panel = document.createElement('section');
+    panel.id = 'notebook-view-panel';
+    panel.className = 'notebook-view-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-view-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'V');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-view-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-view-panel-title';
+    title.textContent = 'Vista de lectura';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-view-panel-shortcut';
+    shortcut.innerHTML = '<kbd>V</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-view-panel-close';
+    close.setAttribute('aria-label', 'Cerrar selector de vista');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setViewPanel(false));
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-view-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Vistas de lectura');
+    const choices = [
+      {
+        mode: 'pages',
+        label: 'Hojas',
+        description: 'Pasá hojas físicas, frente y dorso.',
+      },
+      {
+        mode: 'continuous',
+        label: 'Continua',
+        description: 'Leé todo seguido desplazándote hacia abajo.',
+      },
+    ];
+    choices.forEach(({mode, label, description}) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'notebook-view-option';
+      button.dataset.viewMode = mode;
+      button.setAttribute('role', 'radio');
+      button.setAttribute('aria-checked', 'false');
+      button.setAttribute('aria-label', `${label}: ${description}`);
+
+      const copy = document.createElement('span');
+      copy.className = 'notebook-view-option-copy';
+      const optionLabel = document.createElement('strong');
+      optionLabel.className = 'notebook-view-option-label';
+      optionLabel.textContent = label;
+      const optionDescription = document.createElement('span');
+      optionDescription.className = 'notebook-view-option-description';
+      optionDescription.textContent = description;
+      copy.append(optionLabel, optionDescription);
+
+      button.append(makeViewSketch(mode), copy);
+      button.addEventListener('click', () => void chooseViewMode(mode));
+      list.appendChild(button);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-view-panel-hint';
+    hint.textContent = '↑ ↓ para recorrer · Enter para elegir · Esc para cerrar';
+    panel.append(head, list, hint);
+    document.body.appendChild(panel);
+    viewPanel = panel;
+    syncViewPanelSelection();
+
+    document.addEventListener('pointerdown', (event) => {
+      if (viewPanel?.hidden !== false) return;
+      if (viewPanel.contains(event.target)) return;
+      setViewPanel(false, {focus: false});
+    });
+  };
+
+  const onViewPanelKeydown = (event) => {
+    if (viewPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setViewPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(viewPanel.querySelectorAll('[data-view-mode]:not(:disabled)'));
+    if (!buttons.length) return;
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      void chooseViewMode(buttons[current]?.dataset.viewMode);
+      return;
+    }
+    buttons[next]?.focus();
+  };
+
   const syncViewSwitch = () => {
     if (!viewSwitch) return;
     const actualMode = mounted ? 'pages' : 'continuous';
@@ -3076,6 +3642,7 @@ article.notebook-page.notebook-back::after {
           : 'La vista por hojas está disponible en tablet y escritorio';
       }
     });
+    syncViewPanelSelection();
   };
 
   // The old visual switch is kept as hidden semantic state for compatibility;
@@ -3106,7 +3673,7 @@ article.notebook-page.notebook-back::after {
       toast.setAttribute('aria-live', 'polite');
       document.body.appendChild(toast);
     }
-    toast.textContent = mode === 'pages' ? 'Vista Hojas · V' : 'Vista Continua · V';
+    toast.textContent = mode === 'pages' ? 'Vista Hojas' : 'Vista Continua';
     toast.classList.add('is-visible');
     if (toastTimer) window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1200);
@@ -3414,7 +3981,7 @@ article.notebook-page.notebook-back::after {
 
     const onKeydown = (event) => {
       if (!shell.isConnected || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
-      if (topicPanel?.hidden === false) return;
+      if (topicPanel?.hidden === false || viewPanel?.hidden === false) return;
       const activeElement = document.activeElement;
       const tag = activeElement?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || activeElement?.isContentEditable) return;
@@ -3531,23 +4098,16 @@ article.notebook-page.notebook-back::after {
     return 'continuous';
   };
 
-  const toggleViewMode = async () => {
-    if (!desktop.matches || print.matches) return;
-    const next = mounted || mounting ? 'continuous' : 'pages';
-    const actual = await setViewMode(next);
-    showModeToast(actual);
-  };
-
   const onViewShortcut = (event) => {
     if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
-    if (isEditableTarget(event.target)) return;
+    if (isEditableTarget(event.target) || !viewPanel || print.matches) return;
     if (event.key?.toLowerCase() !== 'v') return;
-    if (!desktop.matches || print.matches) return;
     event.preventDefault();
-    void toggleViewMode();
+    setViewPanel(viewPanel.hidden);
   };
 
   const restoreForPrint = () => {
+    setViewPanel(false, {focus: false});
     if (mounted) restoreContinuous('print-continuous');
   };
 
@@ -3561,6 +4121,7 @@ article.notebook-page.notebook-back::after {
     if (!source) return;
     const pagedEligible = PAGED_KINDS.has(source.dataset.kind || '');
     topics = collectTopics(source);
+    setActiveTopic(0);
     createTopicNavigation();
     document.addEventListener('keydown', onTopicShortcut);
 
@@ -3574,6 +4135,8 @@ article.notebook-page.notebook-back::after {
 
     originalTemplate = source.cloneNode(true);
     createViewSwitch();
+    createViewPanel();
+    document.addEventListener('keydown', onViewPanelKeydown);
     document.addEventListener('keydown', onViewShortcut);
     if (effectiveMode() === 'pages') void mount();
     else {
