@@ -10,8 +10,8 @@
 
   /* Surfaces — study notebook on a quiet desk */
   --study-canvas: #6f7268;
-  --study-paper: #fbf9f4;
-  --study-paper-muted: #f4f3eb;
+  --study-paper: #f2ece0;
+  --study-paper-muted: #e9e2d4;
   --study-ink: #1b2430;
   --study-ink-strong: #10131a;
   --study-ink-soft: #3c4657;
@@ -1551,6 +1551,225 @@ article ul > li:nth-child(even)::before {
    are user-facing through the V shortcut, not through persistent UI chrome. */
 .notebook-view-switch { display: none; }
 
+/* Paper color panel — mirrors the topic panel structure and pencil grammar. */
+.notebook-paper-panel[hidden] { display: none !important; }
+
+.notebook-paper-panel {
+  position: fixed;
+  z-index: 140;
+  top: 50%;
+  left: 50%;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: min(70vh, 34rem);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  padding: 1rem 1.1rem .8rem;
+  border: 1px solid var(--study-rule-strong);
+  border-radius: 2px 6px 6px 2px;
+  background-color: var(--study-paper);
+  background-image: var(--notebook-rule-image);
+  background-size: 100% var(--notebook-line-pitch);
+  background-position: 0 .2rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .34);
+  color: var(--study-ink);
+  font-family: var(--study-font-body);
+}
+
+.notebook-paper-panel-head {
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: .7rem;
+  align-items: center;
+  padding: 0 0 .45rem;
+  border-bottom: 1px solid var(--study-rule-strong);
+}
+
+.notebook-paper-panel-head h2 {
+  margin: 0;
+  color: var(--study-ink-strong);
+  font-family: var(--study-font-hand);
+  font-size: 1.35rem;
+  line-height: var(--notebook-line-pitch);
+}
+
+.notebook-paper-panel-shortcut {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+}
+
+.notebook-paper-panel-close {
+  padding: .25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule-strong);
+  background: transparent;
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .64rem;
+  cursor: pointer;
+}
+
+.notebook-paper-panel-close:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: 2px;
+}
+
+.notebook-paper-panel kbd {
+  min-width: 1.35rem;
+  padding: .12rem .28rem;
+  border: 1px solid var(--study-rule);
+  border-bottom-color: var(--study-rule-strong);
+  border-radius: 2px;
+  background: var(--study-paper-muted);
+  color: var(--study-ink-soft);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1;
+  text-align: center;
+}
+
+/* Color list: vertical stack of swatch + label rows. */
+.notebook-paper-list {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  margin: .5rem 0 0;
+  padding: 0;
+}
+
+.notebook-paper-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  min-height: calc(var(--notebook-line-pitch) * 2);
+  padding: .36rem .45rem;
+  border: 0;
+  border-bottom: 1px solid var(--study-rule);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.notebook-paper-item:hover,
+.notebook-paper-item:focus-visible {
+  background: color-mix(in srgb, var(--study-marker) 32%, transparent);
+}
+
+.notebook-paper-item:focus-visible {
+  outline: 2px solid var(--study-focus);
+  outline-offset: -2px;
+}
+
+.notebook-paper-item[aria-checked="true"] {
+  box-shadow: inset .2rem 0 0 var(--study-accent);
+}
+
+/* Pencil-drawn swatch: imperfect border, slight rotation, double trace. */
+.notebook-paper-swatch {
+  --paper-swatch-color: var(--study-paper);
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 2.1rem;
+  height: 1.5rem;
+  border-radius: 2px 6px 5px 2px / 3px 4px 6px 2px;
+  transform: rotate(-.6deg) skewX(-.4deg);
+  box-shadow:
+    .04rem .03rem 0 color-mix(in srgb, var(--study-ink) 12%, transparent),
+    -.02rem .02rem 0 color-mix(in srgb, var(--study-ink) 6%, transparent);
+  transition: transform .12s ease;
+}
+
+/* Outer pencil trace */
+.notebook-paper-swatch::before {
+  content: "";
+  position: absolute;
+  inset: -.18rem;
+  border: 1.2px solid color-mix(in srgb, var(--study-ink) 28%, transparent);
+  border-radius: 3px 7px 6px 2px / 3px 5px 7px 3px;
+  transform: rotate(.3deg);
+  pointer-events: none;
+}
+
+/* Inner pencil trace — slight offset for double-line feel */
+.notebook-paper-swatch::after {
+  content: "";
+  position: absolute;
+  inset: -.06rem;
+  border: .7px solid color-mix(in srgb, var(--study-ink) 14%, transparent);
+  border-radius: 2px 5px 4px 3px / 2px 6px 5px 2px;
+  transform: rotate(-.15deg);
+  pointer-events: none;
+}
+
+/* Actual color fill */
+.notebook-paper-swatch::before {
+  background-color: var(--paper-swatch-color);
+}
+
+/* Default swatch: shows the theme token with a pencil-hatched fill */
+.notebook-paper-swatch.is-default {
+  background:
+    repeating-linear-gradient(
+      176deg,
+      transparent 0 .9px,
+      color-mix(in srgb, var(--study-ink) 8%, transparent) .9px 1.48px,
+      transparent 1.62px 3.2px
+    ),
+    repeating-linear-gradient(
+      171deg,
+      transparent 0 2.65px,
+      color-mix(in srgb, var(--study-ink) 4%, transparent) 2.65px 3.02px,
+      transparent 3.2px 5.5px
+    ),
+    var(--study-paper);
+}
+
+/* Active swatch: denser pencil fill like the active section tab */
+.notebook-paper-item.is-active .notebook-paper-swatch::after {
+  background:
+    repeating-linear-gradient(
+      176deg,
+      transparent 0 .9px,
+      color-mix(in srgb, var(--study-accent) 18%, transparent) .9px 1.48px,
+      transparent 1.62px 3.2px
+    ),
+    repeating-linear-gradient(
+      171deg,
+      transparent 0 2.65px,
+      color-mix(in srgb, var(--study-accent) 8%, transparent) 2.65px 3.02px,
+      transparent 3.2px 5.5px
+    );
+}
+
+.notebook-paper-item-label {
+  color: var(--study-ink-strong);
+  font-size: .93rem;
+  line-height: 1.35;
+}
+
+.notebook-paper-item.is-active .notebook-paper-item-label {
+  color: var(--study-accent);
+  font-weight: 500;
+}
+
+.notebook-paper-panel-hint {
+  margin: .55rem 0 0;
+  color: var(--study-ink-muted);
+  font-family: var(--study-font-utility);
+  font-size: .62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
 .notebook-mode-toast {
   position: fixed;
   z-index: 130;
@@ -2179,11 +2398,27 @@ article.notebook-page.notebook-back::after {
     padding: .85rem .85rem .7rem;
   }
 
+  .notebook-paper-panel {
+    top: auto;
+    right: .65rem;
+    bottom: .65rem;
+    left: .65rem;
+    width: auto;
+    max-height: calc(100vh - 1.3rem);
+    transform: none;
+    padding: .85rem .85rem .7rem;
+  }
+
   .notebook-topic-panel-head {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
+  .notebook-paper-panel-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
   .notebook-topic-panel-shortcut { display: none; }
+  .notebook-paper-panel-shortcut { display: none; }
 
   .notebook-topic-list-button {
     grid-template-columns: 3.65rem minmax(0, 1fr);
@@ -2198,6 +2433,7 @@ article.notebook-page.notebook-back::after {
   .notebook-mode-toast,
   .notebook-topic-tabs,
   .notebook-topic-panel,
+  .notebook-paper-panel,
   .notebook-reader-status,
   .notebook-turn-corner { display: none !important; }
 
@@ -2219,7 +2455,7 @@ article.notebook-page.notebook-back::after {
   .section-head.notebook-section-tab::after { display: none; }
 }
 </style></head>
-<body><div class="reading-progress" aria-hidden="true"><span></span></div><main class="study-shell"><div class="study-grid with-toc"><article data-kind="guide"><div class="book-frontmatter"><div class="book-running-line"><span class="book-course">Sistemas Operativos</span><span class="book-kind">Guía · Unidad 2</span></div></div><header class="study-header"><div class="mark">Capítulo 2</div><div class="body"><h1 id="estados-de-un-proceso">Estados de un proceso</h1><p class="study-lede">Explicación, comparación, tabla y recuperación activa en una página más densa.</p></div></header>
+<body><main class="study-shell"><div class="study-grid without-toc"><article data-kind="summary"><div class="book-frontmatter"><div class="book-running-line"><span class="book-course">Material de estudio</span><span class="book-kind">Resumen</span></div></div><header class="study-header"><div class="mark"></div><div class="body"><h1 id="estados-de-un-proceso">Estados de un proceso</h1><p class="study-lede">Explicación, comparación, tabla y recuperación activa en una página más densa.</p></div></header>
 <div class="section-head"><div class="num"></div><h2 id="estado-no-significa-prioridad">Estado no significa prioridad</h2></div>
 <div class="row"><div class="mark"></div><div class="body"><p>Un proceso puede cambiar de estado porque está ejecutándose, esperando un recurso o listo para recibir CPU. El estado describe <strong>qué condición de ejecución tiene ahora</strong>, no cuán importante es para el sistema.</p></div></div>
 <aside class="callout danger"><div class="callout-title">Error típico</div><div class="callout-body"><p class="term">Confusión típica</p><p>«Listo» no significa «ejecutándose». Significa que el proceso puede ejecutar, pero todavía no tiene asignado el procesador.</p></div></aside>
@@ -2229,23 +2465,10 @@ article.notebook-page.notebook-back::after {
 <aside class="callout connection"><div class="callout-title">Relación</div><div class="callout-body"><p class="term">Cambio de contexto</p><p>Cuando el sistema deja de ejecutar un proceso y pasa a otro, debe conservar el estado necesario para poder retomarlo después.</p></div></aside>
 <div class="section-head"><div class="num"></div><h2 id="qué-debería-quedar-después-de-leer">Qué debería quedar después de leer</h2></div>
 <div class="row"><div class="mark"></div><div class="body"><p>Podés mirar un escenario y justificar por qué un proceso está listo, ejecutando o bloqueado sin usar esos nombres como etiquetas memorizadas.</p></div></div>
-<aside class="callout recall"><div class="callout-title">Recuperación</div><div class="callout-body"><p class="term">Caso corto</p><p class="prompt">Un proceso necesita leer un dato de disco y no puede continuar hasta recibirlo. ¿Qué estado esperarías durante esa espera y qué tendría que ocurrir para que vuelva a competir por CPU?</p><p class="hint">Respondé sin mirar antes de seguir leyendo.</p></div></aside></article><nav class="toc" aria-label="Índice"><strong>Índice</strong><a class="depth-2" href="#estado-no-significa-prioridad">Estado no significa prioridad</a><a class="depth-2" href="#comparación-rápida">Comparación rápida</a><a class="depth-2" href="#qué-debería-quedar-después-de-leer">Qué debería quedar después de leer</a></nav></div></main><script>
-(() => {
-  const bar = document.querySelector('.reading-progress > span');
-  if (!bar) return;
-  const update = () => {
-    const d = document.documentElement;
-    const max = Math.max(0, d.scrollHeight - d.clientHeight);
-    const pct = max ? Math.min(100, Math.max(0, d.scrollTop / max * 100)) : 0;
-    bar.style.width = pct.toFixed(2) + '%';
-  };
-  addEventListener('scroll', update, {passive: true});
-  addEventListener('resize', update);
-  update();
-})();
-</script><script>(() => {
+<aside class="callout recall"><div class="callout-title">Recuperación</div><div class="callout-body"><p class="term">Caso corto</p><p class="prompt">Un proceso necesita leer un dato de disco y no puede continuar hasta recibirlo. ¿Qué estado esperarías durante esa espera y qué tendría que ocurrir para que vuelva a competir por CPU?</p><p class="hint">Respondé sin mirar antes de seguir leyendo.</p></div></aside></article></div></main><script>(() => {
   const PAGED_KINDS = new Set(['summary', 'rapid-review', 'learn', 'explain']);
   const STORAGE_KEY = 'university-study:reader-mode';
+  const PAPER_STORAGE_KEY = 'university-study:paper-color';
   const desktop = window.matchMedia('(min-width: 48.01rem)');
   const print = window.matchMedia('print');
 
@@ -2276,6 +2499,198 @@ article.notebook-page.notebook-back::after {
 
   const writeStoredMode = (value) => {
     try { window.localStorage?.setItem(STORAGE_KEY, value); } catch (_) {}
+  };
+
+  /* Paper color switcher */
+  const PAPER_COLORS = [
+    { name: 'Default',    paper: null,      muted: null },
+    { name: 'Blanco',     paper: '#ffffff', muted: '#f5f5f5' },
+    { name: 'Crema',      paper: '#f5f0e6', muted: '#ede7da' },
+    { name: 'Trigo',      paper: '#f2ece0', muted: '#e9e2d4' },
+    { name: 'Kraft',      paper: '#efe8d4', muted: '#e6dfc9' },
+    { name: 'Pergamino',  paper: '#e8dcc4', muted: '#dfd2b8' },
+  ];
+  let paperColorIndex = 0;
+  let paperColorPanel = null;
+  let paperColorReturnFocus = null;
+
+  const readStoredPaperColor = () => {
+    try {
+      const v = window.localStorage?.getItem(PAPER_STORAGE_KEY);
+      if (v === null) return 0;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 && n < PAPER_COLORS.length ? n : 0;
+    } catch (_) { return 0; }
+  };
+
+  const writeStoredPaperColor = (index) => {
+    try { window.localStorage?.setItem(PAPER_STORAGE_KEY, String(index)); } catch (_) {}
+  };
+
+  const applyPaperColor = (index) => {
+    const root = document.documentElement;
+    const c = PAPER_COLORS[index];
+    if (!c || !c.paper) {
+      root.style.removeProperty('--study-paper');
+      root.style.removeProperty('--study-paper-muted');
+    } else {
+      root.style.setProperty('--study-paper', c.paper);
+      root.style.setProperty('--study-paper-muted', c.muted);
+    }
+  };
+
+  const syncPaperPanelSelection = () => {
+    if (!paperColorPanel) return;
+    paperColorPanel.querySelectorAll('[data-paper-index]').forEach((btn) => {
+      const active = Number(btn.dataset.paperIndex) === paperColorIndex;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-checked', String(active));
+    });
+  };
+
+  const setPaperPanel = (open, {focus = true} = {}) => {
+    if (!paperColorPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      if (paperColorPanel.hidden) {
+        const active = document.activeElement;
+        paperColorReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    paperColorPanel.hidden = !open;
+    if (open) {
+      syncPaperPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          paperColorPanel.querySelector('[data-paper-index].is-active')?.focus();
+        });
+      }
+    } else {
+      if (focus && paperColorReturnFocus?.isConnected) {
+        paperColorReturnFocus.focus({preventScroll: true});
+      }
+      paperColorReturnFocus = null;
+    }
+  };
+
+  const selectPaperColor = (index) => {
+    paperColorIndex = index;
+    applyPaperColor(index);
+    writeStoredPaperColor(index);
+    syncPaperPanelSelection();
+  };
+
+  const createPaperColorPanel = () => {
+    if (paperColorPanel) return;
+
+    const panel = document.createElement('section');
+    panel.className = 'notebook-paper-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-paper-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'C');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-paper-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-paper-panel-title';
+    title.textContent = 'Color de hoja';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-paper-panel-shortcut';
+    shortcut.innerHTML = '<kbd>C</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-paper-panel-close';
+    close.setAttribute('aria-label', 'Cerrar selector de color');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setPaperPanel(false));
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-paper-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Colores de hoja');
+    PAPER_COLORS.forEach((color, index) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'notebook-paper-item';
+      item.dataset.paperIndex = String(index);
+      item.setAttribute('role', 'radio');
+      item.setAttribute('aria-checked', 'false');
+      item.setAttribute('aria-label', color.name);
+      item.title = color.name;
+
+      const swatch = document.createElement('span');
+      swatch.className = 'notebook-paper-swatch';
+      if (color.paper) {
+        swatch.style.setProperty('--paper-swatch-color', color.paper);
+      } else {
+        swatch.classList.add('is-default');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'notebook-paper-item-label';
+      label.textContent = color.name;
+
+      item.append(swatch, label);
+      item.addEventListener('click', () => {
+        selectPaperColor(index);
+        setPaperPanel(false, {focus: false});
+      });
+      list.appendChild(item);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-paper-panel-hint';
+    hint.textContent = '\u2190 \u2192 para recorrer \u00b7 Enter para elegir \u00b7 Esc para cerrar';
+    panel.append(head, list, hint);
+
+    document.body.appendChild(panel);
+    paperColorPanel = panel;
+
+    document.addEventListener('pointerdown', (event) => {
+      if (paperColorPanel?.hidden !== false) return;
+      if (paperColorPanel.contains(event.target)) return;
+      setPaperPanel(false, {focus: false});
+    });
+  };
+
+  const onPaperColorShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target)) return;
+    if (event.key?.toLowerCase() !== 'c') return;
+    event.preventDefault();
+    createPaperColorPanel();
+    setPaperPanel(paperColorPanel?.hidden !== false);
+  };
+
+  const onPaperPanelKeydown = (event) => {
+    if (paperColorPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setPaperPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(paperColorPanel.querySelectorAll('[data-paper-index]'));
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      selectPaperColor(Number(buttons[current]?.dataset.paperIndex ?? 0));
+      setPaperPanel(false, {focus: false});
+      return;
+    }
+    buttons[next]?.focus();
   };
 
   // Pages remain the desktop/tablet default so existing artifacts keep the
@@ -2400,13 +2815,16 @@ article.notebook-page.notebook-back::after {
 
   const setTopicPanel = (open, {focus = true} = {}) => {
     if (!topicNavigator || !topicPanel) return;
-    if (open && topicPanel.hidden) {
-      const active = document.activeElement;
-      topicPanelReturnFocus = active instanceof HTMLElement
-        && active !== document.body
-        && active !== document.documentElement
-        ? active
-        : null;
+    if (open) {
+      setPaperPanel(false, {focus: false});
+      if (topicPanel.hidden) {
+        const active = document.activeElement;
+        topicPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
     }
     topicPanel.hidden = !open;
     topicNavigator.dataset.open = open ? 'true' : 'false';
@@ -3127,6 +3545,11 @@ article.notebook-page.notebook-back::after {
   };
 
   const init = () => {
+    paperColorIndex = readStoredPaperColor();
+    applyPaperColor(paperColorIndex);
+    document.addEventListener('keydown', onPaperColorShortcut);
+    document.addEventListener('keydown', onPaperPanelKeydown);
+
     const source = document.querySelector('.study-grid > article');
     if (!source) return;
     const pagedEligible = PAGED_KINDS.has(source.dataset.kind || '');

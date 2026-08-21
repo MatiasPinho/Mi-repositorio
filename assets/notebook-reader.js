@@ -1,6 +1,7 @@
 (() => {
   const PAGED_KINDS = new Set(['summary', 'rapid-review', 'learn', 'explain']);
   const STORAGE_KEY = 'university-study:reader-mode';
+  const PAPER_STORAGE_KEY = 'university-study:paper-color';
   const desktop = window.matchMedia('(min-width: 48.01rem)');
   const print = window.matchMedia('print');
 
@@ -31,6 +32,198 @@
 
   const writeStoredMode = (value) => {
     try { window.localStorage?.setItem(STORAGE_KEY, value); } catch (_) {}
+  };
+
+  /* Paper color switcher */
+  const PAPER_COLORS = [
+    { name: 'Default',    paper: null,      muted: null },
+    { name: 'Blanco',     paper: '#ffffff', muted: '#f5f5f5' },
+    { name: 'Crema',      paper: '#f5f0e6', muted: '#ede7da' },
+    { name: 'Trigo',      paper: '#f2ece0', muted: '#e9e2d4' },
+    { name: 'Kraft',      paper: '#efe8d4', muted: '#e6dfc9' },
+    { name: 'Pergamino',  paper: '#e8dcc4', muted: '#dfd2b8' },
+  ];
+  let paperColorIndex = 0;
+  let paperColorPanel = null;
+  let paperColorReturnFocus = null;
+
+  const readStoredPaperColor = () => {
+    try {
+      const v = window.localStorage?.getItem(PAPER_STORAGE_KEY);
+      if (v === null) return 0;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 && n < PAPER_COLORS.length ? n : 0;
+    } catch (_) { return 0; }
+  };
+
+  const writeStoredPaperColor = (index) => {
+    try { window.localStorage?.setItem(PAPER_STORAGE_KEY, String(index)); } catch (_) {}
+  };
+
+  const applyPaperColor = (index) => {
+    const root = document.documentElement;
+    const c = PAPER_COLORS[index];
+    if (!c || !c.paper) {
+      root.style.removeProperty('--study-paper');
+      root.style.removeProperty('--study-paper-muted');
+    } else {
+      root.style.setProperty('--study-paper', c.paper);
+      root.style.setProperty('--study-paper-muted', c.muted);
+    }
+  };
+
+  const syncPaperPanelSelection = () => {
+    if (!paperColorPanel) return;
+    paperColorPanel.querySelectorAll('[data-paper-index]').forEach((btn) => {
+      const active = Number(btn.dataset.paperIndex) === paperColorIndex;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-checked', String(active));
+    });
+  };
+
+  const setPaperPanel = (open, {focus = true} = {}) => {
+    if (!paperColorPanel) return;
+    if (open) {
+      setTopicPanel(false, {focus: false});
+      if (paperColorPanel.hidden) {
+        const active = document.activeElement;
+        paperColorReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
+    }
+    paperColorPanel.hidden = !open;
+    if (open) {
+      syncPaperPanelSelection();
+      if (focus) {
+        window.requestAnimationFrame(() => {
+          paperColorPanel.querySelector('[data-paper-index].is-active')?.focus();
+        });
+      }
+    } else {
+      if (focus && paperColorReturnFocus?.isConnected) {
+        paperColorReturnFocus.focus({preventScroll: true});
+      }
+      paperColorReturnFocus = null;
+    }
+  };
+
+  const selectPaperColor = (index) => {
+    paperColorIndex = index;
+    applyPaperColor(index);
+    writeStoredPaperColor(index);
+    syncPaperPanelSelection();
+  };
+
+  const createPaperColorPanel = () => {
+    if (paperColorPanel) return;
+
+    const panel = document.createElement('section');
+    panel.className = 'notebook-paper-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'false');
+    panel.setAttribute('aria-labelledby', 'notebook-paper-panel-title');
+    panel.setAttribute('aria-keyshortcuts', 'C');
+    panel.hidden = true;
+
+    const head = document.createElement('div');
+    head.className = 'notebook-paper-panel-head';
+    const title = document.createElement('h2');
+    title.id = 'notebook-paper-panel-title';
+    title.textContent = 'Color de hoja';
+    const shortcut = document.createElement('span');
+    shortcut.className = 'notebook-paper-panel-shortcut';
+    shortcut.innerHTML = '<kbd>C</kbd> abrir / cerrar';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notebook-paper-panel-close';
+    close.setAttribute('aria-label', 'Cerrar selector de color');
+    close.textContent = 'Cerrar';
+    close.addEventListener('click', () => setPaperPanel(false));
+    head.append(title, shortcut, close);
+
+    const list = document.createElement('div');
+    list.className = 'notebook-paper-list';
+    list.setAttribute('role', 'radiogroup');
+    list.setAttribute('aria-label', 'Colores de hoja');
+    PAPER_COLORS.forEach((color, index) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'notebook-paper-item';
+      item.dataset.paperIndex = String(index);
+      item.setAttribute('role', 'radio');
+      item.setAttribute('aria-checked', 'false');
+      item.setAttribute('aria-label', color.name);
+      item.title = color.name;
+
+      const swatch = document.createElement('span');
+      swatch.className = 'notebook-paper-swatch';
+      if (color.paper) {
+        swatch.style.setProperty('--paper-swatch-color', color.paper);
+      } else {
+        swatch.classList.add('is-default');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'notebook-paper-item-label';
+      label.textContent = color.name;
+
+      item.append(swatch, label);
+      item.addEventListener('click', () => {
+        selectPaperColor(index);
+        setPaperPanel(false, {focus: false});
+      });
+      list.appendChild(item);
+    });
+
+    const hint = document.createElement('p');
+    hint.className = 'notebook-paper-panel-hint';
+    hint.textContent = '\u2190 \u2192 para recorrer \u00b7 Enter para elegir \u00b7 Esc para cerrar';
+    panel.append(head, list, hint);
+
+    document.body.appendChild(panel);
+    paperColorPanel = panel;
+
+    document.addEventListener('pointerdown', (event) => {
+      if (paperColorPanel?.hidden !== false) return;
+      if (paperColorPanel.contains(event.target)) return;
+      setPaperPanel(false, {focus: false});
+    });
+  };
+
+  const onPaperColorShortcut = (event) => {
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isEditableTarget(event.target)) return;
+    if (event.key?.toLowerCase() !== 'c') return;
+    event.preventDefault();
+    createPaperColorPanel();
+    setPaperPanel(paperColorPanel?.hidden !== false);
+  };
+
+  const onPaperPanelKeydown = (event) => {
+    if (paperColorPanel?.hidden !== false) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setPaperPanel(false);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    const buttons = Array.from(paperColorPanel.querySelectorAll('[data-paper-index]'));
+    const current = Math.max(0, buttons.indexOf(document.activeElement));
+    let next = current;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = buttons.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+    else {
+      selectPaperColor(Number(buttons[current]?.dataset.paperIndex ?? 0));
+      setPaperPanel(false, {focus: false});
+      return;
+    }
+    buttons[next]?.focus();
   };
 
   // Pages remain the desktop/tablet default so existing artifacts keep the
@@ -155,13 +348,16 @@
 
   const setTopicPanel = (open, {focus = true} = {}) => {
     if (!topicNavigator || !topicPanel) return;
-    if (open && topicPanel.hidden) {
-      const active = document.activeElement;
-      topicPanelReturnFocus = active instanceof HTMLElement
-        && active !== document.body
-        && active !== document.documentElement
-        ? active
-        : null;
+    if (open) {
+      setPaperPanel(false, {focus: false});
+      if (topicPanel.hidden) {
+        const active = document.activeElement;
+        topicPanelReturnFocus = active instanceof HTMLElement
+          && active !== document.body
+          && active !== document.documentElement
+          ? active
+          : null;
+      }
     }
     topicPanel.hidden = !open;
     topicNavigator.dataset.open = open ? 'true' : 'false';
@@ -882,6 +1078,11 @@
   };
 
   const init = () => {
+    paperColorIndex = readStoredPaperColor();
+    applyPaperColor(paperColorIndex);
+    document.addEventListener('keydown', onPaperColorShortcut);
+    document.addEventListener('keydown', onPaperPanelKeydown);
+
     const source = document.querySelector('.study-grid > article');
     if (!source) return;
     const pagedEligible = PAGED_KINDS.has(source.dataset.kind || '');
